@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INBDE Pro - Main Dashboard</title>
+<style>
+    /* --- 1. VARIABLES DE MARCA (COHERENCIA TOTAL) --- */
+    :root {
+        --primary-color: #fcdc11; /* Amarillo Marca */
+        --primary-dark: #121212;  /* Negro Marca */
+        --light-bg: #f3f4f6;      /* Fondo Pantalla */
+        --white: #ffffff;
+        --border-color: #e5e7eb;
+        --text-muted: #6b7280;
+        --accent-blue: #2563eb; /* Para enlaces o detalles */
+        --hover-bg: #fffce0;
+    }
+
+    /* --- 2. RESET Y ESTRUCTURA --- */
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--light-bg);
+        color: var(--primary-dark);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+    }
+
+    .main-wrapper {
+        display: flex;
+        flex-direction: column;
+        width: 1100px;
+        max-width: 100%;
+        background-color: var(--white);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        min-height: 80vh;
+    }
+
+    /* --- 3. CABECERA (HEADER) --- */
+    .brand-header {
+        background-color: var(--primary-dark);
+        color: var(--primary-color);
+        padding: 15px 30px;
+        font-weight: 800;
+        font-size: 1.2em;
+        border-bottom: 4px solid var(--primary-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-right {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .btn-header {
+        background: transparent;
+        border: 1px solid var(--primary-color);
+        color: var(--primary-color);
+        padding: 8px 14px;
+        font-size: 0.85em;
+        font-weight: 700;
+        cursor: pointer;
+        border-radius: 4px;
+        text-decoration: none;
+        text-transform: uppercase;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-header:hover { background-color: rgba(252, 220, 17, 0.2); }
+
+    .btn-logout {
+        border-color: #ef4444;
+        color: #ef4444;
+    }
+    .btn-logout:hover { background-color: rgba(239, 68, 68, 0.1); }
+
+
+    /* --- 4. CONTENIDO PRINCIPAL --- */
+    .content-container {
+        padding: 40px;
+        flex: 1;
+    }
+
+    .welcome-msg {
+        font-size: 1.8em;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    .subtitle-msg {
+        color: var(--text-muted);
+        margin-bottom: 30px;
+    }
+
+    /* --- 5. BOTONES GRANDES (SIMULACRO VS PRACTICE) --- */
+    .big-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .action-card {
+        background: var(--white);
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .action-card:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    .action-card.active {
+        border-color: var(--primary-dark);
+        background-color: var(--hover-bg);
+    }
+
+    .card-icon { font-size: 2.5em; margin-bottom: 10px; display: block; }
+    .card-title { font-size: 1.4em; font-weight: 800; color: var(--primary-dark); }
+    .card-desc { font-size: 0.9em; color: var(--text-muted); margin-top: 5px; }
+
+
+    /* --- 6. LISTA DE MATERIAS (ACORDEÓN) --- */
+    .modules-section {
+        border-top: 1px solid var(--border-color);
+        padding-top: 30px;
+    }
+    
+    .section-title {
+        font-size: 1.2em;
+        font-weight: 700;
+        margin-bottom: 20px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--primary-dark);
+    }
+
+    .loader {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-muted);
+        font-style: italic;
+    }
+
+    /* Estilos del Acordeón */
+    .module-item {
+        margin-bottom: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .module-header {
+        background-color: #f9fafb;
+        padding: 15px 20px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background 0.2s;
+    }
+    .module-header:hover { background-color: #f0f0f0; }
+    .module-header::after { content: '▼'; font-size: 0.8em; color: var(--text-muted); }
+    .module-item.open .module-header::after { content: '▲'; }
+
+    .quiz-list {
+        display: none; /* Oculto por defecto */
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        background: var(--white);
+        border-top: 1px solid var(--border-color);
+    }
+    .module-item.open .quiz-list { display: block; } /* Mostrar al abrir */
+
+    .quiz-link {
+        display: block;
+        padding: 12px 20px;
+        text-decoration: none;
+        color: #333;
+        font-size: 0.95em;
+        border-bottom: 1px solid #eee;
+        transition: background 0.1s;
+        display: flex;
+        justify-content: space-between;
+    }
+    .quiz-link:last-child { border-bottom: none; }
+    .quiz-link:hover { background-color: var(--hover-bg); color: var(--primary-dark); }
+    
+    .quiz-status {
+        font-size: 0.8em;
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: #eee;
+        color: #666;
+    }
+
+</style>
+</head>
+<body onload="initDashboard()">
+
+<div class="main-wrapper">
+    <!-- HEADER -->
+    <div class="brand-header">
+        <span>INBDE Pro</span>
+        <div class="header-right">
+            <a href="stats.html" class="btn-header">📊 Mi Dashboard</a>
+            <button class="btn-header btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- CONTENIDO -->
+    <div class="content-container">
+        <div class="welcome-msg">Welcome, <span id="user-name">Student</span></div>
+        <div class="subtitle-msg">Select a study mode to begin.</div>
+
+        <!-- BOTONES GRANDES -->
+        <div class="big-actions">
+            <div class="action-card" onclick="filterMode('simulation')">
+                <span class="card-icon">⏱️</span>
+                <!-- CAMBIO SOLICITADO: 'Simulacro' -> 'Simulation' -->
+                <div class="card-title">Simulation</div>
+                <div class="card-desc">Timed exam mode. Mimics real test conditions.</div>
+            </div>
+            <div class="action-card" onclick="filterMode('practice')">
+                <span class="card-icon">📖</span>
+                <div class="card-title">Practice Questions</div>
+                <div class="card-desc">Study mode with instant feedback.</div>
+            </div>
+        </div>
+
+        <!-- LISTA DE MATERIAS -->
+        <div class="modules-section">
+            <div class="section-title">Study Modules</div>
+            
+            <div id="modules-container">
+                <div id="loader" class="loader">Loading modules form database...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SUPABASE SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- SCRIPT PRINCIPAL -->
+<script>
+    // 1. CONFIGURACIÓN SUPABASE
+    const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
+    
+    const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // 2. INICIALIZACIÓN
+    async function initDashboard() {
+        // Verificar autenticación
+        const userEmail = localStorage.getItem('quiz_username');
+        
+        if (!userEmail) {
+            // Manejo seguro de la redirección
+            try {
+                window.location.href = 'login.html';
+            } catch (e) {
+                console.warn("Redirección automática falló (Entorno de prueba detectado). Mostrando UI alternativa.");
+                // Si falla la redirección, reemplazamos el cuerpo para mostrar un enlace manual
+                document.body.innerHTML = `
+                    <div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;text-align:center;font-family:sans-serif;">
+                        <h2 style="color:#121212;">Acceso Requerido</h2>
+                        <p style="color:#666;">Debes iniciar sesión para ver el dashboard.</p>
+                        <a href="login.html" style="background:#fcdc11; color:#121212; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; margin-top:15px;">
+                            Ir a Iniciar Sesión
+                        </a>
+                    </div>
+                `;
+            }
+            return;
+        }
+        
+        document.getElementById('user-name').innerText = userEmail.split('@')[0]; // Mostrar parte del correo
+
+        // Cargar Módulos
+        await fetchModules();
+    }
+
+    // 3. OBTENER MÓDULOS DE SUPABASE
+    async function fetchModules() {
+        const container = document.getElementById('modules-container');
+        const loader = document.getElementById('loader');
+
+        try {
+            // Consulta a la tabla 'contenido_quizzes'
+            const { data: quizzes, error } = await _supabase
+                .from('contenido_quizzes') 
+                .select('*')
+                .order('materia', { ascending: true });
+
+            if (error) throw error;
+
+            if (!quizzes || quizzes.length === 0) {
+                loader.innerText = "No quizzes available yet.";
+                return;
+            }
+
+            // Agrupar por Materia
+            const grouped = quizzes.reduce((acc, item) => {
+                if (!acc[item.materia]) acc[item.materia] = [];
+                acc[item.materia].push(item);
+                return acc;
+            }, {});
+
+            // Renderizar HTML
+            container.innerHTML = ''; // Limpiar loader
+            
+            for (const [materia, items] of Object.entries(grouped)) {
+                // Crear el bloque del acordeón
+                const moduleDiv = document.createElement('div');
+                moduleDiv.className = 'module-item';
+                
+                // Header del acordeón
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'module-header';
+                headerDiv.innerHTML = `${materia} <span style="font-weight:400; font-size:0.9em; color:#888">(${items.length})</span>`;
+                headerDiv.onclick = () => toggleAccordion(moduleDiv);
+
+                // Lista de quizzes oculta
+                const ul = document.createElement('ul');
+                ul.className = 'quiz-list';
+
+                items.forEach(quiz => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <a href="${quiz.archivo_url}" class="quiz-link">
+                            <span>${quiz.titulo_quiz}</span>
+                            <span class="quiz-status">Start</span>
+                        </a>
+                    `;
+                    ul.appendChild(li);
+                });
+
+                moduleDiv.appendChild(headerDiv);
+                moduleDiv.appendChild(ul);
+                container.appendChild(moduleDiv);
+            }
+
+        } catch (err) {
+            console.error("Error:", err);
+            loader.innerText = "Error loading content. Check database connection.";
+        }
+    }
+
+    // 4. FUNCIONES UI
+    function toggleAccordion(element) {
+        element.classList.toggle('open');
+    }
+
+    function filterMode(mode) {
+        alert("You selected: " + mode + " mode. (Filter logic coming soon)");
+        document.querySelectorAll('.action-card').forEach(c => c.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+    }
+
+    async function logout() {
+        const { error } = await _supabase.auth.signOut();
+        localStorage.removeItem('quiz_username');
+        try {
+            window.location.href = 'login.html';
+        } catch (e) {
+            console.warn("Redirección de logout falló, mostrando mensaje manual.");
+            alert("Sesión cerrada. Por favor ve a la página de login.");
+            // Opcional: mostrar botón manual aquí también si se desea
+        }
+    }
+</script>
+
+</body>
+</html>
