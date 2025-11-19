@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INBDE Pro - Pharmacology Quiz 1</title>
+<style>
+    /* --- CSS VARIABLES --- */
+    :root {
+        --primary-color: #fcdc11; --primary-dark: #121212; --light-bg: #f3f4f6;
+        --white: #ffffff; --border-color: #e5e7eb; --correct-bg: #e6fcf5;
+        --correct-border: #22c55e; --correct-text: #15803d; --incorrect-bg: #fff5f5;
+        --incorrect-border: #ef4444; --incorrect-text: #b91c1c; --text-muted: #6b7280;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background-color: var(--light-bg); color: var(--primary-dark);
+        margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh;
+        box-sizing: border-box;
+    }
+
+    .quiz-wrapper {
+        display: flex; flex-direction: column; width: 1200px; max-width: 100%;
+        background-color: var(--white); box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color);
+        position: relative; min-height: 80vh;
+    }
+
+    /* HEADER */
+    .brand-header {
+        background-color: var(--primary-dark); color: var(--primary-color);
+        padding: 15px 20px; font-weight: 800; font-size: 1.1em;
+        border-bottom: 4px solid var(--primary-color);
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 10px;
+    }
+
+    .header-right { display: flex; align-items: center; gap: 15px; font-size: 0.9em; color: white; }
+    .timer-box { background: rgba(255,255,255,0.15); padding: 5px 10px; border-radius: 4px; font-family: monospace; font-weight: 700; letter-spacing: 1px; }
+    .question-counter { color: var(--white); font-weight: 600; }
+    .btn-stats-link { background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); padding: 5px 10px; font-size: 0.8em; font-weight: 700; cursor: pointer; border-radius: 4px; text-decoration: none; text-transform: uppercase; transition: background 0.2s; }
+    .btn-stats-link:hover { background-color: rgba(252, 220, 17, 0.2); }
+
+    /* VISTAS */
+    .view-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; flex: 1; overflow-y: auto; }
+    #welcome-view { display: flex; } 
+    #quiz-view { display: none; flex-direction: row; flex: 1; overflow: hidden; } 
+    #results-view { display: none; }
+
+    /* SIDEBAR & MAIN */
+    .sidebar { width: 300px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; background-color: #fafafa; overflow-y: auto; }
+    .main-content { flex: 1; padding: 30px; display: flex; flex-direction: column; overflow-y: auto; background: var(--white); }
+
+    /* WELCOME */
+    .welcome-title { font-size: 2.5em; margin-bottom: 10px; line-height: 1.2; }
+    .welcome-subtitle { font-size: 1.2em; color: var(--text-muted); margin-bottom: 30px; }
+    .info-pill { background: #f3f4f6; padding: 8px 20px; border-radius: 30px; font-weight: 600; border: 1px solid var(--border-color); display: inline-block; margin: 5px; }
+    .user-input { padding: 12px; width: 100%; max-width: 300px; font-size: 1em; border: 2px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; text-align: center; }
+    .btn-start { background-color: var(--primary-color); color: var(--primary-dark); padding: 14px 40px; font-size: 1.2em; font-weight: 800; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 0 rgba(0,0,0,0.2); transition: transform 0.1s; }
+    .btn-start:hover { transform: translateY(-2px); }
+
+    /* QUIZ COMPONENTS */
+    .toggle-buttons { padding: 10px; display: flex; gap: 10px; justify-content: center; border-bottom: 1px solid var(--border-color); background: #fff; }
+    .btn-toggle { background: var(--white); border: 1px solid var(--primary-dark); padding: 6px 12px; font-weight: 700; cursor: pointer; font-size: 0.8em; }
+    .btn-toggle:hover:not(.disabled-btn) { background-color: var(--primary-color); }
+    .btn-toggle.disabled-btn { opacity: 0.3; cursor: not-allowed; }
+
+    .info-block { border-bottom: 1px solid var(--border-color); }
+    .info-header { background-color: #e5e7eb; padding: 8px 15px; font-weight: 700; font-size: 0.85em; text-transform: uppercase; }
+    .info-content { padding: 15px; font-size: 0.95em; line-height: 1.5; color: #333; }
+
+    .scoreboard { display: flex; flex-wrap: wrap; gap: 15px; background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 15px; margin-bottom: 20px; font-weight: 600; font-size: 0.9em; }
+    .score-item { display: flex; align-items: center; gap: 6px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot.gray { background: #ccc; } .dot.green { background: #22c55e; } .dot.red { background: #ef4444; }
+
+    .question-text { font-size: 1.2em; font-weight: 600; margin-bottom: 20px; line-height: 1.5; }
+    .options-list { display: flex; flex-direction: column; gap: 10px; }
+    .option { display: flex; align-items: center; padding: 15px; border: 2px solid var(--border-color); border-radius: 8px; cursor: pointer; font-size: 1em; transition: all 0.2s; background: white; }
+    .option:hover:not(.disabled) { border-color: var(--primary-dark); background-color: #fffce0; }
+    .option-circle { height: 24px; width: 24px; min-width: 24px; border-radius: 50%; border: 2px solid #9ca3af; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: white; }
+    
+    .option.correct-answer { background-color: var(--correct-bg); border-color: var(--correct-border); color: var(--correct-text); font-weight: 600; }
+    .option.correct-answer .option-circle { border-color: var(--correct-border); background-color: var(--correct-border); content: "✓"; }
+    .option.wrong-answer { background-color: var(--incorrect-bg); border-color: var(--incorrect-border); color: var(--incorrect-text); }
+    .option.wrong-answer .option-circle { border-color: var(--incorrect-border); background-color: var(--incorrect-border); }
+    .option.disabled { pointer-events: none; opacity: 0.8; }
+
+    .feedback-message { margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: 700; text-align: center; display: none; }
+    .feedback-message.success { background: var(--correct-bg); color: var(--correct-text); border: 1px solid var(--correct-border); }
+    .feedback-message.error { background: var(--incorrect-bg); color: var(--incorrect-text); border: 1px solid var(--incorrect-border); }
+    .time-badge { display: block; font-size: 0.8em; font-weight: 400; margin-top: 5px; opacity: 0.8; }
+
+    .btn-next { background-color: var(--primary-dark); color: var(--primary-color); padding: 12px 30px; border: none; border-radius: 6px; font-size: 1em; font-weight: 700; cursor: pointer; margin-top: 20px; display: none; width: 100%; }
+
+    /* RESULTS */
+    .score-card { background-color: var(--primary-dark); color: var(--white); padding: 30px; border-radius: 12px; width: 100%; max-width: 400px; margin-bottom: 20px; }
+    .score-number { font-size: 4em; font-weight: 900; color: var(--primary-color); display: block; margin: 10px 0; }
+    .final-time-value { font-family: monospace; font-size: 1.4em; font-weight: bold; }
+    .review-list { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 15px; }
+    .review-item { border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; background: #fff; }
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; text-transform: uppercase; }
+    .badge.correct { background: var(--correct-bg); color: var(--correct-text); }
+    .badge.incorrect { background: var(--incorrect-bg); color: var(--incorrect-text); }
+    .explanation-box { display: none; margin-top: 10px; padding: 10px; background: #f8f9fa; border-left: 4px solid var(--primary-color); font-size: 0.9em; }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+        body { padding: 0; }
+        .quiz-wrapper { border-radius: 0; border: none; height: 100vh; }
+        #quiz-view { flex-direction: column; }
+        .sidebar { width: 100%; height: auto; max-height: 35vh; border-right: none; border-bottom: 2px solid var(--primary-color); }
+        .main-content { padding: 20px; }
+        .brand-header { padding: 10px 15px; font-size: 0.9em; }
+        .btn-start { width: 100%; padding: 15px; }
+    }
+    
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+    .modal-content img { max-width: 95vw; max-height: 80vh; border: 2px solid #fff; border-radius: 4px; }
+    .close-btn { position: absolute; top: 20px; right: 20px; color: #fff; font-size: 40px; cursor: pointer; }
+    .brand-footer { padding: 10px; text-align: center; font-weight: 600; border-top: 1px solid var(--border-color); background: #fafafa; font-size: 0.8em; }
+</style>
+</head>
+<body>
+
+<div class="quiz-wrapper">
+    <div class="brand-header">
+        <span class="header-left">INBDE Pro - Pharma 1</span>
+        <div class="header-right">
+            <span id="timer" class="timer-box" style="display:none;">30:00</span>
+            <span id="question-counter" class="question-counter" style="display:none;">Question 1 of 5</span>
+            <a href="home.html" class="btn-stats-link">🏠 Home</a>
+        </div>
+    </div>
+
+    <div id="welcome-view" class="view-container">
+        <div class="welcome-card">
+            <h1 class="welcome-title">Pharmacology I</h1>
+            <p class="welcome-subtitle">Local Anesthetics & Antibiotics</p>
+            <input type="email" id="username-input" class="user-input" placeholder="Confirm your email..." required>
+            <div class="welcome-info">
+                <span class="info-pill">📝 5 Questions</span>
+                <span class="info-pill">⏱️ 10 Minutes</span>
+            </div>
+            <button class="btn-start" onclick="startQuiz()">START QUIZ</button>
+        </div>
+    </div>
+
+    <div id="quiz-view">
+        <div class="sidebar">
+            <div class="toggle-buttons">
+                <button class="btn-toggle" id="btn-xray" onclick="openImage('xray')">X-RAYS</button>
+                <button class="btn-toggle" id="btn-photo" onclick="openImage('photo')">PHOTOS</button>
+            </div>
+            <div class="info-block"><div class="info-header">Patient</div><div class="info-content" id="sidebar-patient">...</div></div>
+            <div class="info-block"><div class="info-header">Chief Complaint</div><div class="info-content" id="sidebar-cc">...</div></div>
+            <div class="info-block"><div class="info-header">History</div><div class="info-content" id="sidebar-history">...</div></div>
+            <div class="info-block"><div class="info-header">Current Findings</div><div class="info-content" id="sidebar-findings">...</div></div>
+        </div>
+        <div class="main-content">
+            <div class="scoreboard">
+                <div class="score-item"><span class="dot gray"></span>Ans: <span id="score-answered">0</span></div>
+                <div class="score-item"><span class="dot green"></span>Correct: <span id="score-correct">0</span></div>
+                <div class="score-item"><span class="dot red"></span>Wrong: <span id="score-incorrect">0</span></div>
+            </div>
+            <div class="question-text" id="question-text">Loading...</div>
+            <div class="options-list" id="options-container"></div>
+            <div id="feedbackDisplay" class="feedback-message"></div>
+            <button class="btn-next" id="btn-next" onclick="nextQuestion()">Next Question →</button>
+        </div>
+    </div>
+
+    <div id="results-view" class="view-container">
+        <div class="score-card">
+            <h2>Quiz Complete</h2>
+            <span class="score-number" id="final-score">0%</span>
+            <p id="score-text">...</p>
+            <div class="final-time-container">
+                <span class="final-time-label">Total Time</span>
+                <span id="final-time-value" class="final-time-value">0m 0s</span>
+            </div>
+        </div>
+        <h3>Review Answers</h3>
+        <div class="review-list" id="review-list"></div>
+        <a href="stats.html" class="btn-start" style="margin-top:30px; text-decoration:none; display:block;">View Dashboard</a>
+    </div>
+    <div class="brand-footer">INBDE Pro</div>
+</div>
+
+<div id="image-modal" class="modal-overlay" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <img id="modal-img" src="" alt="Clinical Image">
+        <div id="modal-caption" class="modal-caption" style="color:#fff; margin-top:10px;"></div>
+    </div>
+</div>
+
+<!-- SUPABASE SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+    const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
+    const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// --- DATA (20 QUESTIONS) ---
+    const questions = [
+        { 
+            id: 1, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Male, 24 years old", cc: "\"I am extremely nervous...\"", history: "History of dental anxiety.", findings: "Class I caries #30." }, 
+            text: "A patient is undergoing a procedure with nitrous oxide and oxygen. They are relaxed, able to respond purposefully to verbal commands, and their airway reflexes are intact. Which level of sedation does this MOST LIKELY represent?", 
+            options: ["Minimal Sedation (Anxiolysis)", "Moderate Sedation", "Deep Sedation", "General Anesthesia"], 
+            correct: 0, 
+            explanation: "Minimal sedation is characterized by normal response to verbal commands. The patient maintains their airway and reflexes." 
+        },
+        { 
+            id: 2, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Female, 28 years old", cc: "\"Bump on gum bleeds.\"", history: "2nd trimester pregnancy.", findings: "Erythematous mass on papilla." }, 
+            text: "A pregnant patient in her second trimester presents with a localized, round, red growth on the interdental papilla that bleeds easily. This lesion is MOST LIKELY a:", 
+            options: ["Fibroma", "Pyogenic Granuloma (Granuloma Gravidarum)", "Peripheral Giant Cell Granuloma", "Papilloma"], 
+            correct: 1, 
+            explanation: "Pyogenic granuloma (pregnancy tumor) is a common benign vascular lesion in pregnancy due to hormonal changes, typically appearing on the gingiva." 
+        },
+        { 
+            id: 3, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Female, 32 years old", cc: "\"Need extraction.\"", history: "34 weeks pregnant (3rd Trimester).", findings: "Non-restorable #30. Feels faint lying flat." }, 
+            text: "To prevent supine hypotensive syndrome in a pregnant patient during the third trimester, how should the patient be positioned in the dental chair?", 
+            options: ["Completely supine", "Trendelenburg position", "Left lateral decubitus position", "Right lateral decubitus position"], 
+            correct: 2, 
+            explanation: "Left lateral decubitus position relieves pressure exerted by the uterus on the inferior vena cava, improving venous return." 
+        },
+        { 
+            id: 4, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Female, 30 years old", cc: "\"Is this medication safe?\"", history: "1st Trimester.", findings: "Requires medication." }, 
+            text: "Which FDA pregnancy category describes drugs for which there is positive evidence of human fetal risk based on adverse reaction data, but potential benefits may warrant use of the drug in pregnant women despite potential risks?", 
+            options: ["Category A", "Category B", "Category C", "Category D"], 
+            correct: 3, 
+            explanation: "Category D indicates positive evidence of human fetal risk, but benefits may outweigh risks in serious situations." 
+        },
+        { 
+            id: 5, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Female, 26 years old", cc: "\"Face swollen.\"", history: "18 weeks pregnant. No allergies.", findings: "Facial swelling from #19." }, 
+            text: "A pregnant patient requires an antibiotic for an odontogenic infection. She has no known drug allergies. Which of the following is considered SAFEST to prescribe (Category B)?", 
+            options: ["Doxycycline", "Amoxicillin", "Clarithromycin", "Tetracycline"], 
+            correct: 1, 
+            explanation: "Amoxicillin is a Category B drug and is considered safe for use during pregnancy. Tetracyclines are Category D." 
+        },
+        { 
+            id: 6, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Male, 55 years old", cc: "\"Tired lately.\"", history: "History of anemia.", findings: "Reviewing CBC." }, 
+            text: "Which component of a complete blood count (CBC) is specifically used to assess the variation in red blood cell size?", 
+            options: ["MCV (Mean Corpuscular Volume)", "MCH (Mean Corpuscular Hemoglobin)", "MCHC (Mean Corpuscular Hemoglobin Concentration)", "RDW (Red Cell Distribution Width)"], 
+            correct: 3, 
+            explanation: "RDW (Red Cell Distribution Width) measures the variation in red blood cell volume and size (anisocytosis)." 
+        },
+        { 
+            id: 7, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Female, 40 years old", cc: "\"My gums look very pale.\"", history: "Reports heavy menstrual cycles and fatigue.", findings: "Pale oral mucosa. Low Hb, Low MCV." }, 
+            text: "A patient's hemogram reveals a low Hemoglobin and a low Mean Corpuscular Volume (MCV). Which of the following conditions is a MOST LIKELY differential diagnosis?", 
+            options: ["Folic acid deficiency", "Vitamin B12 deficiency", "Iron Deficiency Anemia (IDA)", "Liver disease"], 
+            correct: 2, 
+            explanation: "Low MCV indicates microcytic anemia, which is classically caused by Iron Deficiency Anemia (IDA). B12/Folate deficiency causes macrocytic anemia (High MCV)." 
+        },
+        { 
+            id: 8, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "N/A (Board Review)", cc: "N/A", history: "Regulatory compliance review.", findings: "N/A" }, 
+            text: "A drug with a high potential for abuse, no currently accepted medical use in treatment in the United States, and a lack of accepted safety for use under medical supervision would be classified as:", 
+            options: ["Schedule I", "Schedule II", "Schedule III", "Schedule IV"], 
+            correct: 0, 
+            explanation: "Schedule I drugs (e.g., Heroin, LSD) have high abuse potential and no accepted medical use." 
+        },
+        { 
+            id: 9, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Male, 45 years old", cc: "\"Severe pain.\"", history: "Recent complex extraction.", findings: "Needs potent analgesic." }, 
+            text: "Which of the following analgesics is classified as a Schedule II controlled substance?", 
+            options: ["Acetaminophen with Codeine (Tylenol #3)", "Ibuprofen", "Oxycodone", "Tramadol"], 
+            correct: 2, 
+            explanation: "Oxycodone is a Schedule II drug (High abuse potential). Tylenol #3 is Schedule III, Tramadol is Schedule IV." 
+        },
+        { 
+            id: 10, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Female, 22 years old", cc: "\"Numb me up good.\"", history: "No contraindications.", findings: "Using Lidocaine." }, 
+            text: "Local anesthetics exert their primary effect by:", 
+            options: ["Blocking voltage-gated calcium channels", "Blocking voltage-gated sodium (Na+) channels", "Enhancing GABA receptor activity", "Inhibiting prostaglandin synthesis"], 
+            correct: 1, 
+            explanation: "Local anesthetics prevent the generation and conduction of nerve impulses by blocking voltage-gated Sodium (Na+) channels." 
+        },
+        { 
+            id: 11, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Male, 65 years old", cc: "\"Cleaning.\"", history: "Hyperlipidemia. Taking Atorvastatin.", findings: "Normal findings." }, 
+            text: "Statins, used to lower LDL cholesterol, work by competitively inhibiting which enzyme?", 
+            options: ["Angiotensin-converting enzyme (ACE)", "Cyclooxygenase (COX)", "HMG-CoA reductase", "Monoamine oxidase (MAO)"], 
+            correct: 2, 
+            explanation: "Statins are HMG-CoA reductase inhibitors, the rate-limiting enzyme in cholesterol synthesis." 
+        },
+        { 
+            id: 12, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Male, 25 years old", cc: "\"My teeth are rotting.\"", history: "Substance abuse.", findings: "Rampant caries, xerostomia." }, 
+            text: "Regular use of amphetamines can lead to several adverse oral and systemic effects. Which of the following is NOT typically associated with amphetamine use?", 
+            options: ["Reduced appetite/Weight loss", "Dry mouth (Xerostomia)", "Decreased heart rate (Bradycardia)", "Dental problems (\"Meth mouth\")"], 
+            correct: 2, 
+            explanation: "Amphetamines are stimulants and cause Tachycardia (increased heart rate), not Bradycardia." 
+        },
+        { 
+            id: 13, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Female, 45 years old", cc: "\"I get nauseous.\"", history: "Severe gag reflex.", findings: "Consider adjunct." }, 
+            text: "Scopolamine is an anticholinergic drug primarily indicated for the prevention of:", 
+            options: ["Hypertension", "Seizures", "Nausea and vomiting associated with motion sickness", "Bacterial infections"], 
+            correct: 2, 
+            explanation: "Scopolamine is an anticholinergic used to prevent nausea and vomiting caused by motion sickness or recovery from anesthesia." 
+        },
+        { 
+            id: 14, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Male, 19 years old", cc: "None (Emergency).", history: "High anxiety.", findings: "Lost consciousness after injection." }, 
+            text: "The MOST COMMON medical emergency in the dental office is syncope. What is the immediate management step for a patient experiencing vasovagal syncope?", 
+            options: ["Administer epinephrine immediately", "Place patient in a supine position with legs elevated", "Administer nitroglycerin sublingually", "Have the patient breathe into a paper bag"], 
+            correct: 1, 
+            explanation: "Placing the patient supine with legs elevated (Trendelenburg) increases venous return to the brain to resolve cerebral hypoxia." 
+        },
+        { 
+            id: 15, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Male, 68 years old", cc: "\"Chest tightness.\"", history: "Stable angina.", findings: "Conscious, chest pain." }, 
+            text: "A patient with a history of stable angina experiences chest pain during a dental procedure. The patient remains conscious. What is the first-line drug to administer?", 
+            options: ["Aspirin 325 mg chewed", "Nitroglycerin (0.4 mg) sublingually", "Epinephrine IM", "Albuterol inhaler"], 
+            correct: 1, 
+            explanation: "Nitroglycerin is the first-line vasodilator for acute angina episodes." 
+        },
+        { 
+            id: 16, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Male, 62 years old", cc: "\"I need implants.\"", history: "MI 2 months ago.", findings: "Elective surgery request." }, 
+            text: "According to standard guidelines, what is the recommended waiting period for elective complex dental procedures after a patient has had a Myocardial Infarction (MI)?", 
+            options: ["6 weeks", "3 months", "6 months", "12 months"], 
+            correct: 2, 
+            explanation: "It is generally recommended to wait 6 months after an MI before performing elective surgical procedures to minimize reinfarction risk." 
+        },
+        { 
+            id: 17, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Female, 78 years old", cc: "\"Out of breath.\"", history: "Congestive Heart Failure.", findings: "Dyspnea at rest." }, 
+            text: "A patient with New York Heart Association (NYHA) Class IV Congestive Heart Failure (CHF) would MOST LIKELY exhibit which of the following?", 
+            options: ["No limitation of physical activity", "Symptoms only with strenuous exertion", "Severe compromise; symptoms present at rest", "Symptoms only when supine"], 
+            correct: 2, 
+            explanation: "NYHA Class IV represents severe heart failure where patients have symptoms even at rest and cannot carry out physical activity." 
+        },
+        { 
+            id: 18, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Male, 14 years old", cc: "\"Dizzy and hungry.\"", history: "Type 1 Diabetes. Skipped breakfast.", findings: "Sweating, pale." }, 
+            text: "Which of the following is a classic sign or symptom of hypoglycemia (low blood sugar)?", 
+            options: ["Increased thirst (Polydipsia)", "Frequent urination (Polyuria)", "Sweating (Diaphoresis) and irritability", "Fruity breath odor"], 
+            correct: 2, 
+            explanation: "Sweating (diaphoresis), tachycardia, and irritability are sympathetic responses to hypoglycemia. Polydipsia is a sign of hyperglycemia." 
+        },
+        { 
+            id: 19, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Female, 10 years old", cc: "\"Can't breathe.\"", history: "Asthma.", findings: "Audible wheezing." }, 
+            text: "A patient is having an acute asthma attack in the dental chair. What is the FIRST pharmacological intervention?", 
+            options: ["Administer oxygen only", "Administer short-acting beta-2 agonist (Albuterol) inhaler", "Inject Epinephrine IM", "Administer IV corticosteroids"], 
+            correct: 1, 
+            explanation: "A short-acting beta-2 agonist (SABA) like Albuterol is the first-line rescue medication for acute bronchospasm." 
+        },
+        { 
+            id: 20, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Female, 35 years old", cc: "\"Throat closing.\"", history: "No known allergies.", findings: "Lip swelling, hypotension after Amoxicillin." }, 
+            text: "What is the critical, first-line drug that must be administered immediately for a patient experiencing anaphylactic shock?", 
+            options: ["Diphenhydramine (Benadryl)", "Albuterol inhaler", "Epinephrine (0.3 mg 1:1000) IM", "High-flow oxygen"], 
+            correct: 2, 
+            explanation: "Epinephrine is the drug of choice for anaphylaxis to reverse hypotension and bronchoconstriction. Antihistamines are secondary." 
+        }
+    ];
+
+    let currentQuestionIndex = 0, userScore = 0, answeredCount = 0, correctCount = 0, incorrectCount = 0;
+    let userAnswers = [], questionStartTime, timerInterval, totalTime = 10 * 60; // 10 min for 5 q
+    let currentUser = "";
+
+    function startQuiz() { 
+        const userInput = document.getElementById('username-input');
+        if (!userInput.value.trim()) { alert("Please enter your email."); return; }
+        currentUser = userInput.value.trim();
+        localStorage.setItem('quiz_username', currentUser);
+        showView('quiz-view'); 
+        loadQuestion(); 
+        startTimer(); 
+    }
+
+    function showView(viewId) {
+        ['welcome-view', 'quiz-view', 'results-view'].forEach(id => document.getElementById(id).style.display = 'none');
+        document.getElementById(viewId).style.display = (viewId === 'quiz-view') ? 'flex' : 'flex'; // Flex for layout
+        
+        const isQuiz = (viewId === 'quiz-view');
+        document.getElementById('timer').style.display = isQuiz ? 'inline-block' : 'none';
+        document.getElementById('question-counter').style.display = isQuiz ? 'inline-block' : 'none';
+        
+        // Fix view container flex for center alignment
+        if(viewId !== 'quiz-view') document.getElementById(viewId).style.display = 'flex';
+    }
+
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        const timerDisplay = document.getElementById('timer');
+        function update() {
+            const m = Math.floor(totalTime / 60);
+            let s = totalTime % 60;
+            timerDisplay.innerText = `${m}:${s < 10 ? '0'+s : s}`;
+            if (totalTime <= 0) { clearInterval(timerInterval); showResults(); } else { totalTime--; }
+        }
+        update();
+        timerInterval = setInterval(update, 1000);
+    }
+
+    function loadQuestion() {
+        const q = questions[currentQuestionIndex];
+        questionStartTime = new Date(); 
+        
+        document.getElementById('question-counter').innerText = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+        
+        document.getElementById('sidebar-patient').innerText = q.sidebar.patient || "";
+        document.getElementById('sidebar-cc').innerText = q.sidebar.cc || "";
+        document.getElementById('sidebar-history').innerText = q.sidebar.history || "";
+        document.getElementById('sidebar-findings').innerText = q.sidebar.findings || "";
+
+        const btnXray = document.getElementById('btn-xray');
+        const btnPhoto = document.getElementById('btn-photo');
+        if (q.images?.xray) { btnXray.classList.remove('disabled-btn'); btnXray.disabled = false; } else { btnXray.classList.add('disabled-btn'); btnXray.disabled = true; }
+        if (q.images?.photo) { btnPhoto.classList.remove('disabled-btn'); btnPhoto.disabled = false; } else { btnPhoto.classList.add('disabled-btn'); btnPhoto.disabled = true; }
+
+        document.getElementById('question-text').innerText = q.text;
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        document.getElementById('feedbackDisplay').style.display = 'none';
+        document.getElementById('btn-next').style.display = 'none';
+
+        q.options.forEach((opt, idx) => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.onclick = () => checkAnswer(div, idx);
+            div.innerHTML = `<div class="option-circle"></div><span>${String.fromCharCode(65 + idx)}. ${opt}</span>`;
+            container.appendChild(div);
+        });
+    }
+
+    function checkAnswer(el, idx) {
+        if (document.querySelector('.option.disabled')) return;
+        
+        const timeSpent = ((new Date() - questionStartTime) / 1000).toFixed(1);
+        const q = questions[currentQuestionIndex];
+        document.querySelectorAll('.option').forEach(o => o.classList.add('disabled'));
+
+        const isCorrect = (idx === q.correct);
+        userAnswers.push({ qIndex: currentQuestionIndex, selected: idx, isCorrect });
+        answeredCount++;
+
+        if (isCorrect) {
+            correctCount++; userScore++;
+            el.classList.add('correct-answer'); el.querySelector('.option-circle').innerText = '✓';
+        } else {
+            incorrectCount++;
+            el.classList.add('wrong-answer'); el.querySelector('.option-circle').innerText = '✕';
+            const correctEl = document.querySelectorAll('.option')[q.correct];
+            correctEl.classList.add('correct-answer'); correctEl.querySelector('.option-circle').innerText = '✓';
+        }
+        document.getElementById('score-answered').innerText = answeredCount;
+        document.getElementById('score-correct').innerText = correctCount;
+        document.getElementById('score-incorrect').innerText = incorrectCount;
+        
+        const fb = document.getElementById('feedbackDisplay');
+        fb.innerHTML = `${isCorrect ? "Correct! Well done." : "Incorrect."} <span class="time-badge">⏱️ Time: ${timeSpent}s</span>`;
+        fb.className = `feedback-message ${isCorrect ? 'success' : 'error'}`;
+        fb.style.display = 'block';
+        document.getElementById('btn-next').style.display = 'block';
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.length) loadQuestion(); else showResults();
+    }
+
+    function showResults() {
+        clearInterval(timerInterval);
+        showView('results-view');
+        const pct = Math.round((userScore / questions.length) * 100);
+        document.getElementById('final-score').innerText = pct + "%";
+        document.getElementById('score-text').innerText = `You answered ${userScore} out of ${questions.length} correctly.`;
+        
+        const spent = (10 * 60) - totalTime;
+        document.getElementById('final-time-value').innerText = `${Math.floor(spent/60)}m ${spent%60}s`;
+        
+        saveDataSupabase(pct, userScore, questions.length);
+
+        const list = document.getElementById('review-list');
+        list.innerHTML = '';
+        userAnswers.forEach((ans, i) => {
+            const q = questions[ans.qIndex];
+            const item = document.createElement('div');
+            item.className = 'review-item';
+            item.innerHTML = `
+                <div class="review-header"><span class="badge ${ans.isCorrect ? 'correct' : 'incorrect'}">${ans.isCorrect ? 'Correct' : 'Incorrect'}</span></div>
+                <div class="review-question">${i+1}. ${q.text}</div>
+                <div style="font-size:0.9em; margin-bottom:10px;">Correct Answer: <strong>${q.options[q.correct]}</strong></div>
+                <button class="btn-explain" onclick="toggleExpl(${i})">Explanation</button>
+                <div class="explanation-box" id="expl-${i}"><strong>Rationale:</strong><br>${q.explanation}</div>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    async function saveDataSupabase(score, correct, total) {
+        console.log("Sending to Supabase for user:", currentUser);
+        const { error } = await _supabase.from('resultados').insert([
+            { username: currentUser, score: score, correct: correct, total: total }
+        ]);
+        if (error) console.error('Supabase Error:', error);
+    }
+
+    function toggleExpl(i) {
+        const b = document.getElementById(`expl-${i}`);
+        b.style.display = b.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function openImage(type) {
+        const q = questions[currentQuestionIndex];
+        if (!q.images || !q.images[type]) return;
+        const modal = document.getElementById('image-modal');
+        document.getElementById('modal-img').src = q.images[type];
+        document.getElementById('modal-caption').innerText = type === 'xray' ? "Radiograph" : "Photo";
+        modal.style.display = 'flex';
+    }
+    function closeModal() { document.getElementById('image-modal').style.display = 'none'; }
+    document.addEventListener('keydown', e => { if (e.key === "Escape") closeModal(); });
+    
+    window.onload = () => {
+        const savedUser = localStorage.getItem('quiz_username');
+        if(savedUser) document.getElementById('username-input').value = savedUser;
+        showView('welcome-view');
+    };
+</script>
+
+</body>
+</html>
