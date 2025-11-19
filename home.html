@@ -13,7 +13,7 @@
         --white: #ffffff;
         --border-color: #e5e7eb;
         --text-muted: #6b7280;
-        --accent-blue: #2563eb; /* Para enlaces o detalles */
+        --accent-blue: #2563eb; 
         --hover-bg: #fffce0;
     }
 
@@ -124,10 +124,14 @@
         transform: translateY(-3px);
         box-shadow: 0 5px 15px rgba(0,0,0,0.05);
     }
+    /* Estado Activo: Cuando se selecciona */
     .action-card.active {
         border-color: var(--primary-dark);
-        background-color: var(--hover-bg);
+        background-color: var(--primary-dark);
+        color: var(--primary-color);
     }
+    .action-card.active .card-title { color: var(--primary-color); }
+    .action-card.active .card-desc { color: #ccc; }
 
     .card-icon { font-size: 2.5em; margin-bottom: 10px; display: block; }
     .card-title { font-size: 1.4em; font-weight: 800; color: var(--primary-dark); }
@@ -138,6 +142,14 @@
     .modules-section {
         border-top: 1px solid var(--border-color);
         padding-top: 30px;
+        /* CAMBIO CLAVE: Oculto por defecto */
+        display: none; 
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     .section-title {
@@ -147,6 +159,8 @@
         text-transform: uppercase;
         letter-spacing: 1px;
         color: var(--primary-dark);
+        border-left: 5px solid var(--primary-color);
+        padding-left: 10px;
     }
 
     .loader {
@@ -162,6 +176,7 @@
         border: 1px solid var(--border-color);
         border-radius: 8px;
         overflow: hidden;
+        background: white;
     }
 
     .module-header {
@@ -177,6 +192,13 @@
     .module-header:hover { background-color: #f0f0f0; }
     .module-header::after { content: '▼'; font-size: 0.8em; color: var(--text-muted); }
     .module-item.open .module-header::after { content: '▲'; }
+    
+    /* Estilo cuando un módulo está abierto */
+    .module-item.open .module-header {
+        background-color: var(--primary-color);
+        color: var(--primary-dark);
+    }
+    .module-item.open .module-header::after { color: var(--primary-dark); }
 
     .quiz-list {
         display: none; /* Oculto por defecto */
@@ -190,7 +212,7 @@
 
     .quiz-link {
         display: block;
-        padding: 12px 20px;
+        padding: 15px 20px;
         text-decoration: none;
         color: #333;
         font-size: 0.95em;
@@ -198,16 +220,19 @@
         transition: background 0.1s;
         display: flex;
         justify-content: space-between;
+        align-items: center;
     }
     .quiz-link:last-child { border-bottom: none; }
     .quiz-link:hover { background-color: var(--hover-bg); color: var(--primary-dark); }
     
     .quiz-status {
-        font-size: 0.8em;
-        padding: 2px 8px;
-        border-radius: 10px;
-        background: #eee;
-        color: #666;
+        font-size: 0.75em;
+        padding: 4px 12px;
+        border-radius: 20px;
+        background: var(--primary-dark);
+        color: var(--primary-color);
+        font-weight: bold;
+        text-transform: uppercase;
     }
 
 </style>
@@ -231,25 +256,25 @@
 
         <!-- BOTONES GRANDES -->
         <div class="big-actions">
-            <div class="action-card" onclick="filterMode('simulation')">
+            <!-- Se añadió el parámetro 'this' para manipular el estilo del botón clickeado -->
+            <div class="action-card" onclick="filterMode('simulation', this)">
                 <span class="card-icon">⏱️</span>
-                <!-- CAMBIO SOLICITADO: 'Simulacro' -> 'Simulation' -->
                 <div class="card-title">Simulation</div>
-                <div class="card-desc">Timed exam mode. Mimics real test conditions.</div>
+                <div class="card-desc">Timed exam mode. Select to view available quizzes.</div>
             </div>
-            <div class="action-card" onclick="filterMode('practice')">
+            <div class="action-card" onclick="filterMode('practice', this)">
                 <span class="card-icon">📖</span>
                 <div class="card-title">Practice Questions</div>
                 <div class="card-desc">Study mode with instant feedback.</div>
             </div>
         </div>
 
-        <!-- LISTA DE MATERIAS -->
-        <div class="modules-section">
-            <div class="section-title">Study Modules</div>
+        <!-- LISTA DE MATERIAS (OCULTA POR DEFECTO, ID AGREGADO) -->
+        <div id="modules-section" class="modules-section">
+            <div class="section-title">Available Simulation Quizzes</div>
             
             <div id="modules-container">
-                <div id="loader" class="loader">Loading modules form database...</div>
+                <div id="loader" class="loader">Loading modules from database...</div>
             </div>
         </div>
     </div>
@@ -271,12 +296,10 @@
         const userEmail = localStorage.getItem('quiz_username');
         
         if (!userEmail) {
-            // Manejo seguro de la redirección
             try {
                 window.location.href = 'login.html';
             } catch (e) {
-                console.warn("Redirección automática falló (Entorno de prueba detectado). Mostrando UI alternativa.");
-                // Si falla la redirección, reemplazamos el cuerpo para mostrar un enlace manual
+                console.warn("Redirección automática falló.");
                 document.body.innerHTML = `
                     <div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;text-align:center;font-family:sans-serif;">
                         <h2 style="color:#121212;">Acceso Requerido</h2>
@@ -292,7 +315,7 @@
         
         document.getElementById('user-name').innerText = userEmail.split('@')[0]; // Mostrar parte del correo
 
-        // Cargar Módulos
+        // Pre-cargar Módulos (se cargan pero permanecen ocultos hasta que se elija el modo)
         await fetchModules();
     }
 
@@ -333,7 +356,7 @@
                 // Header del acordeón
                 const headerDiv = document.createElement('div');
                 headerDiv.className = 'module-header';
-                headerDiv.innerHTML = `${materia} <span style="font-weight:400; font-size:0.9em; color:#888">(${items.length})</span>`;
+                headerDiv.innerHTML = `${materia} <span style="font-weight:400; font-size:0.9em; opacity:0.7">(${items.length} Quizzes)</span>`;
                 headerDiv.onclick = () => toggleAccordion(moduleDiv);
 
                 // Lista de quizzes oculta
@@ -345,7 +368,7 @@
                     li.innerHTML = `
                         <a href="${quiz.archivo_url}" class="quiz-link">
                             <span>${quiz.titulo_quiz}</span>
-                            <span class="quiz-status">Start</span>
+                            <span class="quiz-status">START EXAM</span>
                         </a>
                     `;
                     ul.appendChild(li);
@@ -364,25 +387,44 @@
 
     // 4. FUNCIONES UI
     function toggleAccordion(element) {
+        // Cierra otros abiertos si quieres modo exclusivo (opcional), por ahora permite múltiples abiertos
         element.classList.toggle('open');
     }
 
-    function filterMode(mode) {
-        alert("You selected: " + mode + " mode. (Filter logic coming soon)");
+    // NUEVA LÓGICA DE FILTRO
+    function filterMode(mode, cardElement) {
+        // 1. Resetear estilos de todos los botones
         document.querySelectorAll('.action-card').forEach(c => c.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+        
+        // 2. Activar el botón clickeado
+        if (cardElement) {
+            cardElement.classList.add('active');
+        }
+
+        const modulesSection = document.getElementById('modules-section');
+
+        if (mode === 'simulation') {
+            // MOSTRAR la lista
+            modulesSection.style.display = 'block';
+            
+            // Desplazar suavemente hacia la lista
+            setTimeout(() => {
+                modulesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+
+        } else if (mode === 'practice') {
+            // OCULTAR la lista (o mostrar otra cosa en el futuro)
+            modulesSection.style.display = 'none';
+            alert("Practice Mode is coming soon! Please select Simulation for now.");
+            // Quitar estilo activo si no hay nada que mostrar
+            if (cardElement) cardElement.classList.remove('active');
+        }
     }
 
     async function logout() {
         const { error } = await _supabase.auth.signOut();
         localStorage.removeItem('quiz_username');
-        try {
-            window.location.href = 'login.html';
-        } catch (e) {
-            console.warn("Redirección de logout falló, mostrando mensaje manual.");
-            alert("Sesión cerrada. Por favor ve a la página de login.");
-            // Opcional: mostrar botón manual aquí también si se desea
-        }
+        window.location.href = 'login.html';
     }
 </script>
 
