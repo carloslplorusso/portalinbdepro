@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>INBDE Pro - Student Access</title>
 <style>
-    /* --- ESTILOS DE MARCA (COHERENCIA VISUAL) --- */
+    /* --- ESTILOS DE MARCA (NEGRO Y AMARILLO) --- */
     :root {
         --primary-color: #fcdc11; /* Amarillo Marca */
         --primary-dark: #121212;  /* Negro Marca */
         --light-bg: #f3f4f6;      /* Fondo */
         --white: #ffffff;
         --border-color: #e5e7eb;
-        --error-color: #ef4444;
+        --error-color: #b91c1c;
     }
 
     body {
@@ -29,9 +29,9 @@
 
     .login-card {
         width: 100%;
-        max-width: 400px;
+        max-width: 420px;
         background-color: var(--white);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         border-radius: 12px;
         overflow: hidden;
         border: 1px solid var(--border-color);
@@ -41,9 +41,9 @@
     .brand-header {
         background-color: var(--primary-dark);
         color: var(--primary-color);
-        padding: 25px;
+        padding: 30px;
         font-weight: 800;
-        font-size: 1.5em;
+        font-size: 1.8em;
         border-bottom: 4px solid var(--primary-color);
         letter-spacing: 1px;
     }
@@ -53,14 +53,20 @@
     }
 
     .login-title {
-        font-size: 1.2em;
-        font-weight: 600;
+        font-size: 1.3em;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: var(--primary-dark);
+    }
+    
+    .login-subtitle {
+        font-size: 0.95em;
+        color: #666;
         margin-bottom: 30px;
-        color: #444;
     }
 
     .input-group {
-        margin-bottom: 20px;
+        margin-bottom: 25px;
         text-align: left;
     }
 
@@ -70,8 +76,9 @@
         font-size: 1.1em;
         border: 2px solid var(--border-color);
         border-radius: 8px;
-        box-sizing: border-box; /* Para que el padding no rompa el ancho */
+        box-sizing: border-box;
         transition: border-color 0.2s;
+        text-align: center;
     }
 
     .user-input:focus {
@@ -82,9 +89,9 @@
     .btn-login {
         background-color: var(--primary-color);
         color: var(--primary-dark);
-        padding: 15px;
+        padding: 16px;
         width: 100%;
-        font-size: 1.1em;
+        font-size: 1.2em;
         font-weight: 800;
         border: none;
         border-radius: 8px;
@@ -98,23 +105,16 @@
         box-shadow: 0 4px 10px rgba(252, 220, 17, 0.4);
     }
 
-    .btn-login:active {
-        transform: translateY(0);
-    }
-
-    .btn-login:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
-    }
+    .btn-login:active { transform: translateY(0); }
+    .btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
     .error-message {
         margin-top: 20px;
         color: var(--error-color);
         font-weight: 600;
         font-size: 0.9em;
-        display: none; /* Oculto por defecto */
-        padding: 10px;
+        display: none;
+        padding: 12px;
         background-color: #fef2f2;
         border-radius: 6px;
         border: 1px solid #fee2e2;
@@ -135,33 +135,32 @@
     </div>
     
     <div class="login-body">
-        <div class="login-title">Student Access Portal</div>
+        <div class="login-title">Welcome Student</div>
+        <p class="login-subtitle">Please enter your email to access the platform.</p>
         
         <div class="input-group">
-            <input type="email" id="email-input" class="user-input" placeholder="Enter your registered email" required>
+            <input type="email" id="email-input" class="user-input" placeholder="name@example.com" required>
         </div>
 
         <button id="btn-enter" class="btn-login" onclick="handleLogin()">ENTER</button>
         
-        <div id="login-error" class="error-message">
-            ⛔ Access Denied: Email not registered.
-        </div>
+        <div id="login-error" class="error-message"></div>
 
         <div class="footer-text">
-            Authorized personnel only.
+            Authorized Access Only
         </div>
     </div>
 </div>
 
+<!-- LIBRERÍA SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // 1. CONFIGURACIÓN SUPABASE (Tus claves)
+    // 1. CONFIGURACIÓN SUPABASE
     const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
     
-    // Usamos un nombre único para no tener conflictos
-    const _supabaseAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const _supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // 2. LÓGICA DE LOGIN
     async function handleLogin() {
@@ -169,13 +168,13 @@
         const errorMsg = document.getElementById('login-error');
         const btn = document.getElementById('btn-enter');
 
-        const email = emailField.value.trim().toLowerCase(); // Convertir a minúsculas para evitar errores
+        const email = emailField.value.trim().toLowerCase();
 
-        // Resetear estado visual
+        // Resetear UI
         errorMsg.style.display = 'none';
         
         if (!email) {
-            alert("Please enter an email address.");
+            showError("Please enter an email address.");
             return;
         }
 
@@ -184,9 +183,8 @@
         btn.innerText = "Verifying...";
 
         try {
-            // CONSULTA A LA BASE DE DATOS
-            // Buscamos si el email existe en la tabla 'usuarios_permitidos'
-            const { data, error } = await _supabaseAuth
+            // --- CONSULTA A SUPABASE ---
+            const { data, error } = await _supabaseClient
                 .from('usuarios_permitidos')
                 .select('email')
                 .eq('email', email)
@@ -194,44 +192,42 @@
 
             if (error) throw error;
 
-            // VERIFICACIÓN
+            // --- VERIFICACIÓN ---
             if (data && data.length > 0) {
-                // ¡ÉXITO! El usuario está en la lista blanca
-                console.log("Usuario autorizado:", email);
+                // SI EXISTE: Guardar y Redirigir
+                localStorage.setItem('quiz_username', email);
                 
-                // Guardamos el email en el navegador para usarlo en las otras páginas
-                localStorage.setItem('quiz_user_email', email);
-                
-                // Redirigir al Home (Landing de Materias)
-                // Asegúrate de crear el archivo home.html luego
+                // Redirección a home.html
                 window.location.href = 'home.html'; 
             } else {
-                // FALLO: El usuario no está en la tabla
-                errorMsg.innerText = "⛔ Access Denied: This email is not enrolled.";
-                errorMsg.style.display = 'block';
+                // NO EXISTE
+                showError("⛔ Access Denied: This email is not enrolled.");
                 btn.disabled = false;
                 btn.innerText = "ENTER";
             }
 
         } catch (err) {
-            console.error("Error de conexión:", err);
-            errorMsg.innerText = "⚠️ Connection Error. Check console.";
-            errorMsg.style.display = 'block';
+            console.error("Connection Error:", err);
+            showError("⚠️ Connection Error. Check your internet.");
             btn.disabled = false;
             btn.innerText = "ENTER";
         }
     }
 
-    // Permitir login presionando la tecla Enter
+    function showError(msg) {
+        const errorDiv = document.getElementById('login-error');
+        errorDiv.innerText = msg;
+        errorDiv.style.display = 'block';
+    }
+
+    // Permitir login con tecla Enter
     document.getElementById('email-input').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            handleLogin();
-        }
+        if (e.key === 'Enter') handleLogin();
     });
 
-    // Limpiar sesión anterior al entrar a login
+    // Limpiar sesión anterior al cargar esta página (por seguridad)
     window.onload = function() {
-        localStorage.removeItem('quiz_user_email');
+        localStorage.removeItem('quiz_username');
     };
 </script>
 
