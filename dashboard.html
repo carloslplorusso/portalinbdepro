@@ -63,7 +63,7 @@
         align-items: center;
     }
 
-    /* Botón Stats Superior */
+    /* Botón Stats Superior (Opcional, ya que ahora hay card abajo) */
     .btn-stats-top {
         background: transparent;
         border: 1px solid var(--primary-color);
@@ -105,7 +105,7 @@
     }
     .btn-logout:hover { background: rgba(255, 107, 107, 0.1); }
 
-    /* --- AVISO DE CONTRASEÑA (NUEVO) --- */
+    /* --- AVISO DE CONTRASEÑA (CRÍTICO) --- */
     .password-alert {
         background-color: var(--warning-bg);
         color: var(--warning-text);
@@ -113,7 +113,7 @@
         text-align: center;
         font-size: 0.95em;
         border-bottom: 1px solid #ffeeba;
-        display: none; /* Se muestra solo si es recovery */
+        display: none; /* Se activa con JS */
         animation: slideDown 0.5s ease;
     }
     @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -133,7 +133,7 @@
         flex-direction: column;
     }
 
-    .welcome-section { margin-bottom: 40px; text-align: center; }
+    .welcome-section { margin-bottom: 30px; text-align: center; }
     .welcome-title { font-size: 1.8em; font-weight: 800; margin: 0 0 8px 0; color: var(--primary-dark); }
     .welcome-sub { color: var(--text-muted); font-size: 1em; }
 
@@ -163,8 +163,9 @@
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         position: relative;
         overflow: hidden;
-        text-decoration: none;
+        text-decoration: none; /* Quita subrayado de enlaces */
         color: inherit;
+        display: block; /* Para que el <a> funcione como bloque */
     }
 
     .menu-card:hover {
@@ -177,22 +178,31 @@
     .menu-card .title { font-size: 1.2em; font-weight: 800; display: block; margin-bottom: 8px; }
     .menu-card .desc { font-size: 0.9em; color: var(--text-muted); line-height: 1.4; }
 
-    /* TARJETA PEQUEÑA DE STATS (NUEVO) */
-    .stats-card-row {
-        display: flex;
-        justify-content: center;
+    /* --- TARJETA DE ESTADÍSTICAS (NUEVA) --- */
+    .stats-row {
+        margin-top: 0px; /* Espacio con las de arriba */
     }
-    .menu-card.small {
-        padding: 15px 40px;
+    
+    .menu-card.stats-variant {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 15px;
-        width: auto;
-        min-width: 200px;
+        gap: 20px;
+        padding: 25px;
+        background: linear-gradient(to right, #ffffff, #fcfcfc);
     }
-    .menu-card.small .icon { font-size: 1.5em; margin-bottom: 0; }
-    .menu-card.small .title { font-size: 1em; margin-bottom: 0; }
+    
+    .menu-card.stats-variant .icon {
+        font-size: 2.5em;
+        margin-bottom: 0; /* Reset para alineación horizontal */
+    }
+    .menu-card.stats-variant .text-content {
+        text-align: left;
+    }
+    .menu-card.stats-variant .title {
+        margin-bottom: 4px;
+        font-size: 1.3em;
+    }
 
     /* --- 6. VISTA DE LISTA --- */
     .list-view-wrapper { display: none; animation: slideIn 0.3s ease-out; }
@@ -263,6 +273,8 @@
         .menu-grid { grid-template-columns: 1fr; }
         .content-container { padding: 20px; }
         .menu-card { padding: 30px 20px; display: flex; align-items: center; text-align: left; gap: 20px; }
+        .menu-card.stats-variant { flex-direction: column; text-align: center; }
+        .menu-card.stats-variant .text-content { text-align: center; }
         .menu-card .icon { margin-bottom: 0; font-size: 2.5em; }
         .welcome-title { font-size: 1.4em; }
         .header-actions { gap: 5px; }
@@ -283,8 +295,9 @@
     </div>
 
     <div id="password-alert" class="password-alert">
-        ⚠️ <strong>Action Required:</strong> You are using a temporary access link. 
-        <span class="alert-link" onclick="openResetModal()">Click here to set your permanent password</span> so you don't lose access.
+        ⚠️ <strong>ACTION REQUIRED:</strong> You are using a temporary access link. 
+        <br>
+        <span class="alert-link" onclick="openResetModal()">Click here to create your permanent password</span> or you may lose access.
     </div>
 
     <div class="content-container">
@@ -313,10 +326,13 @@
                 </div>
             </div>
 
-            <div class="stats-card-row">
-                <a href="stats.html" class="menu-card small">
+            <div class="stats-row">
+                <a href="stats.html" class="menu-card stats-variant">
                     <span class="icon">📊</span>
-                    <span class="title">View Statistics</span>
+                    <div class="text-content">
+                        <span class="title">Personal Statistics</span>
+                        <span class="desc">View your performance, progress, and accuracy analytics.</span>
+                    </div>
                 </a>
             </div>
 
@@ -378,19 +394,16 @@
 
     // --- 2. INICIALIZACIÓN ---
     async function initApp() {
-        // Detectar si viene de recuperación por URL
         const urlParams = new URLSearchParams(window.location.search);
         const isRecovery = urlParams.get('recovery') === 'true';
 
         if (isRecovery) {
-            // Limpiar URL
             window.history.replaceState({}, document.title, "dashboard.html");
             showRecoveryAlert();
         }
 
         const { data: { session } } = await _supabase.auth.getSession();
         if (!session) {
-            // Corrección 404: Usar path relativo seguro
             window.location.href = './index.html';
             return;
         }
@@ -402,15 +415,14 @@
         await loadData();
     }
 
-    // --- NUEVO: MOSTRAR AVISO Y MODAL ---
+    // --- 3. LÓGICA DE AVISO Y MODAL ---
     function showRecoveryAlert() {
-        // 1. Mostrar la barra amarilla de aviso
+        // Muestra la barra amarilla
         document.getElementById('password-alert').style.display = 'block';
-        // 2. Abrir el modal automáticamente (opcional, pero recomendado)
-        setTimeout(() => { openResetModal(); }, 500);
+        // Abre el modal automáticamente una vez
+        setTimeout(() => { openResetModal(); }, 800);
     }
 
-    // --- 3. LÓGICA MODAL ---
     function openResetModal() {
         document.getElementById('recovery-modal').style.display = 'flex';
         document.getElementById('new-password-input').focus();
@@ -431,7 +443,6 @@
         } else {
             alert("Password updated successfully! Please log in with your new credentials.");
             await _supabase.auth.signOut();
-            // Corrección 404:
             window.location.href = './index.html';
         }
     }
@@ -464,7 +475,7 @@
 
     function goHome() {
         document.getElementById('list-view').style.display = 'none';
-        // IMPORTANTE: display flex para el contenedor nuevo, no grid
+        // Regresar a Flex (no Grid) porque el contenedor principal usa flex direction column
         document.getElementById('menu-view').style.display = 'flex'; 
         document.getElementById('home-intro').style.display = 'block';
         document.getElementById('search-bar').value = '';
@@ -552,7 +563,6 @@
     // --- 7. SALIR ---
     async function logout() {
         await _supabase.auth.signOut();
-        // Corrección 404: Usar ./ para asegurar ruta relativa
         window.location.href = './index.html';
     }
 </script>
