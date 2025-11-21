@@ -64,6 +64,34 @@
     .btn-main:hover { transform: scale(1.02); }
     .btn-main:disabled { background-color: #ddd; cursor: wait; }
 
+    /* --- ESTILOS BOTÓN GOOGLE --- */
+    .divider {
+        display: flex; align-items: center; margin: 25px 0; color: #999; font-size: 0.8em;
+    }
+    .divider::before, .divider::after {
+        content: ""; flex: 1; height: 1px; background: #eee;
+    }
+    .divider span { padding: 0 10px; }
+
+    .btn-google {
+        width: 100%;
+        background-color: white;
+        color: #333;
+        font-weight: 600;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.95em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: background 0.2s;
+    }
+    .btn-google:hover { background-color: #f9f9f9; border-color: #bbb; }
+    .btn-google img { width: 20px; height: 20px; }
+
     .switch-link {
         margin-top: 20px; font-size: 0.9em; color: #666;
     }
@@ -100,6 +128,13 @@
         </div>
 
         <button class="btn-main" onclick="handleLogin()" id="btn-login">Sign In</button>
+
+        <div class="divider"><span>OR CONTINUE WITH</span></div>
+        
+        <button class="btn-google" onclick="handleGoogleLogin()">
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="G">
+            Google
+        </button>
     </div>
 
     <div id="view-forgot" class="form-view">
@@ -134,7 +169,7 @@
         document.getElementById(`view-${viewName}`).classList.add('active');
     }
 
-    // --- LOGIN ---
+    // --- 1. LOGIN EMAIL ---
     async function handleLogin() {
         const email = document.getElementById('login-email').value;
         const pass = document.getElementById('login-password').value;
@@ -154,7 +189,22 @@
         }
     }
 
-    // --- RECUPERAR CONTRASEÑA ---
+    // --- 2. LOGIN GOOGLE ---
+    async function handleGoogleLogin() {
+        const { data, error } = await _supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                // IMPORTANTE: Asegúrate de que esta URL esté en Supabase -> Authentication -> URL Configuration
+                redirectTo: 'https://carloslplorusso.github.io/dashboard.html'
+            }
+        });
+        
+        if (error) {
+            showMsg(error.message, 'error');
+        }
+    }
+
+    // --- 3. RECUPERAR PASS ---
     async function handleReset() {
         const email = document.getElementById('reset-email').value;
         const btn = document.getElementById('btn-reset');
@@ -163,14 +213,10 @@
 
         btn.innerText = 'Sending...'; btn.disabled = true;
 
-        // URL de redirección
-        const redirectUrl = 'https://carloslplorusso.github.io/dashboard.html'; 
-
         const { data, error } = await _supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: redirectUrl,
+            redirectTo: 'https://carloslplorusso.github.io/dashboard.html',
         });
 
-        // Por seguridad, Supabase no dice si el email existe o no para evitar hackers
         showMsg('If the email exists, we sent a recovery link.', 'success');
         btn.innerText = 'Sent ✓';
     }
