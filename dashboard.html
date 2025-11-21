@@ -35,7 +35,7 @@
         display: flex;
         flex-direction: column;
         width: 100%;
-        max-width: 900px;
+        max-width: 1000px; /* Aumentado un poco para que quepan 3 cards */
         background-color: var(--white);
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         border-radius: 16px;
@@ -63,7 +63,7 @@
         align-items: center;
     }
 
-    /* Botón Stats Superior (Opcional, ya que ahora hay card abajo) */
+    /* Botones */
     .btn-stats-top {
         background: transparent;
         border: 1px solid var(--primary-color);
@@ -105,7 +105,7 @@
     }
     .btn-logout:hover { background: rgba(255, 107, 107, 0.1); }
 
-    /* --- AVISO DE CONTRASEÑA (CRÍTICO) --- */
+    /* --- AVISO DE CONTRASEÑA --- */
     .password-alert {
         background-color: var(--warning-bg);
         color: var(--warning-text);
@@ -113,7 +113,7 @@
         text-align: center;
         font-size: 0.95em;
         border-bottom: 1px solid #ffeeba;
-        display: none; /* Se activa con JS */
+        display: none;
         animation: slideDown 0.5s ease;
     }
     @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -141,15 +141,16 @@
     .menu-container {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 30px;
         width: 100%;
-        max-width: 700px;
+        max-width: 100%; /* Usar todo el ancho disponible */
         margin: 0 auto;
     }
 
     .menu-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        /* CAMBIO: Ajuste automático para soportar 3 columnas */
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 20px;
     }
 
@@ -157,15 +158,19 @@
         background: white;
         border: 2px solid var(--border-color);
         border-radius: 16px;
-        padding: 40px 20px;
+        padding: 30px 20px;
         text-align: center;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         position: relative;
         overflow: hidden;
-        text-decoration: none; /* Quita subrayado de enlaces */
+        text-decoration: none;
         color: inherit;
-        display: block; /* Para que el <a> funcione como bloque */
+        display: flex; /* Para centrar contenido verticalmente */
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px; /* Altura uniforme */
     }
 
     .menu-card:hover {
@@ -178,30 +183,32 @@
     .menu-card .title { font-size: 1.2em; font-weight: 800; display: block; margin-bottom: 8px; }
     .menu-card .desc { font-size: 0.9em; color: var(--text-muted); line-height: 1.4; }
 
-    /* --- TARJETA DE ESTADÍSTICAS (NUEVA) --- */
+    /* --- TARJETA DE ESTADÍSTICAS --- */
     .stats-row {
-        margin-top: 0px; /* Espacio con las de arriba */
+        margin-top: 10px;
     }
     
     .menu-card.stats-variant {
         display: flex;
+        flex-direction: row; /* Horizontal */
         align-items: center;
         justify-content: center;
         gap: 20px;
-        padding: 25px;
-        background: linear-gradient(to right, #ffffff, #fcfcfc);
+        padding: 20px;
+        min-height: auto; /* Reset altura */
+        background: linear-gradient(to right, #ffffff, #f9fafb);
     }
     
     .menu-card.stats-variant .icon {
         font-size: 2.5em;
-        margin-bottom: 0; /* Reset para alineación horizontal */
+        margin-bottom: 0; 
     }
     .menu-card.stats-variant .text-content {
         text-align: left;
     }
     .menu-card.stats-variant .title {
         margin-bottom: 4px;
-        font-size: 1.3em;
+        font-size: 1.1em;
     }
 
     /* --- 6. VISTA DE LISTA --- */
@@ -269,14 +276,12 @@
         border-radius: 8px; font-size: 1em; box-sizing: border-box; text-align: center;
     }
 
-    @media (max-width: 600px) {
-        .menu-grid { grid-template-columns: 1fr; }
+    @media (max-width: 768px) {
+        .menu-grid { grid-template-columns: 1fr; } /* 1 columna en móvil */
         .content-container { padding: 20px; }
-        .menu-card { padding: 30px 20px; display: flex; align-items: center; text-align: left; gap: 20px; }
+        .menu-card { min-height: 150px; }
         .menu-card.stats-variant { flex-direction: column; text-align: center; }
         .menu-card.stats-variant .text-content { text-align: center; }
-        .menu-card .icon { margin-bottom: 0; font-size: 2.5em; }
-        .welcome-title { font-size: 1.4em; }
         .header-actions { gap: 5px; }
         .btn-stats-top, .btn-pass, .btn-logout { font-size: 0.7em; padding: 6px 10px; }
     }
@@ -317,11 +322,19 @@
                     </div>
                 </div>
                 
-                <div class="menu-card" onclick="openMode('Single Questions')">
+                <div class="menu-card" onclick="openMode('Stand Alone Questions')">
                     <span class="icon">🧠</span>
                     <div>
-                        <span class="title">Single Questions</span>
+                        <span class="title">Stand Alone Questions</span>
                         <span class="desc">Practice specific topics at your own pace with instant feedback.</span>
+                    </div>
+                </div>
+
+                <div class="menu-card" onclick="openMode('Item Sets')">
+                    <span class="icon">🔗</span>
+                    <div>
+                        <span class="title">Item Sets</span>
+                        <span class="desc">Complex clinical scenarios connecting multiple concepts.</span>
                     </div>
                 </div>
             </div>
@@ -415,11 +428,9 @@
         await loadData();
     }
 
-    // --- 3. LÓGICA DE AVISO Y MODAL ---
+    // --- 3. LÓGICA DE AVISO ---
     function showRecoveryAlert() {
-        // Muestra la barra amarilla
         document.getElementById('password-alert').style.display = 'block';
-        // Abre el modal automáticamente una vez
         setTimeout(() => { openResetModal(); }, 800);
     }
 
@@ -447,7 +458,7 @@
         }
     }
 
-    // --- 4. NAVEGACIÓN CON FILTRO ---
+    // --- 4. NAVEGACIÓN CON FILTRO (ACTUALIZADO) ---
     function openMode(modeName) {
         document.getElementById('menu-view').style.display = 'none';
         document.getElementById('home-intro').style.display = 'none';
@@ -462,10 +473,14 @@
             titleText.innerText = 'Simulation Mode';
             icon.innerText = '⏱️';
             filterType = 'simulation'; 
-        } else {
-            titleText.innerText = 'Single Questions';
+        } else if (modeName === 'Stand Alone Questions') { // Nombre nuevo
+            titleText.innerText = 'Stand Alone Questions';
             icon.innerText = '🧠';
-            filterType = 'single'; 
+            filterType = 'single'; // Mismo filtro DB
+        } else if (modeName === 'Item Sets') { // Nueva Sección
+            titleText.innerText = 'Item Sets';
+            icon.innerText = '🔗';
+            filterType = 'itemsets'; // Nuevo filtro DB
         }
         
         const filteredList = allQuizzes.filter(quiz => quiz.tipo === filterType);
@@ -475,7 +490,6 @@
 
     function goHome() {
         document.getElementById('list-view').style.display = 'none';
-        // Regresar a Flex (no Grid) porque el contenedor principal usa flex direction column
         document.getElementById('menu-view').style.display = 'flex'; 
         document.getElementById('home-intro').style.display = 'block';
         document.getElementById('search-bar').value = '';
