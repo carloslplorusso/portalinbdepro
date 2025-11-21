@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>INBDE Pro - Main Dashboard</title>
+<title>INBDE Pro - Dashboard</title>
 <style>
-    /* --- 1. VARIABLES DE MARCA --- */
+    /* --- 1. VARIABLES & RESET --- */
     :root {
         --primary-color: #fcdc11; 
         --primary-dark: #121212;  
@@ -13,13 +13,11 @@
         --white: #ffffff;
         --border-color: #e5e7eb;
         --text-muted: #6b7280;
-        --accent-blue: #2563eb; 
-        --hover-bg: #fffce0;
+        --success: #10b981; /* Verde para completado */
     }
 
-    /* --- 2. RESET Y ESTRUCTURA --- */
     body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         background-color: var(--light-bg);
         color: var(--primary-dark);
         margin: 0;
@@ -27,446 +25,414 @@
         display: flex;
         justify-content: center;
         min-height: 100vh;
-        box-sizing: border-box; /* Asegura que el padding no rompa el ancho */
+        box-sizing: border-box;
     }
 
+    /* --- 2. LAYOUT PRINCIPAL --- */
     .main-wrapper {
         display: flex;
         flex-direction: column;
-        /* RESPONSIVE: Usar porcentaje y max-width en lugar de width fijo */
-        width: 100%; 
+        width: 100%;
         max-width: 1100px;
         background-color: var(--white);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
         border-radius: 12px;
         overflow: hidden;
         border: 1px solid var(--border-color);
-        min-height: 80vh;
+        min-height: 85vh;
     }
 
-    /* --- 3. CABECERA (HEADER) --- */
+    /* --- 3. HEADER --- */
     .brand-header {
         background-color: var(--primary-dark);
         color: var(--primary-color);
-        padding: 15px 30px;
+        padding: 15px 25px;
         font-weight: 800;
         font-size: 1.2em;
         border-bottom: 4px solid var(--primary-color);
         display: flex;
         justify-content: space-between;
         align-items: center;
-        flex-wrap: wrap; /* Permite que los elementos bajen si no caben */
+        flex-wrap: wrap;
         gap: 15px;
     }
 
-    .header-right {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .btn-header {
+    .btn-logout {
         background: transparent;
-        border: 1px solid var(--primary-color);
-        color: var(--primary-color);
-        padding: 8px 14px;
-        font-size: 0.85em;
+        border: 1px solid #ef4444;
+        color: #ef4444;
+        padding: 6px 12px;
+        font-size: 0.8em;
         font-weight: 700;
         cursor: pointer;
         border-radius: 4px;
-        text-decoration: none;
-        text-transform: uppercase;
-        transition: background 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        white-space: nowrap; /* Evita que el texto del botón se parta */
+        transition: all 0.2s;
     }
-    .btn-header:hover { background-color: rgba(252, 220, 17, 0.2); }
+    .btn-logout:hover { background: rgba(239, 68, 68, 0.1); }
 
-    .btn-logout {
-        border-color: #ef4444;
-        color: #ef4444;
-    }
-    .btn-logout:hover { background-color: rgba(239, 68, 68, 0.1); }
-
-    /* --- 4. CONTENIDO PRINCIPAL --- */
+    /* --- 4. CONTENIDO --- */
     .content-container {
-        padding: 40px;
+        padding: 30px;
         flex: 1;
     }
 
-    .welcome-msg {
-        font-size: 1.8em;
-        font-weight: 700;
-        margin-bottom: 5px;
-        line-height: 1.2;
-    }
-    .subtitle-msg {
-        color: var(--text-muted);
-        margin-bottom: 30px;
-    }
+    .welcome-section { margin-bottom: 30px; }
+    .welcome-title { font-size: 1.6em; font-weight: 800; margin: 0 0 5px 0; }
+    .welcome-sub { color: var(--text-muted); font-size: 0.95em; }
 
-    /* --- 5. BOTONES GRANDES --- */
-    .big-actions {
-        display: grid;
-        /* RESPONSIVE: Por defecto 2 columnas, pero flexible */
-        grid-template-columns: 1fr 1fr; 
-        gap: 20px;
-        margin-bottom: 40px;
+    /* --- 5. BUSCADOR (NUEVO) --- */
+    .search-container {
+        margin-bottom: 25px;
+        position: relative;
     }
-
-    .action-card {
-        background: var(--white);
+    .search-input {
+        width: 100%;
+        padding: 15px 20px;
+        padding-left: 45px; /* Espacio para ícono */
+        font-size: 1em;
         border: 2px solid var(--border-color);
-        border-radius: 10px;
-        padding: 30px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        /* Mejor experiencia táctil */
-        touch-action: manipulation; 
+        border-radius: 8px;
+        box-sizing: border-box;
+        transition: border-color 0.3s;
+        background-color: #f9fafb;
     }
-    .action-card:hover {
+    .search-input:focus {
         border-color: var(--primary-color);
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        outline: none;
+        background-color: #fff;
     }
-    .action-card.active {
-        border-color: var(--primary-dark);
-        background-color: var(--primary-dark);
-        color: var(--primary-color);
-        transform: none; /* Evita saltos en móvil al activar */
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.2em;
+        opacity: 0.5;
     }
-    .action-card.active .card-title { color: var(--primary-color); }
-    .action-card.active .card-desc { color: #ccc; }
 
-    .card-icon { font-size: 2.5em; margin-bottom: 10px; display: block; }
-    .card-title { font-size: 1.4em; font-weight: 800; color: var(--primary-dark); }
-    .card-desc { font-size: 0.9em; color: var(--text-muted); margin-top: 5px; }
-
-    /* --- 6. ACORDEÓN DE MATERIAS --- */
-    .modules-section {
-        border-top: 1px solid var(--border-color);
-        padding-top: 30px;
-        display: none; 
-        animation: fadeIn 0.5s ease-in-out;
+    /* --- 6. MODOS DE ESTUDIO --- */
+    .mode-selector {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 15px;
     }
-    
-    @keyframes fadeIn {
+    .mode-btn {
+        background: none;
+        border: none;
+        font-size: 1em;
+        font-weight: 600;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 8px 0;
+        position: relative;
+    }
+    .mode-btn.active { color: var(--primary-dark); }
+    .mode-btn.active::after {
+        content: '';
+        position: absolute;
+        bottom: -16px;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: var(--primary-color);
+    }
+
+    /* --- 7. LISTA DE QUIZZES (ACORDEÓN MEJORADO) --- */
+    .modules-container { display: none; animation: fadeUp 0.4s ease; }
+    .modules-container.active { display: block; }
+
+    @keyframes fadeUp {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
     }
-    
-    .section-title {
-        font-size: 1.2em;
-        font-weight: 700;
-        margin-bottom: 20px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--primary-dark);
-        border-left: 5px solid var(--primary-color);
-        padding-left: 10px;
-    }
 
-    .loader {
-        text-align: center;
-        padding: 40px;
-        color: var(--text-muted);
-        font-style: italic;
-    }
-
-    .module-item {
-        margin-bottom: 10px;
+    .module-card {
         border: 1px solid var(--border-color);
         border-radius: 8px;
+        margin-bottom: 12px;
         overflow: hidden;
         background: white;
     }
-
+    
     .module-header {
-        background-color: #f9fafb;
         padding: 15px 20px;
-        font-weight: 700;
+        background: #fff;
         cursor: pointer;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        font-weight: 700;
+        border-bottom: 1px solid transparent;
         transition: background 0.2s;
-        /* Previene selección de texto al hacer tap rápido */
-        user-select: none; 
     }
-    .module-header:hover { background-color: #f0f0f0; }
-    .module-header::after { content: '▼'; font-size: 0.8em; color: var(--text-muted); }
-    .module-item.open .module-header::after { content: '▲'; }
-    
-    .module-item.open .module-header {
+    .module-header:hover { background-color: #fdfdfd; }
+    .module-card.open .module-header {
         background-color: var(--primary-color);
-        color: var(--primary-dark);
+        border-bottom-color: rgba(0,0,0,0.1);
     }
-    .module-item.open .module-header::after { color: var(--primary-dark); }
 
     .quiz-list {
-        display: none; 
-        padding: 0;
-        margin: 0;
+        display: none;
         list-style: none;
-        background: var(--white);
-        border-top: 1px solid var(--border-color);
+        margin: 0;
+        padding: 0;
     }
-    .module-item.open .quiz-list { display: block; } 
+    .module-card.open .quiz-list { display: block; }
 
-    .quiz-link {
-        display: block;
-        padding: 15px 20px;
-        text-decoration: none;
-        color: #333;
-        font-size: 0.95em;
-        border-bottom: 1px solid #eee;
-        transition: background 0.1s;
+    .quiz-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        flex-wrap: wrap; /* Permite que el botón START baje si el título es muy largo */
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border-color);
+        text-decoration: none;
+        color: #333;
+        transition: background 0.2s;
         gap: 10px;
     }
-    .quiz-link:last-child { border-bottom: none; }
-    .quiz-link:hover { background-color: var(--hover-bg); color: var(--primary-dark); }
-    
-    .quiz-status {
-        font-size: 0.75em;
-        padding: 4px 12px;
+    .quiz-item:last-child { border-bottom: none; }
+    .quiz-item:hover { background-color: var(--hover-bg); }
+
+    /* --- 8. ESTADOS (COMPLETADO / NUEVO) --- */
+    .status-badge {
+        font-size: 0.7em;
+        padding: 4px 10px;
         border-radius: 20px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .status-start {
         background: var(--primary-dark);
         color: var(--primary-color);
-        font-weight: bold;
-        text-transform: uppercase;
-        white-space: nowrap;
+    }
+    .status-done {
+        background: var(--success);
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
 
-    /* --- 7. MEDIA QUERIES (LA MAGIA RESPONSIVE) --- */
-
-    /* Tablets y Móviles Grandes (hasta 768px) */
-    @media (max-width: 768px) {
-        body {
-            padding: 10px; /* Menos borde gris alrededor */
-        }
-        
-        .content-container {
-            padding: 25px 20px; /* Menos padding interno */
-        }
-
-        .big-actions {
-            grid-template-columns: 1fr; /* Una sola columna (apilados) */
-        }
-
-        .welcome-msg {
-            font-size: 1.5em;
-        }
+    .hidden { display: none !important; }
+    
+    /* RESPONSIVE */
+    @media (max-width: 600px) {
+        .content-container { padding: 20px; }
+        .quiz-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+        .status-badge { align-self: flex-start; }
     }
-
-    /* Móviles Pequeños (hasta 480px) */
-    @media (max-width: 480px) {
-        .brand-header {
-            flex-direction: column; /* Logo arriba, botones abajo */
-            gap: 15px;
-            padding: 15px 20px;
-            text-align: center;
-        }
-
-        .header-right {
-            width: 100%;
-            justify-content: center; /* Centrar botones */
-        }
-
-        .btn-header {
-            flex: 1; /* Botones ocupan espacio equitativo */
-            justify-content: center;
-            padding: 10px;
-        }
-
-        .action-card {
-            padding: 20px; /* Tarjetas más compactas */
-        }
-
-        .card-title {
-            font-size: 1.2em;
-        }
-
-        .module-header {
-            font-size: 0.95em;
-            padding: 12px 15px;
-        }
-
-        .quiz-link {
-            font-size: 0.9em;
-        }
-    }
-
 </style>
 </head>
-<body onload="initDashboard()">
+<body onload="initApp()">
 
 <div class="main-wrapper">
     <div class="brand-header">
         <span>INBDE Pro</span>
-        <div class="header-right">
-            <a href="stats.html" class="btn-header">📊 Dashboard</a>
-            <button class="btn-header btn-logout" onclick="logout()">Logout</button>
-        </div>
+        <button class="btn-logout" onclick="logout()">Logout</button>
     </div>
 
     <div class="content-container">
-        <div class="welcome-msg">Welcome, <span id="user-name">Student</span></div>
-        <div class="subtitle-msg">Select a study mode to begin.</div>
-
-        <div class="big-actions">
-            <div class="action-card" onclick="filterMode('simulation', this)">
-                <span class="card-icon">⏱️</span>
-                <div class="card-title">Simulation</div>
-                <div class="card-desc">Timed exam mode. Select to view available quizzes.</div>
-            </div>
-            <div class="action-card" onclick="filterMode('practice', this)">
-                <span class="card-icon">📖</span>
-                <div class="card-title">Practice</div>
-                <div class="card-desc">Study mode with instant feedback.</div>
-            </div>
+        
+        <div class="welcome-section">
+            <h1 class="welcome-title">Hello, <span id="user-name">Doctor</span> 👋</h1>
+            <div class="welcome-sub">Ready to practice today?</div>
         </div>
 
-        <div id="modules-section" class="modules-section">
-            <div class="section-title">Available Quizzes</div>
-            
-            <div id="modules-container">
-                <div id="loader" class="loader">Loading modules from database...</div>
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-bar" class="search-input" placeholder="Search quizzes (e.g., 'Oral Surgery', 'Anatomy')..." onkeyup="filterQuizzes()">
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="switchMode('simulation', this)">Simulation</button>
+            <button class="mode-btn" onclick="switchMode('practice', this)">Practice (Beta)</button>
+        </div>
+
+        <div id="loading-state" style="text-align:center; color:#999; padding:40px;">
+            Loading your progress...
+        </div>
+
+        <div id="simulation-view" class="modules-container">
             </div>
+
+        <div id="practice-view" class="modules-container" style="text-align:center; padding:40px; color:#666;">
+            Practice mode coming soon! Focus on Simulation for now.
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+    // --- CONFIGURACIÓN ---
     const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
-    
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function initDashboard() {
-        const userEmail = localStorage.getItem('quiz_username');
-        
-        if (!userEmail) {
-            try {
-                window.location.href = 'login.html';
-            } catch (e) {
-                console.warn("Redirección automática falló.");
-                document.body.innerHTML = `
-                    <div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;text-align:center;font-family:sans-serif;padding:20px;">
-                        <h2 style="color:#121212;">Acceso Requerido</h2>
-                        <p style="color:#666;">Debes iniciar sesión para ver el dashboard.</p>
-                        <a href="login.html" style="background:#fcdc11; color:#121212; padding:12px 25px; text-decoration:none; border-radius:5px; font-weight:bold; margin-top:15px; display:inline-block;">
-                            Ir a Iniciar Sesión
-                        </a>
-                    </div>
-                `;
-            }
+    // Variables Globales
+    let allQuizzes = [];
+    let userCompletedIds = new Set();
+    let currentUser = null;
+
+    // --- 1. INICIALIZACIÓN SEGURA ---
+    async function initApp() {
+        // Verificar sesión real con Supabase
+        const { data: { session } } = await _supabase.auth.getSession();
+
+        if (!session) {
+            window.location.href = 'login.html';
             return;
         }
-        
-        document.getElementById('user-name').innerText = userEmail.split('@')[0]; 
 
-        await fetchModules();
+        currentUser = session.user;
+        // Mostrar email del usuario
+        document.getElementById('user-name').innerText = currentUser.email.split('@')[0];
+
+        // Cargar Datos
+        await loadData();
     }
 
-    async function fetchModules() {
-        const container = document.getElementById('modules-container');
-        const loader = document.getElementById('loader');
-
+    // --- 2. CARGA DE DATOS (Quizzes + Progreso) ---
+    async function loadData() {
         try {
-            const { data: quizzes, error } = await _supabase
-                .from('contenido_quizzes') 
+            // A. Obtener todos los quizzes
+            const quizzesReq = _supabase
+                .from('contenido_quizzes')
                 .select('*')
                 .order('materia', { ascending: true });
 
-            if (error) throw error;
+            // B. Obtener progreso del usuario actual
+            // NOTA: Esto requiere haber creado la tabla 'user_progress' en Supabase
+            const progressReq = _supabase
+                .from('user_progress')
+                .select('quiz_id')
+                .eq('user_id', currentUser.id);
 
-            if (!quizzes || quizzes.length === 0) {
-                loader.innerText = "No quizzes available yet.";
-                return;
-            }
+            // Ejecutar ambas peticiones en paralelo para velocidad
+            const [quizzesRes, progressRes] = await Promise.all([quizzesReq, progressReq]);
 
-            const grouped = quizzes.reduce((acc, item) => {
-                if (!acc[item.materia]) acc[item.materia] = [];
-                acc[item.materia].push(item);
-                return acc;
-            }, {});
+            if (quizzesRes.error) throw quizzesRes.error;
 
-            container.innerHTML = ''; 
+            allQuizzes = quizzesRes.data;
             
-            for (const [materia, items] of Object.entries(grouped)) {
-                const moduleDiv = document.createElement('div');
-                moduleDiv.className = 'module-item';
-                
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'module-header';
-                headerDiv.innerHTML = `<span>${materia}</span> <span style="font-weight:400; font-size:0.9em; opacity:0.7">(${items.length})</span>`;
-                headerDiv.onclick = () => toggleAccordion(moduleDiv);
-
-                const ul = document.createElement('ul');
-                ul.className = 'quiz-list';
-
-                items.forEach(quiz => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <a href="${quiz.archivo_url}" class="quiz-link">
-                            <span style="flex:1; padding-right:10px;">${quiz.titulo_quiz}</span>
-                            <span class="quiz-status">START</span>
-                        </a>
-                    `;
-                    ul.appendChild(li);
-                });
-
-                moduleDiv.appendChild(headerDiv);
-                moduleDiv.appendChild(ul);
-                container.appendChild(moduleDiv);
+            // Si existe progreso, guardamos los IDs en un Set para búsqueda rápida
+            if (progressRes.data) {
+                userCompletedIds = new Set(progressRes.data.map(p => p.quiz_id));
             }
+
+            renderQuizzes(allQuizzes);
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('simulation-view').classList.add('active');
 
         } catch (err) {
-            console.error("Error:", err);
-            loader.innerText = "Error loading content. Check database connection.";
+            console.error("Error loading data:", err);
+            document.getElementById('loading-state').innerText = "Error loading content. Please refresh.";
         }
     }
 
-    function toggleAccordion(element) {
-        element.classList.toggle('open');
+    // --- 3. RENDERIZADO (HTML GENERATOR) ---
+    function renderQuizzes(quizzesToRender) {
+        const container = document.getElementById('simulation-view');
+        container.innerHTML = ''; // Limpiar
+
+        if (quizzesToRender.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#999;">No quizzes found matching your search.</div>';
+            return;
+        }
+
+        // Agrupar por Materia
+        const grouped = quizzesToRender.reduce((acc, quiz) => {
+            if (!acc[quiz.materia]) acc[quiz.materia] = [];
+            acc[quiz.materia].push(quiz);
+            return acc;
+        }, {});
+
+        // Crear HTML
+        for (const [materia, items] of Object.entries(grouped)) {
+            // Verificar si todos los de esta materia están completados (opcional, para UX visual)
+            const completedCount = items.filter(q => userCompletedIds.has(q.id)).length;
+            const isAllDone = completedCount === items.length;
+
+            const card = document.createElement('div');
+            card.className = 'module-card'; // Por defecto cerrado
+
+            // Header
+            const header = document.createElement('div');
+            header.className = 'module-header';
+            header.innerHTML = `
+                <span>${materia}</span>
+                <span style="font-weight:400; font-size:0.85em; color:#666;">
+                    ${completedCount}/${items.length} Done
+                </span>
+            `;
+            header.onclick = () => card.classList.toggle('open');
+
+            // Lista
+            const list = document.createElement('div');
+            list.className = 'quiz-list';
+
+            items.forEach(quiz => {
+                const isDone = userCompletedIds.has(quiz.id);
+                const link = document.createElement('a');
+                link.className = 'quiz-item';
+                // Truco: Pasamos el ID del quiz en la URL para que la pagina del quiz sepa cual es
+                link.href = `${quiz.archivo_url}?quiz_id=${quiz.id}`; 
+                
+                // HTML del Item
+                link.innerHTML = `
+                    <div style="flex:1">
+                        <div style="font-weight:600;">${quiz.titulo_quiz}</div>
+                    </div>
+                    ${isDone 
+                        ? `<span class="status-badge status-done">✓ COMPLETED</span>` 
+                        : `<span class="status-badge status-start">START</span>`
+                    }
+                `;
+                list.appendChild(link);
+            });
+
+            card.appendChild(header);
+            card.appendChild(list);
+            container.appendChild(card);
+        }
     }
 
-    function filterMode(mode, cardElement) {
-        document.querySelectorAll('.action-card').forEach(c => c.classList.remove('active'));
+    // --- 4. BUSCADOR ---
+    function filterQuizzes() {
+        const query = document.getElementById('search-bar').value.toLowerCase();
         
-        if (cardElement) {
-            cardElement.classList.add('active');
+        if (!query) {
+            renderQuizzes(allQuizzes); // Si está vacío, mostrar todo
+            return;
         }
 
-        const modulesSection = document.getElementById('modules-section');
+        const filtered = allQuizzes.filter(quiz => 
+            quiz.titulo_quiz.toLowerCase().includes(query) || 
+            quiz.materia.toLowerCase().includes(query)
+        );
+        
+        renderQuizzes(filtered);
+        
+        // Auto-abrir acordeones si hay búsqueda
+        document.querySelectorAll('.module-card').forEach(card => card.classList.add('open'));
+    }
 
-        if (mode === 'simulation') {
-            modulesSection.style.display = 'block';
-            setTimeout(() => {
-                modulesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+    // --- 5. UTILIDADES ---
+    function switchMode(mode, btn) {
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
 
-        } else if (mode === 'practice') {
-            modulesSection.style.display = 'none';
-            alert("Practice Mode is coming soon!");
-            if (cardElement) cardElement.classList.remove('active');
-        }
+        document.getElementById('simulation-view').style.display = mode === 'simulation' ? 'block' : 'none';
+        document.getElementById('practice-view').style.display = mode === 'practice' ? 'block' : 'none';
     }
 
     async function logout() {
-        const { error } = await _supabase.auth.signOut();
-        localStorage.removeItem('quiz_username');
+        await _supabase.auth.signOut();
         window.location.href = 'login.html';
     }
 </script>
-
 </body>
 </html>
