@@ -131,7 +131,7 @@
         <div class="header-right">
             <span id="timer" class="timer-box" style="display:none;">30:00</span>
             <span id="question-counter" class="question-counter" style="display:none;">Question 1 of 5</span>
-            <a href="home.html" class="btn-stats-link">🏠 Home</a>
+            <a href="dashboard.html" class="btn-stats-link">🏠 Home</a>
         </div>
     </div>
 
@@ -139,7 +139,7 @@
         <div class="welcome-card">
             <h1 class="welcome-title">Pharmacology I</h1>
             <p class="welcome-subtitle">Local Anesthetics & Antibiotics</p>
-            <input type="email" id="username-input" class="user-input" placeholder="Confirm your email..." required>
+            <input type="hidden" id="username-input">
             <div class="welcome-info">
                 <span class="info-pill">📝 20 Questions</span>
                 <span class="info-pill">⏱️ 30 Minutes</span>
@@ -184,7 +184,7 @@
         </div>
         <h3>Review Answers</h3>
         <div class="review-list" id="review-list"></div>
-        <a href="stats.html" class="btn-start" style="margin-top:30px; text-decoration:none; display:block;">View Dashboard</a>
+        <a href="dashboard.html" class="btn-start" style="margin-top:30px; text-decoration:none; display:block;">Back to Dashboard</a>
     </div>
     <div class="brand-footer">INBDE Pro</div>
 </div>
@@ -197,15 +197,16 @@
     </div>
 </div>
 
-<!-- SUPABASE SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
+    // 1. CONFIGURACIÓN SUPABASE
     const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
+    
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- DATA (20 QUESTIONS) ---
+    // --- DATA (20 QUESTIONS) ---
     const questions = [
         { 
             id: 1, 
@@ -394,24 +395,34 @@
     let currentUser = "";
 
     function startQuiz() { 
-        const userInput = document.getElementById('username-input');
-        if (!userInput.value.trim()) { alert("Please enter your email."); return; }
-        currentUser = userInput.value.trim();
-        localStorage.setItem('quiz_username', currentUser);
-        showView('quiz-view'); 
-        loadQuestion(); 
-        startTimer(); 
+        // Intentamos obtener el usuario de Supabase automáticamente
+        checkUserAndStart();
+    }
+
+    async function checkUserAndStart() {
+        const { data: { session } } = await _supabase.auth.getSession();
+        
+        if (session) {
+            currentUser = session.user.email;
+            // Si ya tenemos sesión, empezamos
+            showView('quiz-view'); 
+            loadQuestion(); 
+            startTimer(); 
+        } else {
+            // Si no hay sesión, pedimos login (o podrías redirigir a index.html)
+            alert("Please log in to start.");
+            window.location.href = 'index.html';
+        }
     }
 
     function showView(viewId) {
         ['welcome-view', 'quiz-view', 'results-view'].forEach(id => document.getElementById(id).style.display = 'none');
-        document.getElementById(viewId).style.display = (viewId === 'quiz-view') ? 'flex' : 'flex'; // Flex for layout
+        document.getElementById(viewId).style.display = (viewId === 'quiz-view') ? 'flex' : 'flex'; 
         
         const isQuiz = (viewId === 'quiz-view');
         document.getElementById('timer').style.display = isQuiz ? 'inline-block' : 'none';
         document.getElementById('question-counter').style.display = isQuiz ? 'inline-block' : 'none';
         
-        // Fix view container flex for center alignment
         if(viewId !== 'quiz-view') document.getElementById(viewId).style.display = 'flex';
     }
 
@@ -505,10 +516,8 @@
         const spent = (10 * 60) - totalTime;
         document.getElementById('final-time-value').innerText = `${Math.floor(spent/60)}m ${spent%60}s`;
         
-        saveDataSupabase(pct, userScore, questions.length);
-
-            // --- NUEVA LÍNEA AGREGADA ---
-    marcarExamenComoCompletado(); 
+        // Llamada a la función que guarda el progreso
+        marcarExamenComoCompletado(); 
 
         const list = document.getElementById('review-list');
         list.innerHTML = '';
@@ -527,12 +536,32 @@
         });
     }
 
-    async function saveDataSupabase(score, correct, total) {
-        console.log("Sending to Supabase for user:", currentUser);
-        const { error } = await _supabase.from('resultados').insert([
-            { username: currentUser, score: score, correct: correct, total: total }
-        ]);
-        if (error) console.error('Supabase Error:', error);
+    // FUNCIÓN CORREGIDA Y UNIFICADA
+    async function marcarExamenComoCompletado() {
+        // 1. Obtener ID del quiz de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const quizId = urlParams.get('quiz_id');
+
+        // 2. Obtener usuario actual
+        const { data: { session } } = await _supabase.auth.getSession();
+
+        if (session && quizId) {
+            console.log("Guardando progreso para usuario:", session.user.email);
+            
+            const { error } = await _supabase.from('user_progress').insert([
+                { user_id: session.user.id, quiz_id: quizId }
+            ]);
+
+            if (!error) {
+                // Puedes descomentar la alerta si quieres avisar al usuario
+                // alert("¡Felicidades! Examen guardado como completado.");
+                console.log("Progreso guardado exitosamente.");
+            } else {
+                console.error("Error guardando:", error);
+            }
+        } else {
+            console.log("No se pudo guardar: Falta sesión o ID del quiz en la URL");
+        }
     }
 
     function toggleExpl(i) {
@@ -552,53 +581,8 @@
     document.addEventListener('keydown', e => { if (e.key === "Escape") closeModal(); });
     
     window.onload = () => {
-        const savedUser = localStorage.getItem('quiz_username');
-        if(savedUser) document.getElementById('username-input').value = savedUser;
         showView('welcome-view');
     };
-        // --- PEGAR ESTO EN LA LÍNEA 556 ---
-
-    // 1. Configuración de Supabase (Necesaria porque estamos en otro archivo)
-    const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
-    
-    // Asegúrate de que la librería de supabase esté cargada en el <head>, si no, esto fallará.
-    // Si ya definiste _supabase arriba en este archivo, borra esta línea:
-    const _supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
-
-    async function marcarExamenComoCompletado() {
-        if (!_supabase) {
-            console.error("Supabase no está cargado. Asegúrate de poner el script en el HTML.");
-            return;
-        }
-
-        // 1. Obtener ID del quiz de la URL (ej: quiz.html?quiz_id=15)
-        const urlParams = new URLSearchParams(window.location.search);
-        const quizId = urlParams.get('quiz_id');
-
-        // 2. Obtener usuario actual
-        const { data: { session } } = await _supabase.auth.getSession();
-
-        if (session && quizId) {
-            console.log("Guardando progreso para usuario:", session.user.email);
-            
-            // 3. Guardar en la tabla user_progress
-            const { error } = await _supabase.from('user_progress').insert([
-                { user_id: session.user.id, quiz_id: quizId }
-            ]);
-
-            if (!error) {
-                alert("¡Felicidades! Examen guardado como completado.");
-                // Opcional: Redirigir al dashboard
-                 window.location.href = 'dashboard.html'; 
-            } else {
-                console.error("Error guardando:", error);
-            }
-        } else {
-            console.log("No se pudo guardar: Falta sesión o ID del quiz en la URL");
-        }
-    }
-
 </script>
 
 </body>
