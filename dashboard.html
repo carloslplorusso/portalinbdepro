@@ -183,7 +183,7 @@
     }
     .btn-back:hover { border-color: var(--primary-dark); color: var(--primary-dark); transform: translateY(-2px); }
 
-    /* --- 7. MODAL DE RECUPERACIÓN (NUEVO) --- */
+    /* --- 7. MODAL DE RECUPERACIÓN --- */
     .modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000;
@@ -297,7 +297,6 @@
     // --- 1. DETECTOR DE EVENTOS (RECUPERACIÓN) ---
     _supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === "PASSWORD_RECOVERY") {
-            // MOSTRAR MODAL EN VEZ DE PROMPT
             openResetModal();
         }
     });
@@ -325,7 +324,7 @@
         await loadData();
     }
 
-    // --- 3. LÓGICA MODAL (NUEVO) ---
+    // --- 3. LÓGICA MODAL ---
     function openResetModal() {
         document.getElementById('recovery-modal').style.display = 'flex';
         document.getElementById('new-password-input').focus();
@@ -345,13 +344,12 @@
             alert("Error: " + error.message);
         } else {
             alert("Password updated successfully! Please log in with your new credentials.");
-            // REDIRIGIR AL LOGIN
             await _supabase.auth.signOut();
             window.location.href = 'index.html';
         }
     }
 
-    // --- 4. NAVEGACIÓN ---
+    // --- 4. NAVEGACIÓN CON FILTRO (ACTUALIZADO) ---
     function openMode(modeName) {
         document.getElementById('menu-view').style.display = 'none';
         document.getElementById('home-intro').style.display = 'none';
@@ -360,11 +358,25 @@
         const titleText = document.getElementById('mode-title-text');
         const icon = document.getElementById('mode-icon');
 
-        titleText.innerText = modeName;
-        icon.innerText = modeName === 'Simulation Mode' ? '⏱️' : '🧠';
+        // Definimos qué estamos buscando en la base de datos
+        let filterType = '';
+
+        if (modeName === 'Simulation Mode') {
+            titleText.innerText = 'Simulation Mode';
+            icon.innerText = '⏱️';
+            filterType = 'simulation'; // Filtra por 'simulation'
+        } else {
+            titleText.innerText = 'Single Questions';
+            icon.innerText = '🧠';
+            filterType = 'single'; // Filtra por 'single'
+        }
         
+        // FILTRADO: Solo mostramos los quizzes que coincidan con el tipo seleccionado
+        // Si en la BD no existe la columna 'tipo' o está vacía, esto devolverá lista vacía
+        const filteredList = allQuizzes.filter(quiz => quiz.tipo === filterType);
+
         listView.style.display = 'block';
-        renderQuizzes(allQuizzes); 
+        renderQuizzes(filteredList); 
     }
 
     function goHome() {
@@ -402,7 +414,7 @@
         container.innerHTML = ''; 
 
         if (list.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:#999;">No quizzes found.</div>';
+            container.innerHTML = '<div style="text-align:center; color:#999; margin-top:20px;">No quizzes found in this section yet.</div>';
             return;
         }
 
@@ -447,7 +459,11 @@
 
     function filterQuizzes() {
         const query = document.getElementById('search-bar').value.toLowerCase();
-        if (!query) { renderQuizzes(allQuizzes); return; }
+        // Nota: Al buscar, filtramos sobre allQuizzes o sobre la lista actual.
+        // Para simplificar, buscamos en todo, pero si quieres mantener el filtro de modo, es más complejo.
+        // Por ahora busca en todo:
+        if (!query) { return; } 
+        
         const filtered = allQuizzes.filter(q => q.titulo_quiz.toLowerCase().includes(query) || q.materia.toLowerCase().includes(query));
         renderQuizzes(filtered);
         document.querySelectorAll('.module-card').forEach(card => card.classList.add('open'));
