@@ -14,6 +14,8 @@
         --border-color: #e5e7eb;
         --text-muted: #6b7280;
         --success: #10b981;
+        --warning-bg: #fff3cd;
+        --warning-text: #856404;
     }
 
     body {
@@ -61,26 +63,21 @@
         align-items: center;
     }
 
-    /* BOTÓN STATS (NUEVO) */
-    .btn-stats {
+    /* Botón Stats Superior */
+    .btn-stats-top {
         background: transparent;
         border: 1px solid var(--primary-color);
         color: var(--primary-color);
-        padding: 6px 14px;
+        padding: 6px 12px;
         font-size: 0.8em;
         font-weight: 700;
         cursor: pointer;
         border-radius: 6px;
         text-decoration: none;
+        display: flex; align-items: center; gap: 5px;
         transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 5px;
     }
-    .btn-stats:hover {
-        background-color: var(--primary-color);
-        color: var(--primary-dark);
-    }
+    .btn-stats-top:hover { background-color: var(--primary-color); color: var(--primary-dark); }
 
     .btn-pass {
         background: rgba(255,255,255,0.1);
@@ -108,6 +105,25 @@
     }
     .btn-logout:hover { background: rgba(255, 107, 107, 0.1); }
 
+    /* --- AVISO DE CONTRASEÑA (NUEVO) --- */
+    .password-alert {
+        background-color: var(--warning-bg);
+        color: var(--warning-text);
+        padding: 15px;
+        text-align: center;
+        font-size: 0.95em;
+        border-bottom: 1px solid #ffeeba;
+        display: none; /* Se muestra solo si es recovery */
+        animation: slideDown 0.5s ease;
+    }
+    @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .alert-link {
+        font-weight: 800;
+        text-decoration: underline;
+        cursor: pointer;
+        color: #533f03;
+    }
 
     /* --- 4. CONTENIDO --- */
     .content-container {
@@ -122,13 +138,19 @@
     .welcome-sub { color: var(--text-muted); font-size: 1em; }
 
     /* --- 5. MENÚ DE TARJETAS --- */
+    .menu-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        width: 100%;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
     .menu-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 20px;
-        max-width: 700px;
-        margin: 0 auto;
-        width: 100%;
     }
 
     .menu-card {
@@ -141,6 +163,8 @@
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         position: relative;
         overflow: hidden;
+        text-decoration: none;
+        color: inherit;
     }
 
     .menu-card:hover {
@@ -153,21 +177,30 @@
     .menu-card .title { font-size: 1.2em; font-weight: 800; display: block; margin-bottom: 8px; }
     .menu-card .desc { font-size: 0.9em; color: var(--text-muted); line-height: 1.4; }
 
+    /* TARJETA PEQUEÑA DE STATS (NUEVO) */
+    .stats-card-row {
+        display: flex;
+        justify-content: center;
+    }
+    .menu-card.small {
+        padding: 15px 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        width: auto;
+        min-width: 200px;
+    }
+    .menu-card.small .icon { font-size: 1.5em; margin-bottom: 0; }
+    .menu-card.small .title { font-size: 1em; margin-bottom: 0; }
+
     /* --- 6. VISTA DE LISTA --- */
     .list-view-wrapper { display: none; animation: slideIn 0.3s ease-out; }
-
-    @keyframes slideIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
     .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #f3f4f6;
-        padding-bottom: 15px;
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 15px;
     }
     .current-mode-title { font-size: 1.2em; font-weight: 700; color: var(--primary-dark); display: flex; align-items: center; gap: 10px; }
 
@@ -227,13 +260,13 @@
     }
 
     @media (max-width: 600px) {
-        .menu-grid { grid-template-columns: 1fr; max-width: 320px; }
+        .menu-grid { grid-template-columns: 1fr; }
         .content-container { padding: 20px; }
         .menu-card { padding: 30px 20px; display: flex; align-items: center; text-align: left; gap: 20px; }
         .menu-card .icon { margin-bottom: 0; font-size: 2.5em; }
         .welcome-title { font-size: 1.4em; }
         .header-actions { gap: 5px; }
-        .btn-stats, .btn-pass, .btn-logout { font-size: 0.7em; padding: 6px 10px; }
+        .btn-stats-top, .btn-pass, .btn-logout { font-size: 0.7em; padding: 6px 10px; }
     }
 </style>
 </head>
@@ -243,11 +276,15 @@
     <div class="brand-header">
         <span>INBDE Pro</span>
         <div class="header-actions">
-            <a href="stats.html" class="btn-stats">📊 Stats</a>
-            
+            <a href="stats.html" class="btn-stats-top">📊 Stats</a>
             <button class="btn-pass" onclick="openResetModal()">🔑 Password</button>
             <button class="btn-logout" onclick="logout()">Sign Out</button>
         </div>
+    </div>
+
+    <div id="password-alert" class="password-alert">
+        ⚠️ <strong>Action Required:</strong> You are using a temporary access link. 
+        <span class="alert-link" onclick="openResetModal()">Click here to set your permanent password</span> so you don't lose access.
     </div>
 
     <div class="content-container">
@@ -256,22 +293,33 @@
             <div class="welcome-sub">Choose your practice mode</div>
         </div>
 
-        <div id="menu-view" class="menu-grid">
-            <div class="menu-card" onclick="openMode('Simulation Mode')">
-                <span class="icon">⏱️</span>
-                <div>
-                    <span class="title">Simulation</span>
-                    <span class="desc">Timed exams tailored to simulate the real test environment.</span>
-                </div>
-            </div>
+        <div id="menu-view" class="menu-container">
             
-            <div class="menu-card" onclick="openMode('Single Questions')">
-                <span class="icon">🧠</span>
-                <div>
-                    <span class="title">Single Questions</span>
-                    <span class="desc">Practice specific topics at your own pace with instant feedback.</span>
+            <div class="menu-grid">
+                <div class="menu-card" onclick="openMode('Simulation Mode')">
+                    <span class="icon">⏱️</span>
+                    <div>
+                        <span class="title">Simulation</span>
+                        <span class="desc">Timed exams tailored to simulate the real test environment.</span>
+                    </div>
+                </div>
+                
+                <div class="menu-card" onclick="openMode('Single Questions')">
+                    <span class="icon">🧠</span>
+                    <div>
+                        <span class="title">Single Questions</span>
+                        <span class="desc">Practice specific topics at your own pace with instant feedback.</span>
+                    </div>
                 </div>
             </div>
+
+            <div class="stats-card-row">
+                <a href="stats.html" class="menu-card small">
+                    <span class="icon">📊</span>
+                    <span class="title">View Statistics</span>
+                </a>
+            </div>
+
         </div>
 
         <div id="list-view" class="list-view-wrapper">
@@ -299,12 +347,12 @@
 
 <div id="recovery-modal" class="modal-overlay">
     <div class="modal-card">
-        <div class="modal-title">Set New Password</div>
-        <p style="color:#666; margin-bottom:20px;">Please create a secure password to access your account.</p>
+        <div class="modal-title">Set Permanent Password</div>
+        <p style="color:#666; margin-bottom:20px;">Create a secure password to ensure you can log in next time.</p>
         
         <input type="password" id="new-password-input" class="input-pass" placeholder="New Password (min 6 chars)">
         
-        <button class="btn-save" onclick="saveNewPassword()">Save & Login</button>
+        <button class="btn-save" onclick="saveNewPassword()">Save & Re-Login</button>
         
         <button onclick="document.getElementById('recovery-modal').style.display='none'" style="background:none; border:none; color:#999; margin-top:15px; cursor:pointer;">Cancel</button>
     </div>
@@ -321,26 +369,29 @@
     let userCompletedIds = new Set();
     let currentUser = null;
 
-    // --- 1. DETECTOR DE EVENTOS (RECUPERACIÓN) ---
+    // --- 1. DETECTOR DE EVENTOS ---
     _supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === "PASSWORD_RECOVERY") {
-            openResetModal();
+            showRecoveryAlert();
         }
     });
 
     // --- 2. INICIALIZACIÓN ---
     async function initApp() {
+        // Detectar si viene de recuperación por URL
         const urlParams = new URLSearchParams(window.location.search);
         const isRecovery = urlParams.get('recovery') === 'true';
 
         if (isRecovery) {
+            // Limpiar URL
             window.history.replaceState({}, document.title, "dashboard.html");
-            setTimeout(() => { openResetModal(); }, 500);
+            showRecoveryAlert();
         }
 
         const { data: { session } } = await _supabase.auth.getSession();
         if (!session) {
-            window.location.href = 'index.html';
+            // Corrección 404: Usar path relativo seguro
+            window.location.href = './index.html';
             return;
         }
         currentUser = session.user;
@@ -349,6 +400,14 @@
         document.getElementById('user-name').innerText = displayName;
         
         await loadData();
+    }
+
+    // --- NUEVO: MOSTRAR AVISO Y MODAL ---
+    function showRecoveryAlert() {
+        // 1. Mostrar la barra amarilla de aviso
+        document.getElementById('password-alert').style.display = 'block';
+        // 2. Abrir el modal automáticamente (opcional, pero recomendado)
+        setTimeout(() => { openResetModal(); }, 500);
     }
 
     // --- 3. LÓGICA MODAL ---
@@ -372,7 +431,8 @@
         } else {
             alert("Password updated successfully! Please log in with your new credentials.");
             await _supabase.auth.signOut();
-            window.location.href = 'index.html';
+            // Corrección 404:
+            window.location.href = './index.html';
         }
     }
 
@@ -385,7 +445,6 @@
         const titleText = document.getElementById('mode-title-text');
         const icon = document.getElementById('mode-icon');
 
-        // Definimos qué estamos buscando en la base de datos
         let filterType = '';
 
         if (modeName === 'Simulation Mode') {
@@ -398,16 +457,15 @@
             filterType = 'single'; 
         }
         
-        // FILTRADO: Solo mostramos los quizzes que coincidan con el tipo seleccionado
         const filteredList = allQuizzes.filter(quiz => quiz.tipo === filterType);
-
         listView.style.display = 'block';
         renderQuizzes(filteredList); 
     }
 
     function goHome() {
         document.getElementById('list-view').style.display = 'none';
-        document.getElementById('menu-view').style.display = 'grid'; 
+        // IMPORTANTE: display flex para el contenedor nuevo, no grid
+        document.getElementById('menu-view').style.display = 'flex'; 
         document.getElementById('home-intro').style.display = 'block';
         document.getElementById('search-bar').value = '';
         renderQuizzes(allQuizzes);
@@ -494,7 +552,8 @@
     // --- 7. SALIR ---
     async function logout() {
         await _supabase.auth.signOut();
-        window.location.href = 'index.html';
+        // Corrección 404: Usar ./ para asegurar ruta relativa
+        window.location.href = './index.html';
     }
 </script>
 </body>
