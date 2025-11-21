@@ -58,7 +58,42 @@
     .header-actions {
         display: flex;
         gap: 10px;
+        align-items: center;
     }
+
+    /* BOTÓN STATS (NUEVO) */
+    .btn-stats {
+        background: transparent;
+        border: 1px solid var(--primary-color);
+        color: var(--primary-color);
+        padding: 6px 14px;
+        font-size: 0.8em;
+        font-weight: 700;
+        cursor: pointer;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .btn-stats:hover {
+        background-color: var(--primary-color);
+        color: var(--primary-dark);
+    }
+
+    .btn-pass {
+        background: rgba(255,255,255,0.1);
+        border: none;
+        color: #fff;
+        padding: 6px 12px;
+        font-size: 0.8em;
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+    .btn-pass:hover { background: rgba(255, 255, 255, 0.2); }
 
     .btn-logout {
         background: rgba(255,255,255,0.1);
@@ -73,18 +108,6 @@
     }
     .btn-logout:hover { background: rgba(255, 107, 107, 0.1); }
 
-    .btn-pass {
-        background: rgba(255,255,255,0.1);
-        border: none;
-        color: var(--primary-color);
-        padding: 6px 12px;
-        font-size: 0.8em;
-        font-weight: 600;
-        cursor: pointer;
-        border-radius: 6px;
-        transition: all 0.2s;
-    }
-    .btn-pass:hover { background: rgba(255, 255, 255, 0.2); }
 
     /* --- 4. CONTENIDO --- */
     .content-container {
@@ -209,6 +232,8 @@
         .menu-card { padding: 30px 20px; display: flex; align-items: center; text-align: left; gap: 20px; }
         .menu-card .icon { margin-bottom: 0; font-size: 2.5em; }
         .welcome-title { font-size: 1.4em; }
+        .header-actions { gap: 5px; }
+        .btn-stats, .btn-pass, .btn-logout { font-size: 0.7em; padding: 6px 10px; }
     }
 </style>
 </head>
@@ -218,6 +243,8 @@
     <div class="brand-header">
         <span>INBDE Pro</span>
         <div class="header-actions">
+            <a href="stats.html" class="btn-stats">📊 Stats</a>
+            
             <button class="btn-pass" onclick="openResetModal()">🔑 Password</button>
             <button class="btn-logout" onclick="logout()">Sign Out</button>
         </div>
@@ -349,7 +376,7 @@
         }
     }
 
-    // --- 4. NAVEGACIÓN CON FILTRO (ACTUALIZADO) ---
+    // --- 4. NAVEGACIÓN CON FILTRO ---
     function openMode(modeName) {
         document.getElementById('menu-view').style.display = 'none';
         document.getElementById('home-intro').style.display = 'none';
@@ -364,15 +391,14 @@
         if (modeName === 'Simulation Mode') {
             titleText.innerText = 'Simulation Mode';
             icon.innerText = '⏱️';
-            filterType = 'simulation'; // Filtra por 'simulation'
+            filterType = 'simulation'; 
         } else {
             titleText.innerText = 'Single Questions';
             icon.innerText = '🧠';
-            filterType = 'single'; // Filtra por 'single'
+            filterType = 'single'; 
         }
         
         // FILTRADO: Solo mostramos los quizzes que coincidan con el tipo seleccionado
-        // Si en la BD no existe la columna 'tipo' o está vacía, esto devolverá lista vacía
         const filteredList = allQuizzes.filter(quiz => quiz.tipo === filterType);
 
         listView.style.display = 'block';
@@ -459,11 +485,7 @@
 
     function filterQuizzes() {
         const query = document.getElementById('search-bar').value.toLowerCase();
-        // Nota: Al buscar, filtramos sobre allQuizzes o sobre la lista actual.
-        // Para simplificar, buscamos en todo, pero si quieres mantener el filtro de modo, es más complejo.
-        // Por ahora busca en todo:
         if (!query) { return; } 
-        
         const filtered = allQuizzes.filter(q => q.titulo_quiz.toLowerCase().includes(query) || q.materia.toLowerCase().includes(query));
         renderQuizzes(filtered);
         document.querySelectorAll('.module-card').forEach(card => card.classList.add('open'));
