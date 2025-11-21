@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>INBDE Pro - Login</title>
+<title>INBDE Pro - Access</title>
 <style>
     :root {
         --primary-color: #fcdc11;
@@ -18,15 +18,16 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
+        min-height: 100vh;
         margin: 0;
+        padding: 20px;
     }
 
-    .login-card {
+    .auth-card {
         background: white;
         padding: 40px;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
         width: 100%;
         max-width: 400px;
         text-align: center;
@@ -40,154 +41,149 @@
         margin-bottom: 10px;
     }
 
-    .brand-subtitle {
-        color: #666;
-        margin-bottom: 30px;
-    }
+    .form-view { display: none; animation: fadeIn 0.3s ease; }
+    .form-view.active { display: block; }
+    
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    .input-group {
-        margin-bottom: 15px;
-        text-align: left;
-    }
-
-    .input-group label {
-        display: block;
-        font-size: 0.9em;
-        font-weight: 600;
-        margin-bottom: 5px;
-        color: var(--primary-dark);
-    }
-
+    .input-group { margin-bottom: 15px; text-align: left; }
+    .input-group label { display: block; font-size: 0.9em; font-weight: 600; margin-bottom: 5px; color: #444; }
+    
     input {
-        width: 100%;
-        padding: 12px;
-        border: 2px solid var(--border-color);
-        border-radius: 8px;
-        font-size: 1em;
-        box-sizing: border-box; /* Importante para que no se salga */
+        width: 100%; padding: 12px; border: 2px solid var(--border-color);
+        border-radius: 8px; font-size: 1em; box-sizing: border-box;
+        transition: border-color 0.2s;
     }
+    input:focus { border-color: var(--primary-color); outline: none; }
 
-    input:focus {
-        border-color: var(--primary-color);
-        outline: none;
+    .btn-main {
+        width: 100%; background-color: var(--primary-color); color: var(--primary-dark);
+        font-weight: 800; padding: 15px; border: none; border-radius: 8px;
+        cursor: pointer; font-size: 1em; margin-top: 10px; transition: transform 0.1s;
     }
+    .btn-main:hover { transform: scale(1.02); }
+    .btn-main:disabled { background-color: #ddd; cursor: wait; }
 
-    .btn-login {
-        width: 100%;
-        background-color: var(--primary-color);
-        color: var(--primary-dark);
-        font-weight: 800;
-        padding: 15px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 1em;
-        margin-top: 10px;
-        transition: transform 0.1s;
+    .switch-link {
+        margin-top: 20px; font-size: 0.9em; color: #666;
+    }
+    .switch-link span {
+        color: var(--primary-dark); font-weight: 700; cursor: pointer; text-decoration: underline;
     }
     
-    .btn-login:hover { transform: scale(1.02); }
-    .btn-login:disabled { background-color: #ccc; cursor: not-allowed; }
-
-    .error-msg {
-        color: #ef4444;
-        font-size: 0.9em;
-        margin-top: 15px;
-        display: none;
+    .msg-box {
+        padding: 10px; border-radius: 6px; font-size: 0.9em; margin-top: 15px; display: none;
     }
+    .msg-error { background: #fee2e2; color: #ef4444; }
+    .msg-success { background: #dcfce7; color: #166534; }
+
 </style>
 </head>
 <body>
 
-<div class="login-card">
+<div class="auth-card">
     <div class="brand-title">INBDE Pro</div>
-    <div class="brand-subtitle">Sign in to continue your preparation</div>
-
-    <div class="input-group">
-        <label>Email</label>
-        <input type="email" id="email" placeholder="doctor@example.com">
-    </div>
-
-    <div class="input-group">
-        <label>Password</label>
-        <input type="password" id="password" placeholder="••••••••">
-    </div>
-
-    <button class="btn-login" onclick="handleLogin()" id="login-btn">Sign In</button>
     
-    <div id="error-message" class="error-msg"></div>
+    <div id="view-login" class="form-view active">
+        <p style="color:#666; margin-bottom:20px;">Student Access Portal</p>
+        
+        <div class="input-group">
+            <label>Email</label>
+            <input type="email" id="login-email" placeholder="student@university.edu">
+        </div>
+        <div class="input-group">
+            <div style="display:flex; justify-content:space-between;">
+                <label>Password</label>
+                <label style="color:#666; font-weight:400; cursor:pointer; font-size:0.8em;" onclick="switchView('forgot')">Forgot Password?</label>
+            </div>
+            <input type="password" id="login-password">
+        </div>
+
+        <button class="btn-main" onclick="handleLogin()" id="btn-login">Sign In</button>
+    </div>
+
+    <div id="view-forgot" class="form-view">
+        <p style="color:#666; margin-bottom:20px;">We'll send you a recovery link.</p>
+        
+        <div class="input-group">
+            <label>Enter your registered email</label>
+            <input type="email" id="reset-email">
+        </div>
+
+        <button class="btn-main" onclick="handleReset()" id="btn-reset">Send Recovery Link</button>
+        
+        <div class="switch-link">
+            <span onclick="switchView('login')">⬅ Back to Login</span>
+        </div>
+    </div>
+
+    <div id="msg-box" class="msg-box"></div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // 1. CONFIGURACIÓN
     const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
-    
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 2. FUNCIÓN DE LOGIN
+    function switchView(viewName) {
+        hideMsg();
+        document.querySelectorAll('.form-view').forEach(el => el.classList.remove('active'));
+        document.getElementById(`view-${viewName}`).classList.add('active');
+    }
+
+    // --- LOGIN ---
     async function handleLogin() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const btn = document.getElementById('login-btn');
-        const errorDiv = document.getElementById('error-message');
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-password').value;
+        const btn = document.getElementById('btn-login');
 
-        // Validar campos vacíos
-        if (!email || !password) {
-            showError("Please fill in all fields");
-            return;
-        }
+        if(!email || !pass) return showMsg('Please fill all fields', 'error');
 
-        // UI Loading
-        btn.innerText = "Signing in...";
-        btn.disabled = true;
-        errorDiv.style.display = 'none';
+        btn.innerText = 'Checking...'; btn.disabled = true;
 
-        try {
-            // INTENTO DE LOGIN CON SUPABASE
-            const { data, error } = await _supabase.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
+        const { data, error } = await _supabase.auth.signInWithPassword({ email, password: pass });
 
-            if (error) throw error;
-
-            // SI ES EXITOSO
-            console.log("Login success:", data);
-            // Guardar un backup en localStorage por compatibilidad (opcional)
-            localStorage.setItem('quiz_username', email); 
-            // Redirigir
+        if (error) {
+            showMsg('Incorrect email or password.', 'error');
+            btn.innerText = 'Sign In'; btn.disabled = false;
+        } else {
             window.location.href = 'dashboard.html';
-
-        } catch (err) {
-            // SI HAY ERROR
-            console.error("Login error:", err.message);
-            showError(translateError(err.message));
-            btn.innerText = "Sign In";
-            btn.disabled = false;
         }
     }
 
-    function showError(msg) {
-        const el = document.getElementById('error-message');
-        el.innerText = msg;
-        el.style.display = 'block';
+    // --- RECUPERAR CONTRASEÑA ---
+    async function handleReset() {
+        const email = document.getElementById('reset-email').value;
+        const btn = document.getElementById('btn-reset');
+
+        if(!email) return showMsg('Please enter your email', 'error');
+
+        btn.innerText = 'Sending...'; btn.disabled = true;
+
+        // URL de redirección
+        const redirectUrl = 'https://carloslplorusso.github.io/dashboard.html'; 
+
+        const { data, error } = await _supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: redirectUrl,
+        });
+
+        // Por seguridad, Supabase no dice si el email existe o no para evitar hackers
+        showMsg('If the email exists, we sent a recovery link.', 'success');
+        btn.innerText = 'Sent ✓';
     }
 
-    function translateError(msg) {
-        if (msg.includes("Invalid login credentials")) return "Incorrect email or password.";
-        if (msg.includes("Email not confirmed")) return "Please confirm your email address before logging in.";
-        return msg;
+    function showMsg(text, type) {
+        const box = document.getElementById('msg-box');
+        box.innerText = text;
+        box.className = `msg-box msg-${type}`;
+        box.style.display = 'block';
     }
-
-    // Permitir login con tecla Enter
-    document.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            handleLogin();
-        }
-    });
+    function hideMsg() {
+        document.getElementById('msg-box').style.display = 'none';
+    }
 </script>
 
 </body>
