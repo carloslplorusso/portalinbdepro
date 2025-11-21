@@ -507,6 +507,9 @@
         
         saveDataSupabase(pct, userScore, questions.length);
 
+            // --- NUEVA LÍNEA AGREGADA ---
+    marcarExamenComoCompletado(); 
+
         const list = document.getElementById('review-list');
         list.innerHTML = '';
         userAnswers.forEach((ans, i) => {
@@ -553,6 +556,49 @@
         if(savedUser) document.getElementById('username-input').value = savedUser;
         showView('welcome-view');
     };
+        // --- PEGAR ESTO EN LA LÍNEA 556 ---
+
+    // 1. Configuración de Supabase (Necesaria porque estamos en otro archivo)
+    const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
+    
+    // Asegúrate de que la librería de supabase esté cargada en el <head>, si no, esto fallará.
+    // Si ya definiste _supabase arriba en este archivo, borra esta línea:
+    const _supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+    async function marcarExamenComoCompletado() {
+        if (!_supabase) {
+            console.error("Supabase no está cargado. Asegúrate de poner el script en el HTML.");
+            return;
+        }
+
+        // 1. Obtener ID del quiz de la URL (ej: quiz.html?quiz_id=15)
+        const urlParams = new URLSearchParams(window.location.search);
+        const quizId = urlParams.get('quiz_id');
+
+        // 2. Obtener usuario actual
+        const { data: { session } } = await _supabase.auth.getSession();
+
+        if (session && quizId) {
+            console.log("Guardando progreso para usuario:", session.user.email);
+            
+            // 3. Guardar en la tabla user_progress
+            const { error } = await _supabase.from('user_progress').insert([
+                { user_id: session.user.id, quiz_id: quizId }
+            ]);
+
+            if (!error) {
+                alert("¡Felicidades! Examen guardado como completado.");
+                // Opcional: Redirigir al dashboard
+                 window.location.href = 'dashboard.html'; 
+            } else {
+                console.error("Error guardando:", error);
+            }
+        } else {
+            console.log("No se pudo guardar: Falta sesión o ID del quiz en la URL");
+        }
+    }
+
 </script>
 
 </body>
