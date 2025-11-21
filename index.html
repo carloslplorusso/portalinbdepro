@@ -88,9 +88,9 @@
     _supabase.auth.onAuthStateChange((event, session) => {
         if (session) {
             if (event === "PASSWORD_RECOVERY") {
-                window.location.href = 'dashboard.html?recovery=true';
+                window.location.href = './dashboard.html?recovery=true';
             } else {
-                window.location.href = 'dashboard.html';
+                window.location.href = './dashboard.html';
             }
         }
     });
@@ -106,13 +106,19 @@
         const email = document.getElementById('login-email').value;
         const pass = document.getElementById('login-password').value;
         const btn = document.getElementById('btn-login');
+
         if(!email || !pass) return showMsg('Please fill all fields', 'error');
+
         btn.innerText = 'Checking...'; btn.disabled = true;
         
         const { data, error } = await _supabase.auth.signInWithPassword({ email, password: pass });
+
         if (error) {
             showMsg('Incorrect email or password.', 'error');
             btn.innerText = 'Sign In'; btn.disabled = false;
+        } else {
+            // ¡AQUÍ FALTABA LA REDIRECCIÓN!
+            window.location.href = './dashboard.html';
         }
     }
 
@@ -121,7 +127,7 @@
         const { data, error } = await _supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                // AQUI ESTÁ LA CORRECCIÓN CLAVE: Añadí /portalinbdepro/
+                // Redirige a la raíz para que el script de arriba haga el trabajo
                 redirectTo: 'https://carloslplorusso.github.io/portalinbdepro/' 
             }
         });
@@ -136,7 +142,7 @@
         btn.innerText = 'Sending...'; btn.disabled = true;
 
         const { data, error } = await _supabase.auth.resetPasswordForEmail(email, {
-            // AQUI ESTÁ LA OTRA CORRECCIÓN: Añadí /portalinbdepro/
+            // Redirige a la raíz del proyecto
             redirectTo: 'https://carloslplorusso.github.io/portalinbdepro/', 
         });
 
