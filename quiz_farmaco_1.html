@@ -3,120 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>INBDE Pro - Pharmacology Quiz 1</title>
+<title>INBDE Pro - Oral Pathology Quiz</title>
 <style>
-    /* --- CSS VARIABLES --- */
-    :root {
-        --primary-color: #fcdc11; --primary-dark: #121212; --light-bg: #f3f4f6;
-        --white: #ffffff; --border-color: #e5e7eb; --correct-bg: #e6fcf5;
-        --correct-border: #22c55e; --correct-text: #15803d; --incorrect-bg: #fff5f5;
-        --incorrect-border: #ef4444; --incorrect-text: #b91c1c; --text-muted: #6b7280;
-    }
-
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        background-color: var(--light-bg); color: var(--primary-dark);
-        margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh;
-        box-sizing: border-box;
-    }
-
-    .quiz-wrapper {
-        display: flex; flex-direction: column; width: 1200px; max-width: 100%;
-        background-color: var(--white); box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color);
-        position: relative; min-height: 80vh;
-    }
-
-    /* HEADER */
-    .brand-header {
-        background-color: var(--primary-dark); color: var(--primary-color);
-        padding: 15px 20px; font-weight: 800; font-size: 1.1em;
-        border-bottom: 4px solid var(--primary-color);
-        display: flex; justify-content: space-between; align-items: center;
-        flex-wrap: wrap; gap: 10px;
-    }
-
+    :root { --primary-color: #fcdc11; --primary-dark: #121212; --light-bg: #f3f4f6; --white: #ffffff; --border-color: #e5e7eb; --correct-bg: #e6fcf5; --correct-border: #22c55e; --correct-text: #15803d; --incorrect-bg: #fff5f5; --incorrect-border: #ef4444; --incorrect-text: #b91c1c; --text-muted: #6b7280; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--light-bg); color: var(--primary-dark); margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh; box-sizing: border-box; }
+    .quiz-wrapper { display: flex; flex-direction: column; width: 1200px; max-width: 100%; background-color: var(--white); box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); position: relative; min-height: 80vh; }
+    .brand-header { background-color: var(--primary-dark); color: var(--primary-color); padding: 15px 20px; font-weight: 800; font-size: 1.1em; border-bottom: 4px solid var(--primary-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     .header-right { display: flex; align-items: center; gap: 15px; font-size: 0.9em; color: white; }
     .timer-box { background: rgba(255,255,255,0.15); padding: 5px 10px; border-radius: 4px; font-family: monospace; font-weight: 700; letter-spacing: 1px; }
     .question-counter { color: var(--white); font-weight: 600; }
     .btn-stats-link { background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); padding: 5px 10px; font-size: 0.8em; font-weight: 700; cursor: pointer; border-radius: 4px; text-decoration: none; text-transform: uppercase; transition: background 0.2s; }
     .btn-stats-link:hover { background-color: rgba(252, 220, 17, 0.2); }
-
-    /* VISTAS */
     .view-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; flex: 1; overflow-y: auto; }
-    #welcome-view { display: flex; } 
-    #quiz-view { display: none; flex-direction: row; flex: 1; overflow: hidden; } 
-    #results-view { display: none; }
-
-    /* SIDEBAR & MAIN */
+    #welcome-view { display: flex; } #quiz-view { display: none; flex-direction: row; flex: 1; overflow: hidden; } #results-view { display: none; }
     .sidebar { width: 300px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; background-color: #fafafa; overflow-y: auto; }
     .main-content { flex: 1; padding: 30px; display: flex; flex-direction: column; overflow-y: auto; background: var(--white); }
-
-    /* WELCOME */
     .welcome-title { font-size: 2.5em; margin-bottom: 10px; line-height: 1.2; }
     .welcome-subtitle { font-size: 1.2em; color: var(--text-muted); margin-bottom: 30px; }
     .info-pill { background: #f3f4f6; padding: 8px 20px; border-radius: 30px; font-weight: 600; border: 1px solid var(--border-color); display: inline-block; margin: 5px; }
-    .user-input { padding: 12px; width: 100%; max-width: 300px; font-size: 1em; border: 2px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; text-align: center; }
     .btn-start { background-color: var(--primary-color); color: var(--primary-dark); padding: 14px 40px; font-size: 1.2em; font-weight: 800; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 0 rgba(0,0,0,0.2); transition: transform 0.1s; }
     .btn-start:hover { transform: translateY(-2px); }
-
-    /* QUIZ COMPONENTS */
     .toggle-buttons { padding: 10px; display: flex; gap: 10px; justify-content: center; border-bottom: 1px solid var(--border-color); background: #fff; }
     .btn-toggle { background: var(--white); border: 1px solid var(--primary-dark); padding: 6px 12px; font-weight: 700; cursor: pointer; font-size: 0.8em; }
     .btn-toggle:hover:not(.disabled-btn) { background-color: var(--primary-color); }
     .btn-toggle.disabled-btn { opacity: 0.3; cursor: not-allowed; }
-
     .info-block { border-bottom: 1px solid var(--border-color); }
     .info-header { background-color: #e5e7eb; padding: 8px 15px; font-weight: 700; font-size: 0.85em; text-transform: uppercase; }
     .info-content { padding: 15px; font-size: 0.95em; line-height: 1.5; color: #333; }
-
     .scoreboard { display: flex; flex-wrap: wrap; gap: 15px; background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 15px; margin-bottom: 20px; font-weight: 600; font-size: 0.9em; }
     .score-item { display: flex; align-items: center; gap: 6px; }
     .dot { width: 10px; height: 10px; border-radius: 50%; }
     .dot.gray { background: #ccc; } .dot.green { background: #22c55e; } .dot.red { background: #ef4444; }
-
     .question-text { font-size: 1.2em; font-weight: 600; margin-bottom: 20px; line-height: 1.5; }
     .options-list { display: flex; flex-direction: column; gap: 10px; }
     .option { display: flex; align-items: center; padding: 15px; border: 2px solid var(--border-color); border-radius: 8px; cursor: pointer; font-size: 1em; transition: all 0.2s; background: white; }
     .option:hover:not(.disabled) { border-color: var(--primary-dark); background-color: #fffce0; }
     .option-circle { height: 24px; width: 24px; min-width: 24px; border-radius: 50%; border: 2px solid #9ca3af; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: white; }
-    
     .option.correct-answer { background-color: var(--correct-bg); border-color: var(--correct-border); color: var(--correct-text); font-weight: 600; }
     .option.correct-answer .option-circle { border-color: var(--correct-border); background-color: var(--correct-border); content: "✓"; }
     .option.wrong-answer { background-color: var(--incorrect-bg); border-color: var(--incorrect-border); color: var(--incorrect-text); }
     .option.wrong-answer .option-circle { border-color: var(--incorrect-border); background-color: var(--incorrect-border); }
     .option.disabled { pointer-events: none; opacity: 0.8; }
-
     .feedback-message { margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: 700; text-align: center; display: none; }
     .feedback-message.success { background: var(--correct-bg); color: var(--correct-text); border: 1px solid var(--correct-border); }
     .feedback-message.error { background: var(--incorrect-bg); color: var(--incorrect-text); border: 1px solid var(--incorrect-border); }
     .time-badge { display: block; font-size: 0.8em; font-weight: 400; margin-top: 5px; opacity: 0.8; }
-
     .btn-next { background-color: var(--primary-dark); color: var(--primary-color); padding: 12px 30px; border: none; border-radius: 6px; font-size: 1em; font-weight: 700; cursor: pointer; margin-top: 20px; display: none; width: 100%; }
-
-    /* RESULTS */
     .score-card { background-color: var(--primary-dark); color: var(--white); padding: 30px; border-radius: 12px; width: 100%; max-width: 400px; margin-bottom: 20px; }
     .score-number { font-size: 4em; font-weight: 900; color: var(--primary-color); display: block; margin: 10px 0; }
-    .final-time-value { font-family: monospace; font-size: 1.4em; font-weight: bold; }
     .review-list { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 15px; }
     .review-item { border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; background: #fff; }
     .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; text-transform: uppercase; }
     .badge.correct { background: var(--correct-bg); color: var(--correct-text); }
     .badge.incorrect { background: var(--incorrect-bg); color: var(--incorrect-text); }
     .explanation-box { display: none; margin-top: 10px; padding: 10px; background: #f8f9fa; border-left: 4px solid var(--primary-color); font-size: 0.9em; }
-
-    /* RESPONSIVE */
-    @media (max-width: 768px) {
-        body { padding: 0; }
-        .quiz-wrapper { border-radius: 0; border: none; height: 100vh; }
-        #quiz-view { flex-direction: column; }
-        .sidebar { width: 100%; height: auto; max-height: 35vh; border-right: none; border-bottom: 2px solid var(--primary-color); }
-        .main-content { padding: 20px; }
-        .brand-header { padding: 10px 15px; font-size: 0.9em; }
-        .btn-start { width: 100%; padding: 15px; }
-    }
-    
-    /* MODAL */
+    @media (max-width: 768px) { body { padding: 0; } .quiz-wrapper { border-radius: 0; border: none; height: 100vh; } #quiz-view { flex-direction: column; } .sidebar { width: 100%; height: auto; max-height: 35vh; border-right: none; border-bottom: 2px solid var(--primary-color); } .main-content { padding: 20px; } .brand-header { padding: 10px 15px; font-size: 0.9em; } .btn-start { width: 100%; padding: 15px; } }
     .modal-overlay { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
     .modal-content img { max-width: 95vw; max-height: 80vh; border: 2px solid #fff; border-radius: 4px; }
     .close-btn { position: absolute; top: 20px; right: 20px; color: #fff; font-size: 40px; cursor: pointer; }
@@ -127,21 +68,20 @@
 
 <div class="quiz-wrapper">
     <div class="brand-header">
-        <span class="header-left">INBDE Pro - Pharma 1</span>
+        <span class="header-left">INBDE Pro - Oral Pathology</span>
         <div class="header-right">
             <span id="timer" class="timer-box" style="display:none;">30:00</span>
-            <span id="question-counter" class="question-counter" style="display:none;">Question 1 of 5</span>
+            <span id="question-counter" class="question-counter" style="display:none;">Question 1 of 25</span>
             <a href="dashboard.html" class="btn-stats-link">🏠 Home</a>
         </div>
     </div>
 
     <div id="welcome-view" class="view-container">
         <div class="welcome-card">
-            <h1 class="welcome-title">Pharmacology I</h1>
-            <p class="welcome-subtitle">Local Anesthetics & Antibiotics</p>
-            <input type="hidden" id="username-input">
+            <h1 class="welcome-title">Oral Pathology I</h1>
+            <p class="welcome-subtitle">Cysts, Tumors & Bone Lesions</p>
             <div class="welcome-info">
-                <span class="info-pill">📝 20 Questions</span>
+                <span class="info-pill">📝 25 Questions</span>
                 <span class="info-pill">⏱️ 30 Minutes</span>
             </div>
             <button class="btn-start" onclick="startQuiz()">START QUIZ</button>
@@ -200,193 +140,238 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // 1. CONFIGURACIÓN SUPABASE
+    // 1. CONFIGURACIÓN INICIAL (UNA SOLA VEZ)
     const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
     
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // --- DATA (20 QUESTIONS) ---
+    // --- DATA (25 QUESTIONS - ORAL PATHOLOGY) ---
     const questions = [
         { 
             id: 1, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Male, 24 years old", cc: "\"I am extremely nervous...\"", history: "History of dental anxiety.", findings: "Class I caries #30." }, 
-            text: "A patient is undergoing a procedure with nitrous oxide and oxygen. They are relaxed, able to respond purposefully to verbal commands, and their airway reflexes are intact. Which level of sedation does this MOST LIKELY represent?", 
-            options: ["Minimal Sedation (Anxiolysis)", "Moderate Sedation", "Deep Sedation", "General Anesthesia"], 
-            correct: 0, 
-            explanation: "Minimal sedation is characterized by normal response to verbal commands. The patient maintains their airway and reflexes." 
+            sidebar: { patient: "Male, 22 years old", cc: "\"Check up.\"", history: "No pain.", findings: "Impacted #32." }, 
+            text: "A routine panoramic radiograph reveals a well-defined, unilocular radiolucency surrounding the crown of an unerupted mandibular third molar. The lesion appears to displace the adjacent tooth. What is the MOST LIKELY diagnosis?", 
+            options: ["Periapical Cyst", "Dentigerous Cyst", "Eruption Cyst", "Lateral Periodontal Cyst"], 
+            correct: 1, 
+            explanation: "A dentigerous cyst typically surrounds the crown of an unerupted or partially erupted tooth, most commonly in the mandibular third molar region." 
         },
         { 
             id: 2, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Female, 28 years old", cc: "\"Bump on gum bleeds.\"", history: "2nd trimester pregnancy.", findings: "Erythematous mass on papilla." }, 
-            text: "A pregnant patient in her second trimester presents with a localized, round, red growth on the interdental papilla that bleeds easily. This lesion is MOST LIKELY a:", 
-            options: ["Fibroma", "Pyogenic Granuloma (Granuloma Gravidarum)", "Peripheral Giant Cell Granuloma", "Papilloma"], 
-            correct: 1, 
-            explanation: "Pyogenic granuloma (pregnancy tumor) is a common benign vascular lesion in pregnancy due to hormonal changes, typically appearing on the gingiva." 
+            sidebar: { patient: "Female, 6 years old", cc: "\"Blue bump on gum.\"", history: "Tooth erupting.", findings: "Soft swelling." }, 
+            text: "A young child presents with a soft, fluid-filled, bluish swelling on the gingiva overlying an erupting permanent first molar. The radiograph shows a radiolucency associated with the unerupted tooth. What is the indicated treatment?", 
+            options: ["Surgical enucleation", "Marsupialization", "No intervention needed", "Antibiotic therapy"], 
+            correct: 2, 
+            explanation: "This describes an Eruption Cyst. Treatment typically involves no intervention as it usually resolves on its own after the tooth erupts." 
         },
         { 
             id: 3, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Female, 32 years old", cc: "\"Need extraction.\"", history: "34 weeks pregnant (3rd Trimester).", findings: "Non-restorable #30. Feels faint lying flat." }, 
-            text: "To prevent supine hypotensive syndrome in a pregnant patient during the third trimester, how should the patient be positioned in the dental chair?", 
-            options: ["Completely supine", "Trendelenburg position", "Left lateral decubitus position", "Right lateral decubitus position"], 
-            correct: 2, 
-            explanation: "Left lateral decubitus position relieves pressure exerted by the uterus on the inferior vena cava, improving venous return." 
+            sidebar: { patient: "Male, 35 years old", cc: "\"Jaw feels swollen.\"", history: "Recurrent swelling.", findings: "Expansile lesion." }, 
+            text: "A radiograph reveals a well-defined, multilocular radiolucency with a 'soap bubble' appearance in the posterior mandible. Histopathology indicates the lesion is derived from the dental lamina. Which condition is MOST LIKELY?", 
+            options: ["Odontogenic Keratocyst (OKC)", "Dentigerous Cyst", "Traumatic Bone Cyst", "Periapical Cyst"], 
+            correct: 0, 
+            explanation: "The Odontogenic Keratocyst (OKC) is characterized by a 'soap bubble' or 'honeycomb' appearance and arises from the dental lamina." 
         },
         { 
             id: 4, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Female, 30 years old", cc: "\"Is this medication safe?\"", history: "1st Trimester.", findings: "Requires medication." }, 
-            text: "Which FDA pregnancy category describes drugs for which there is positive evidence of human fetal risk based on adverse reaction data, but potential benefits may warrant use of the drug in pregnant women despite potential risks?", 
-            options: ["Category A", "Category B", "Category C", "Category D"], 
-            correct: 3, 
-            explanation: "Category D indicates positive evidence of human fetal risk, but benefits may outweigh risks in serious situations." 
+            sidebar: { patient: "Female, 45 years old", cc: "\"Routine exam.\"", history: "Asymptomatic.", findings: "Radiolucency between roots." }, 
+            text: "A small, well-defined, unilocular radiolucency is discovered adjacent to the lateral root surface of a vital mandibular premolar. The patient is asymptomatic. What is the MOST LIKELY diagnosis?", 
+            options: ["Periapical Cyst", "Lateral Periodontal Cyst", "Dentigerous Cyst", "Gingival Cyst"], 
+            correct: 1, 
+            explanation: "Lateral Periodontal Cysts are typically found in the mandibular premolar-canine region, adjacent to the root of a vital tooth." 
         },
         { 
             id: 5, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Female, 26 years old", cc: "\"Face swollen.\"", history: "18 weeks pregnant. No allergies.", findings: "Facial swelling from #19." }, 
-            text: "A pregnant patient requires an antibiotic for an odontogenic infection. She has no known drug allergies. Which of the following is considered SAFEST to prescribe (Category B)?", 
-            options: ["Doxycycline", "Amoxicillin", "Clarithromycin", "Tetracycline"], 
+            sidebar: { patient: "Male, 28 years old", cc: "\"Tooth discoloration.\"", history: "Trauma years ago.", findings: "Non-vital #8." }, 
+            text: "A periapical cyst is an inflammatory cyst that is MOST LIKELY caused by which of the following?", 
+            options: ["Remnants of the dental lamina", "Necrosis of pulp tissue", "Trauma without pulp death", "Impacted teeth"], 
             correct: 1, 
-            explanation: "Amoxicillin is a Category B drug and is considered safe for use during pregnancy. Tetracyclines are Category D." 
+            explanation: "The etiology of a Periapical (Radicular) Cyst is inflammation due to the necrosis of pulp tissue." 
         },
         { 
             id: 6, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Male, 55 years old", cc: "\"Tired lately.\"", history: "History of anemia.", findings: "Reviewing CBC." }, 
-            text: "Which component of a complete blood count (CBC) is specifically used to assess the variation in red blood cell size?", 
-            options: ["MCV (Mean Corpuscular Volume)", "MCH (Mean Corpuscular Hemoglobin)", "MCHC (Mean Corpuscular Hemoglobin Concentration)", "RDW (Red Cell Distribution Width)"], 
-            correct: 3, 
-            explanation: "RDW (Red Cell Distribution Width) measures the variation in red blood cell volume and size (anisocytosis)." 
+            sidebar: { patient: "Male, 55 years old", cc: "\"Missing tooth area.\"", history: "Extraction 5 years ago.", findings: "Radiolucency in edentulous area." }, 
+            text: "A well-defined radiolucency is noted at the site of a previous tooth extraction. The patient reports the tooth had a 'cyst' that was not removed when the tooth was pulled. This lesion is known as a:", 
+            options: ["Residual Cyst", "Primordial Cyst", "Dentigerous Cyst", "Traumatic Bone Cyst"], 
+            correct: 0, 
+            explanation: "A Residual Cyst arises from remnants of a periapical cyst that were left behind after a tooth extraction." 
         },
         { 
             id: 7, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Female, 40 years old", cc: "\"My gums look very pale.\"", history: "Reports heavy menstrual cycles and fatigue.", findings: "Pale oral mucosa. Low Hb, Low MCV." }, 
-            text: "A patient's hemogram reveals a low Hemoglobin and a low Mean Corpuscular Volume (MCV). Which of the following conditions is a MOST LIKELY differential diagnosis?", 
-            options: ["Folic acid deficiency", "Vitamin B12 deficiency", "Iron Deficiency Anemia (IDA)", "Liver disease"], 
-            correct: 2, 
-            explanation: "Low MCV indicates microcytic anemia, which is classically caused by Iron Deficiency Anemia (IDA). B12/Folate deficiency causes macrocytic anemia (High MCV)." 
+            sidebar: { patient: "Female, 40 years old", cc: "\"Lip swelling.\"", history: "Slow growth.", findings: "Swelling near nose." }, 
+            text: "A patient presents with swelling of the upper lip near the nasolabial fold. Radiographs show no bony changes, but the maxillary lateral incisor appears slightly displaced. What is the MOST LIKELY diagnosis?", 
+            options: ["Nasopalatine Duct Cyst", "Nasolabial Cyst", "Globulomaxillary Cyst", "Periapical Cyst"], 
+            correct: 1, 
+            explanation: "Nasolabial Cysts present as soft tissue swelling in the upper lip/nasolabial fold and are typically not seen on radiographs." 
         },
         { 
             id: 8, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "N/A (Board Review)", cc: "N/A", history: "Regulatory compliance review.", findings: "N/A" }, 
-            text: "A drug with a high potential for abuse, no currently accepted medical use in treatment in the United States, and a lack of accepted safety for use under medical supervision would be classified as:", 
-            options: ["Schedule I", "Schedule II", "Schedule III", "Schedule IV"], 
-            correct: 0, 
-            explanation: "Schedule I drugs (e.g., Heroin, LSD) have high abuse potential and no accepted medical use." 
+            sidebar: { patient: "Male, 30 years old", cc: "\"Check X-ray.\"", history: "No pain.", findings: "Pear-shaped lesion." }, 
+            text: "Which of the following cysts presents radiographically as a well-defined, pear-shaped radiolucency located between the roots of the maxillary lateral incisor and canine?", 
+            options: ["Nasopalatine Duct Cyst", "Globulomaxillary Cyst", "Lateral Periodontal Cyst", "Incise Canal Cyst"], 
+            correct: 1, 
+            explanation: "The Globulomaxillary Cyst is classically described as a pear-shaped radiolucency between the maxillary lateral incisor and canine." 
         },
         { 
             id: 9, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Male, 45 years old", cc: "\"Severe pain.\"", history: "Recent complex extraction.", findings: "Needs potent analgesic." }, 
-            text: "Which of the following analgesics is classified as a Schedule II controlled substance?", 
-            options: ["Acetaminophen with Codeine (Tylenol #3)", "Ibuprofen", "Oxycodone", "Tramadol"], 
+            sidebar: { patient: "Male, 45 years old", cc: "\"Salty taste.\"", history: "Midline palate swelling.", findings: "Heart-shaped lucency." }, 
+            text: "A 45-year-old male presents with mild swelling in the midline of the hard palate. A radiograph shows an oval or heart-shaped radiolucency between the roots of the maxillary central incisors. The teeth are vital. Diagnosis?", 
+            options: ["Nasolabial Cyst", "Median Palatal Cyst", "Nasopalatine Duct Cyst", "Periapical Cyst"], 
             correct: 2, 
-            explanation: "Oxycodone is a Schedule II drug (High abuse potential). Tylenol #3 is Schedule III, Tramadol is Schedule IV." 
+            explanation: "The Nasopalatine Duct Cyst (Incisive Canal Cyst) appears as a heart-shaped radiolucency between the maxillary central incisors." 
         },
         { 
             id: 10, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Female, 22 years old", cc: "\"Numb me up good.\"", history: "No contraindications.", findings: "Using Lidocaine." }, 
-            text: "Local anesthetics exert their primary effect by:", 
-            options: ["Blocking voltage-gated calcium channels", "Blocking voltage-gated sodium (Na+) channels", "Enhancing GABA receptor activity", "Inhibiting prostaglandin synthesis"], 
+            sidebar: { patient: "Female, 18 years old", cc: "\"Lump in neck.\"", history: "Moves when swallowing.", findings: "Midline neck mass." }, 
+            text: "A patient presents with a midline swelling of the neck near the thyroid cartilage. This is the most common congenital cyst of the neck. What is the etiology?", 
+            options: ["Remnants of the dental lamina", "Remnants of the thyroglossal duct", "Obstruction of salivary glands", "Trauma"], 
             correct: 1, 
-            explanation: "Local anesthetics prevent the generation and conduction of nerve impulses by blocking voltage-gated Sodium (Na+) channels." 
+            explanation: "Thyroglossal Duct Cysts arise from remnants of the thyroglossal duct and present as midline neck swelling." 
         },
         { 
             id: 11, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Male, 65 years old", cc: "\"Cleaning.\"", history: "Hyperlipidemia. Taking Atorvastatin.", findings: "Normal findings." }, 
-            text: "Statins, used to lower LDL cholesterol, work by competitively inhibiting which enzyme?", 
-            options: ["Angiotensin-converting enzyme (ACE)", "Cyclooxygenase (COX)", "HMG-CoA reductase", "Monoamine oxidase (MAO)"], 
+            sidebar: { patient: "Male, 16 years old", cc: "\"Routine recall.\"", history: "Football injury last year.", findings: "Scalloped radiolucency." }, 
+            text: "A panoramic radiograph of a teenager reveals a radiolucent area with a scalloped outline extending between the roots of the mandibular molars. The patient recalls trauma to the jaw a year ago. Diagnosis?", 
+            options: ["Ameloblastoma", "Odontogenic Keratocyst", "Traumatic Bone Cyst", "Ossifying Fibroma"], 
             correct: 2, 
-            explanation: "Statins are HMG-CoA reductase inhibitors, the rate-limiting enzyme in cholesterol synthesis." 
+            explanation: "Traumatic Bone Cysts often appear as a well-defined radiolucency with a scalloped outline between roots and are associated with trauma." 
         },
         { 
             id: 12, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Male, 25 years old", cc: "\"My teeth are rotting.\"", history: "Substance abuse.", findings: "Rampant caries, xerostomia." }, 
-            text: "Regular use of amphetamines can lead to several adverse oral and systemic effects. Which of the following is NOT typically associated with amphetamine use?", 
-            options: ["Reduced appetite/Weight loss", "Dry mouth (Xerostomia)", "Decreased heart rate (Bradycardia)", "Dental problems (\"Meth mouth\")"], 
-            correct: 2, 
-            explanation: "Amphetamines are stimulants and cause Tachycardia (increased heart rate), not Bradycardia." 
+            sidebar: { patient: "Female, 14 years old", cc: "\"Tooth hasn't come in.\"", history: "Anterior maxilla.", findings: "Lesion around canine." }, 
+            text: "An Adenomatoid Odontogenic Tumor (AOT) is MOST LIKELY to occur in which of the following demographic and anatomical groups?", 
+            options: ["Males, posterior mandible", "Females, anterior maxilla", "Females, posterior mandible", "Males, anterior maxilla"], 
+            correct: 1, 
+            explanation: "AOTs are more common in females (2nd decade) and typically occur in the anterior maxilla associated with an unerupted tooth." 
         },
         { 
             id: 13, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Female, 45 years old", cc: "\"I get nauseous.\"", history: "Severe gag reflex.", findings: "Consider adjunct." }, 
-            text: "Scopolamine is an anticholinergic drug primarily indicated for the prevention of:", 
-            options: ["Hypertension", "Seizures", "Nausea and vomiting associated with motion sickness", "Bacterial infections"], 
-            correct: 2, 
-            explanation: "Scopolamine is an anticholinergic used to prevent nausea and vomiting caused by motion sickness or recovery from anesthesia." 
+            sidebar: { patient: "Male, 20 years old", cc: "\"Check up.\"", history: "Asymptomatic.", findings: "Radiopaque mass." }, 
+            text: "Which benign odontogenic tumor is characterized radiographically by a well-defined radiopaque mass containing tooth-like structures (enamel/dentin) surrounded by a radiolucent zone?", 
+            options: ["Ameloblastoma", "Odontoma", "Cementoblastoma", "Osteoma"], 
+            correct: 1, 
+            explanation: "Odontomas appear as radiopaque masses with tooth-like structures (dentin, enamel) and are the most common benign odontogenic tumor." 
         },
         { 
             id: 14, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Male, 19 years old", cc: "None (Emergency).", history: "High anxiety.", findings: "Lost consciousness after injection." }, 
-            text: "The MOST COMMON medical emergency in the dental office is syncope. What is the immediate management step for a patient experiencing vasovagal syncope?", 
-            options: ["Administer epinephrine immediately", "Place patient in a supine position with legs elevated", "Administer nitroglycerin sublingually", "Have the patient breathe into a paper bag"], 
+            sidebar: { patient: "Male, 25 years old", cc: "\"Painful molar.\"", history: "Vital tooth.", findings: "Radio-opacity on root." }, 
+            text: "A patient complains of pain in the mandibular molar region. Radiographs show a well-defined radiopaque mass fused to the root of the tooth, surrounded by a radiolucent halo. What is the treatment?", 
+            options: ["Root canal therapy only", "Extraction of the tooth and lesion", "Observation", "Antibiotics"], 
             correct: 1, 
-            explanation: "Placing the patient supine with legs elevated (Trendelenburg) increases venous return to the brain to resolve cerebral hypoxia." 
+            explanation: "Cementoblastoma presents as a painful mass fused to the root. Treatment requires extraction of the affected tooth and the lesion." 
         },
         { 
             id: 15, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Male, 68 years old", cc: "\"Chest tightness.\"", history: "Stable angina.", findings: "Conscious, chest pain." }, 
-            text: "A patient with a history of stable angina experiences chest pain during a dental procedure. The patient remains conscious. What is the first-line drug to administer?", 
-            options: ["Aspirin 325 mg chewed", "Nitroglycerin (0.4 mg) sublingually", "Epinephrine IM", "Albuterol inhaler"], 
+            sidebar: { patient: "Female, 50 years old", cc: "\"Soft bump on cheek.\"", history: "Yellowish hue.", findings: "Mobile mass." }, 
+            text: "A painless, soft, mobile, and compressible mass is noted on the buccal mucosa. It is composed of benign adipose tissue. This lesion is a:", 
+            options: ["Fibroma", "Lipoma", "Mucocele", "Ranula"], 
             correct: 1, 
-            explanation: "Nitroglycerin is the first-line vasodilator for acute angina episodes." 
+            explanation: "Lipoma is a benign tumor of adipose (fat) tissue, described as soft, mobile, and compressible." 
         },
         { 
             id: 16, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Male, 62 years old", cc: "\"I need implants.\"", history: "MI 2 months ago.", findings: "Elective surgery request." }, 
-            text: "According to standard guidelines, what is the recommended waiting period for elective complex dental procedures after a patient has had a Myocardial Infarction (MI)?", 
-            options: ["6 weeks", "3 months", "6 months", "12 months"], 
-            correct: 2, 
-            explanation: "It is generally recommended to wait 6 months after an MI before performing elective surgical procedures to minimize reinfarction risk." 
+            sidebar: { patient: "Male, 40 years old", cc: "\"Hard lump on jaw.\"", history: "Slow growing.", findings: "Bony hard." }, 
+            text: "Radiographically, an Osteoma appears as a dense, radiopaque lesion within the bone. In which region is this rare lesion more commonly found?", 
+            options: ["Anterior Mandible", "Craniofacial region", "Posterior Maxilla", "Sublingual space"], 
+            correct: 1, 
+            explanation: "Osteomas are rare and are more common in the craniofacial region." 
         },
         { 
             id: 17, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Female, 78 years old", cc: "\"Out of breath.\"", history: "Congestive Heart Failure.", findings: "Dyspnea at rest." }, 
-            text: "A patient with New York Heart Association (NYHA) Class IV Congestive Heart Failure (CHF) would MOST LIKELY exhibit which of the following?", 
-            options: ["No limitation of physical activity", "Symptoms only with strenuous exertion", "Severe compromise; symptoms present at rest", "Symptoms only when supine"], 
-            correct: 2, 
-            explanation: "NYHA Class IV represents severe heart failure where patients have symptoms even at rest and cannot carry out physical activity." 
+            sidebar: { patient: "Female, 60 years old", cc: "\"Bumps on gums.\"", history: "Bilateral.", findings: "Lingual mandible." }, 
+            text: "A patient presents with bony growths on the lingual aspect of the mandible. These are asymptomatic. What is the MOST LIKELY diagnosis?", 
+            options: ["Osteoma", "Exostosis (Tori)", "Fibrous Dysplasia", "Cementoblastoma"], 
+            correct: 1, 
+            explanation: "Exostosis is a benign bony growth on the surface of the jaw, typically on the palate or buccal/lingual aspect of the mandible." 
         },
         { 
             id: 18, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Male, 14 years old", cc: "\"Dizzy and hungry.\"", history: "Type 1 Diabetes. Skipped breakfast.", findings: "Sweating, pale." }, 
-            text: "Which of the following is a classic sign or symptom of hypoglycemia (low blood sugar)?", 
-            options: ["Increased thirst (Polydipsia)", "Frequent urination (Polyuria)", "Sweating (Diaphoresis) and irritability", "Fruity breath odor"], 
-            correct: 2, 
-            explanation: "Sweating (diaphoresis), tachycardia, and irritability are sympathetic responses to hypoglycemia. Polydipsia is a sign of hyperglycemia." 
+            sidebar: { patient: "Child, 10 years old", cc: "\"Swollen cheek.\"", history: "Asymptomatic.", findings: "Expansile bone." }, 
+            text: "Which condition is a developmental abnormality where normal bone is replaced by fibrous tissue, showing a radiographic 'ground glass' appearance?", 
+            options: ["Osteomyelitis", "Fibrous Dysplasia", "Condensing Osteitis", "Ameloblastoma"], 
+            correct: 1, 
+            explanation: "Fibrous Dysplasia is characterized by a 'ground glass' radiographic appearance and the replacement of bone with fibrous tissue." 
         },
         { 
             id: 19, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Female, 10 years old", cc: "\"Can't breathe.\"", history: "Asthma.", findings: "Audible wheezing." }, 
-            text: "A patient is having an acute asthma attack in the dental chair. What is the FIRST pharmacological intervention?", 
-            options: ["Administer oxygen only", "Administer short-acting beta-2 agonist (Albuterol) inhaler", "Inject Epinephrine IM", "Administer IV corticosteroids"], 
+            sidebar: { patient: "Male, 45 years old", cc: "\"Severe jaw pain/fever.\"", history: "Dental infection.", findings: "Moth-eaten bone." }, 
+            text: "A patient presents with pain, swelling, and fever. Radiographs reveal a radiolucency with a 'moth-eaten' appearance and periosteal reaction. What is the MOST LIKELY etiology?", 
+            options: ["Trauma", "Infection of the bone", "Benign tumor", "Genetic mutation"], 
             correct: 1, 
-            explanation: "A short-acting beta-2 agonist (SABA) like Albuterol is the first-line rescue medication for acute bronchospasm." 
+            explanation: "Osteomyelitis is an infection of the bone (often secondary to dental infection) showing a 'moth-eaten' radiolucency." 
         },
         { 
             id: 20, 
             images: { xray: null, photo: null }, 
-            sidebar: { patient: "Female, 35 years old", cc: "\"Throat closing.\"", history: "No known allergies.", findings: "Lip swelling, hypotension after Amoxicillin." }, 
-            text: "What is the critical, first-line drug that must be administered immediately for a patient experiencing anaphylactic shock?", 
-            options: ["Diphenhydramine (Benadryl)", "Albuterol inhaler", "Epinephrine (0.3 mg 1:1000) IM", "High-flow oxygen"], 
+            sidebar: { patient: "Female, 22 years old", cc: "\"Check up.\"", history: "Root canal on #30.", findings: "Dense bone at apex." }, 
+            text: "Condensing Osteitis typically presents as a well-defined radiopaque lesion at the apex of a tooth. This condition is associated with:", 
+            options: ["A vital tooth", "A non-vital tooth", "Trauma", "An unerupted tooth"], 
+            correct: 1, 
+            explanation: "Condensing Osteitis is seen at the apex of a non-vital tooth, caused by chronic low-grade infection." 
+        },
+        { 
+            id: 21, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Male, 35 years old", cc: "\"Jaw expansion.\"", history: "Slow growth.", findings: "Multilocular lesion." }, 
+            text: "An Ameloblastoma is a benign but aggressive tumor. The recommended treatment involves surgical resection with wide margins. Where is this tumor MOST commonly located?", 
+            options: ["Anterior Maxilla", "Posterior Maxilla", "Mandible (molar-ramus area)", "Anterior Mandible"], 
             correct: 2, 
-            explanation: "Epinephrine is the drug of choice for anaphylaxis to reverse hypotension and bronchoconstriction. Antihistamines are secondary." 
+            explanation: "Ameloblastoma is more common in the mandible, especially in the molar-ramus area." 
+        },
+        { 
+            id: 22, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Male, 29 years old", cc: "\"Swelling.\"", history: "Asymptomatic.", findings: "Honeycomb xray." }, 
+            text: "Which odontogenic tumor arises from the odontogenic mesenchyme and presents radiographically as a multilocular radiolucency with a 'honeycomb' appearance?", 
+            options: ["Odontogenic Myxoma", "Ameloblastoma", "Odontogenic Fibroma", "Cementoblastoma"], 
+            correct: 0, 
+            explanation: "Odontogenic Myxoma arises from odontogenic mesenchyme and shows a 'honeycomb' appearance." 
+        },
+        { 
+            id: 23, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Female, 45 years old", cc: "\"Painless swelling.\"", history: "Posterior mandible.", findings: "Mixed lucency." }, 
+            text: "Odontogenic Fibroma is a rare tumor that arises from the dental follicle. Its radiographic appearance is typically:", 
+            options: ["Well-defined radiopacity", "Well-defined radiolucency, often with scattered radiopaque flecks", "Moth-eaten radiolucency", "Ground glass appearance"], 
+            correct: 1, 
+            explanation: "Odontogenic Fibroma presents as a well-defined radiolucency, often with scattered radiopaque flecks." 
+        },
+        { 
+            id: 24, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Male, 15 years old", cc: "\"Blister on lip.\"", history: "Bit his lip.", findings: "Fluid filled." }, 
+            text: "A teenager presents with a painless, bluish, soft swelling on the lower lip. The patient reports biting his lip recently. This lesion is MOST LIKELY a:", 
+            options: ["Ranula", "Mucocele", "Lipoma", "Fibroma"], 
+            correct: 1, 
+            explanation: "A Mucocele is caused by the rupture of a minor salivary gland duct (often due to trauma like biting) and is common on the lower lip." 
+        },
+        { 
+            id: 25, 
+            images: { xray: null, photo: null }, 
+            sidebar: { patient: "Child, 8 years old", cc: "\"Swelling under tongue.\"", history: "Bluish color.", findings: "Floor of mouth mass." }, 
+            text: "Which cyst-like lesion is characterized by a bluish swelling on the floor of the mouth and is associated with the sublingual glands?", 
+            options: ["Mucocele", "Ranula", "Dermoid Cyst", "Thyroglossal Duct Cyst"], 
+            correct: 1, 
+            explanation: "A Ranula is a bluish swelling on the floor of the mouth associated with the sublingual glands." 
         }
     ];
 
@@ -395,7 +380,6 @@
     let currentUser = "";
 
     function startQuiz() { 
-        // Intentamos obtener el usuario de Supabase automáticamente
         checkUserAndStart();
     }
 
@@ -404,12 +388,10 @@
         
         if (session) {
             currentUser = session.user.email;
-            // Si ya tenemos sesión, empezamos
             showView('quiz-view'); 
             loadQuestion(); 
             startTimer(); 
         } else {
-            // Si no hay sesión, pedimos login (o podrías redirigir a index.html)
             alert("Please log in to start.");
             window.location.href = 'index.html';
         }
@@ -516,7 +498,6 @@
         const spent = (10 * 60) - totalTime;
         document.getElementById('final-time-value').innerText = `${Math.floor(spent/60)}m ${spent%60}s`;
         
-        // Llamada a la función que guarda el progreso
         marcarExamenComoCompletado(); 
 
         const list = document.getElementById('review-list');
@@ -536,31 +517,16 @@
         });
     }
 
-    // FUNCIÓN CORREGIDA Y UNIFICADA
     async function marcarExamenComoCompletado() {
-        // 1. Obtener ID del quiz de la URL
         const urlParams = new URLSearchParams(window.location.search);
         const quizId = urlParams.get('quiz_id');
-
-        // 2. Obtener usuario actual
         const { data: { session } } = await _supabase.auth.getSession();
 
         if (session && quizId) {
-            console.log("Guardando progreso para usuario:", session.user.email);
-            
             const { error } = await _supabase.from('user_progress').insert([
                 { user_id: session.user.id, quiz_id: quizId }
             ]);
-
-            if (!error) {
-                // Puedes descomentar la alerta si quieres avisar al usuario
-                // alert("¡Felicidades! Examen guardado como completado.");
-                console.log("Progreso guardado exitosamente.");
-            } else {
-                console.error("Error guardando:", error);
-            }
-        } else {
-            console.log("No se pudo guardar: Falta sesión o ID del quiz en la URL");
+            if (!error) console.log("Progreso guardado.");
         }
     }
 
