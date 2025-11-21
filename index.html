@@ -117,14 +117,14 @@
         
         <div class="input-group">
             <label>Email</label>
-            <input type="email" id="login-email" placeholder="student@university.edu">
+            <input type="email" id="login-email" placeholder="student@university.edu" autocapitalize="off" autocorrect="off">
         </div>
         <div class="input-group">
             <div style="display:flex; justify-content:space-between;">
                 <label>Password</label>
                 <label style="color:#666; font-weight:400; cursor:pointer; font-size:0.8em;" onclick="switchView('forgot')">Forgot Password?</label>
             </div>
-            <input type="password" id="login-password">
+            <input type="password" id="login-password" onkeydown="if(event.key==='Enter') handleLogin()">
         </div>
 
         <button class="btn-main" onclick="handleLogin()" id="btn-login">Sign In</button>
@@ -194,7 +194,6 @@
         const { data, error } = await _supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                // IMPORTANTE: Asegúrate de que esta URL esté en Supabase -> Authentication -> URL Configuration
                 redirectTo: 'https://carloslplorusso.github.io/dashboard.html'
             }
         });
@@ -226,6 +225,11 @@
         box.innerText = text;
         box.className = `msg-box msg-${type}`;
         box.style.display = 'block';
+        
+        // Auto-ocultar si el usuario escribe de nuevo
+        setTimeout(() => {
+           if(type === 'error') box.style.display = 'none';
+        }, 5000);
     }
     function hideMsg() {
         document.getElementById('msg-box').style.display = 'none';
