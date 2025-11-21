@@ -379,6 +379,41 @@
         await _supabase.auth.signOut();
         window.location.href = 'index.html';
     }
+    // --- 1. FUNCIÓN PARA CAMBIAR CONTRASEÑA (FALTABA ESTA) ---
+    async function promptNewPassword() {
+        const newPass = prompt("Create your new password (min 6 characters):");
+        
+        if (newPass) {
+            if (newPass.length < 6) {
+                alert("Password must be at least 6 characters long.");
+                return;
+            }
+
+            const { data, error } = await _supabase.auth.updateUser({
+                password: newPass
+            });
+
+            if (error) {
+                alert("Error: " + error.message);
+            } else {
+                alert("Success! Password updated.");
+                // Opcional: recargar para limpiar la URL
+                window.location.href = 'dashboard.html';
+            }
+        }
+    }
+
+    // --- 2. DETECTOR DE RECUPERACIÓN (ESTO YA LO TIENES, PERO PEGALO JUNTO) ---
+    _supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === "PASSWORD_RECOVERY") {
+            console.log("Usuario viene de recuperar contraseña");
+            setTimeout(() => {
+                alert("Recovery successful! Please create your new password now.");
+                promptNewPassword(); // Ahora sí funcionará porque la función existe arriba
+            }, 500);
+        }
+    });
+    });
 </script>
 </body>
 </html>
