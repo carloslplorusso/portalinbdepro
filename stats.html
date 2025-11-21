@@ -197,13 +197,10 @@
         document.getElementById('user-display').innerText = userEmail;
 
         // 2. Consultar datos en Supabase (Tabla 'resultados')
-        // NOTA: Asegúrate de que tu tabla 'resultados' tenga columna 'username' o 'user_id'
-        // Si usas 'user_id' es mejor, pero por ahora mantengo 'username' como email si así lo configuraste.
-        
         const { data, error } = await _supabase
             .from('resultados')
             .select('*')
-            .eq('username', userEmail); // Filtramos por el email del usuario
+            .eq('username', userEmail);
 
         if (error) {
             console.error("Error loading stats:", error);
