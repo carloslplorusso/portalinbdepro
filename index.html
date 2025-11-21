@@ -84,11 +84,9 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // --- AUTO-REDIRECT INTELIGENTE ---
-    // Si el usuario llega aquí con sesión iniciada (por ejemplo, del correo), lo mandamos al dashboard
+    // --- AUTO-REDIRECT ---
     _supabase.auth.onAuthStateChange((event, session) => {
         if (session) {
-            // Si es recuperación, pasamos un aviso al dashboard
             if (event === "PASSWORD_RECOVERY") {
                 window.location.href = 'dashboard.html?recovery=true';
             } else {
@@ -110,6 +108,7 @@
         const btn = document.getElementById('btn-login');
         if(!email || !pass) return showMsg('Please fill all fields', 'error');
         btn.innerText = 'Checking...'; btn.disabled = true;
+        
         const { data, error } = await _supabase.auth.signInWithPassword({ email, password: pass });
         if (error) {
             showMsg('Incorrect email or password.', 'error');
@@ -122,8 +121,8 @@
         const { data, error } = await _supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                // Redirigir a la raíz (index.html) es más seguro, el script de arriba lo enviará al dashboard
-                redirectTo: 'https://carloslplorusso.github.io/' 
+                // AQUI ESTÁ LA CORRECCIÓN CLAVE: Añadí /portalinbdepro/
+                redirectTo: 'https://carloslplorusso.github.io/portalinbdepro/' 
             }
         });
         if (error) showMsg(error.message, 'error');
@@ -137,8 +136,8 @@
         btn.innerText = 'Sending...'; btn.disabled = true;
 
         const { data, error } = await _supabase.auth.resetPasswordForEmail(email, {
-            // Redirigir a la raíz
-            redirectTo: 'https://carloslplorusso.github.io/', 
+            // AQUI ESTÁ LA OTRA CORRECCIÓN: Añadí /portalinbdepro/
+            redirectTo: 'https://carloslplorusso.github.io/portalinbdepro/', 
         });
 
         showMsg('If the email exists, we sent a recovery link.', 'success');
