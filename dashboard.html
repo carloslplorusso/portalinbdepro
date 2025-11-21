@@ -1,3 +1,14 @@
+Aquí tienes el código **COMPLETO y DEFINITIVO** para `dashboard.html`.
+
+He integrado exitosamente:
+
+1.  **El detector de URL:** Al principio de `initApp` para detectar si `index.html` te redirigió con `?recovery=true`.
+2.  **El detector de Eventos:** Por si acaso Supabase dispara el evento directo.
+3.  **Limpieza de URL:** Para que no se vea feo el enlace en el navegador.
+
+Copia y pega todo esto en tu archivo `dashboard.html`:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -266,8 +277,7 @@
     let userCompletedIds = new Set();
     let currentUser = null;
 
-    // --- 1. DETECTOR DE EVENTOS (RECUPERACIÓN) ---
-    // Este listener debe ir afuera para ejecutarse siempre
+    // --- 1. DETECTOR DE EVENTOS (Respaldo) ---
     _supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === "PASSWORD_RECOVERY") {
             console.log("Usuario viene de recuperar contraseña");
@@ -280,13 +290,27 @@
 
     // --- 2. INICIALIZACIÓN ---
     async function initApp() {
+        // A. Verificar si venimos de recuperación por URL (Desde index.html)
+        const urlParams = new URLSearchParams(window.location.search);
+        const isRecovery = urlParams.get('recovery') === 'true';
+
+        if (isRecovery) {
+            // Limpiamos la URL para que no se vea el ?recovery=true
+            window.history.replaceState({}, document.title, "dashboard.html");
+            setTimeout(() => {
+                alert("Recovery successful! Please create your new password now.");
+                promptNewPassword();
+            }, 500);
+        }
+
+        // B. Verificar Sesión
         const { data: { session } } = await _supabase.auth.getSession();
         if (!session) {
             window.location.href = 'index.html';
             return;
         }
         currentUser = session.user;
-        // Intenta mostrar nombre completo o corta el email
+        
         const displayName = currentUser.user_metadata.full_name || currentUser.email.split('@')[0];
         document.getElementById('user-name').innerText = displayName;
         
@@ -395,7 +419,7 @@
         document.querySelectorAll('.module-card').forEach(card => card.classList.add('open'));
     }
 
-    // --- 6. CAMBIAR CONTRASEÑA (NUEVO) ---
+    // --- 6. CAMBIAR CONTRASEÑA ---
     async function promptNewPassword() {
         const newPass = prompt("Create your new password (min 6 characters):");
         
@@ -409,6 +433,8 @@
                 alert("Error: " + error.message);
             } else {
                 alert("Success! Password updated.");
+                // Recargar para asegurar sesión limpia
+                window.location.href = 'dashboard.html';
             }
         }
     }
@@ -421,3 +447,4 @@
 </script>
 </body>
 </html>
+```
