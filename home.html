@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>INBDE Pro - Main Dashboard</title>
 <style>
-    /* --- 1. VARIABLES DE MARCA (COHERENCIA TOTAL) --- */
+    /* --- 1. VARIABLES DE MARCA --- */
     :root {
-        --primary-color: #fcdc11; /* Amarillo Marca */
-        --primary-dark: #121212;  /* Negro Marca */
-        --light-bg: #f3f4f6;      /* Fondo Pantalla */
+        --primary-color: #fcdc11; 
+        --primary-dark: #121212;  
+        --light-bg: #f3f4f6;      
         --white: #ffffff;
         --border-color: #e5e7eb;
         --text-muted: #6b7280;
@@ -27,13 +27,15 @@
         display: flex;
         justify-content: center;
         min-height: 100vh;
+        box-sizing: border-box; /* Asegura que el padding no rompa el ancho */
     }
 
     .main-wrapper {
         display: flex;
         flex-direction: column;
-        width: 1100px;
-        max-width: 100%;
+        /* RESPONSIVE: Usar porcentaje y max-width en lugar de width fijo */
+        width: 100%; 
+        max-width: 1100px;
         background-color: var(--white);
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         border-radius: 12px;
@@ -53,11 +55,13 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap; /* Permite que los elementos bajen si no caben */
+        gap: 15px;
     }
 
     .header-right {
         display: flex;
-        gap: 15px;
+        gap: 10px;
         align-items: center;
     }
 
@@ -76,6 +80,7 @@
         display: flex;
         align-items: center;
         gap: 6px;
+        white-space: nowrap; /* Evita que el texto del botón se parta */
     }
     .btn-header:hover { background-color: rgba(252, 220, 17, 0.2); }
 
@@ -84,7 +89,6 @@
         color: #ef4444;
     }
     .btn-logout:hover { background-color: rgba(239, 68, 68, 0.1); }
-
 
     /* --- 4. CONTENIDO PRINCIPAL --- */
     .content-container {
@@ -96,16 +100,18 @@
         font-size: 1.8em;
         font-weight: 700;
         margin-bottom: 5px;
+        line-height: 1.2;
     }
     .subtitle-msg {
         color: var(--text-muted);
         margin-bottom: 30px;
     }
 
-    /* --- 5. BOTONES GRANDES (SIMULACRO VS PRACTICE) --- */
+    /* --- 5. BOTONES GRANDES --- */
     .big-actions {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        /* RESPONSIVE: Por defecto 2 columnas, pero flexible */
+        grid-template-columns: 1fr 1fr; 
         gap: 20px;
         margin-bottom: 40px;
     }
@@ -118,17 +124,19 @@
         text-align: center;
         cursor: pointer;
         transition: all 0.2s;
+        /* Mejor experiencia táctil */
+        touch-action: manipulation; 
     }
     .action-card:hover {
         border-color: var(--primary-color);
         transform: translateY(-3px);
         box-shadow: 0 5px 15px rgba(0,0,0,0.05);
     }
-    /* Estado Activo: Cuando se selecciona */
     .action-card.active {
         border-color: var(--primary-dark);
         background-color: var(--primary-dark);
         color: var(--primary-color);
+        transform: none; /* Evita saltos en móvil al activar */
     }
     .action-card.active .card-title { color: var(--primary-color); }
     .action-card.active .card-desc { color: #ccc; }
@@ -137,12 +145,10 @@
     .card-title { font-size: 1.4em; font-weight: 800; color: var(--primary-dark); }
     .card-desc { font-size: 0.9em; color: var(--text-muted); margin-top: 5px; }
 
-
-    /* --- 6. LISTA DE MATERIAS (ACORDEÓN) --- */
+    /* --- 6. ACORDEÓN DE MATERIAS --- */
     .modules-section {
         border-top: 1px solid var(--border-color);
         padding-top: 30px;
-        /* CAMBIO CLAVE: Oculto por defecto */
         display: none; 
         animation: fadeIn 0.5s ease-in-out;
     }
@@ -170,7 +176,6 @@
         font-style: italic;
     }
 
-    /* Estilos del Acordeón */
     .module-item {
         margin-bottom: 10px;
         border: 1px solid var(--border-color);
@@ -188,12 +193,13 @@
         justify-content: space-between;
         align-items: center;
         transition: background 0.2s;
+        /* Previene selección de texto al hacer tap rápido */
+        user-select: none; 
     }
     .module-header:hover { background-color: #f0f0f0; }
     .module-header::after { content: '▼'; font-size: 0.8em; color: var(--text-muted); }
     .module-item.open .module-header::after { content: '▲'; }
     
-    /* Estilo cuando un módulo está abierto */
     .module-item.open .module-header {
         background-color: var(--primary-color);
         color: var(--primary-dark);
@@ -201,14 +207,14 @@
     .module-item.open .module-header::after { color: var(--primary-dark); }
 
     .quiz-list {
-        display: none; /* Oculto por defecto */
+        display: none; 
         padding: 0;
         margin: 0;
         list-style: none;
         background: var(--white);
         border-top: 1px solid var(--border-color);
     }
-    .module-item.open .quiz-list { display: block; } /* Mostrar al abrir */
+    .module-item.open .quiz-list { display: block; } 
 
     .quiz-link {
         display: block;
@@ -221,6 +227,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap; /* Permite que el botón START baje si el título es muy largo */
+        gap: 10px;
     }
     .quiz-link:last-child { border-bottom: none; }
     .quiz-link:hover { background-color: var(--hover-bg); color: var(--primary-dark); }
@@ -233,6 +241,66 @@
         color: var(--primary-color);
         font-weight: bold;
         text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    /* --- 7. MEDIA QUERIES (LA MAGIA RESPONSIVE) --- */
+
+    /* Tablets y Móviles Grandes (hasta 768px) */
+    @media (max-width: 768px) {
+        body {
+            padding: 10px; /* Menos borde gris alrededor */
+        }
+        
+        .content-container {
+            padding: 25px 20px; /* Menos padding interno */
+        }
+
+        .big-actions {
+            grid-template-columns: 1fr; /* Una sola columna (apilados) */
+        }
+
+        .welcome-msg {
+            font-size: 1.5em;
+        }
+    }
+
+    /* Móviles Pequeños (hasta 480px) */
+    @media (max-width: 480px) {
+        .brand-header {
+            flex-direction: column; /* Logo arriba, botones abajo */
+            gap: 15px;
+            padding: 15px 20px;
+            text-align: center;
+        }
+
+        .header-right {
+            width: 100%;
+            justify-content: center; /* Centrar botones */
+        }
+
+        .btn-header {
+            flex: 1; /* Botones ocupan espacio equitativo */
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .action-card {
+            padding: 20px; /* Tarjetas más compactas */
+        }
+
+        .card-title {
+            font-size: 1.2em;
+        }
+
+        .module-header {
+            font-size: 0.95em;
+            padding: 12px 15px;
+        }
+
+        .quiz-link {
+            font-size: 0.9em;
+        }
     }
 
 </style>
@@ -240,23 +308,19 @@
 <body onload="initDashboard()">
 
 <div class="main-wrapper">
-    <!-- HEADER -->
     <div class="brand-header">
         <span>INBDE Pro</span>
         <div class="header-right">
-            <a href="stats.html" class="btn-header">📊 Mi Dashboard</a>
+            <a href="stats.html" class="btn-header">📊 Dashboard</a>
             <button class="btn-header btn-logout" onclick="logout()">Logout</button>
         </div>
     </div>
 
-    <!-- CONTENIDO -->
     <div class="content-container">
         <div class="welcome-msg">Welcome, <span id="user-name">Student</span></div>
         <div class="subtitle-msg">Select a study mode to begin.</div>
 
-        <!-- BOTONES GRANDES -->
         <div class="big-actions">
-            <!-- Se añadió el parámetro 'this' para manipular el estilo del botón clickeado -->
             <div class="action-card" onclick="filterMode('simulation', this)">
                 <span class="card-icon">⏱️</span>
                 <div class="card-title">Simulation</div>
@@ -264,14 +328,13 @@
             </div>
             <div class="action-card" onclick="filterMode('practice', this)">
                 <span class="card-icon">📖</span>
-                <div class="card-title">Practice Questions</div>
+                <div class="card-title">Practice</div>
                 <div class="card-desc">Study mode with instant feedback.</div>
             </div>
         </div>
 
-        <!-- LISTA DE MATERIAS (OCULTA POR DEFECTO, ID AGREGADO) -->
         <div id="modules-section" class="modules-section">
-            <div class="section-title">Available Simulation Quizzes</div>
+            <div class="section-title">Available Quizzes</div>
             
             <div id="modules-container">
                 <div id="loader" class="loader">Loading modules from database...</div>
@@ -280,19 +343,14 @@
     </div>
 </div>
 
-<!-- SUPABASE SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- SCRIPT PRINCIPAL -->
 <script>
-    // 1. CONFIGURACIÓN SUPABASE
     const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
     
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 2. INICIALIZACIÓN
     async function initDashboard() {
-        // Verificar autenticación
         const userEmail = localStorage.getItem('quiz_username');
         
         if (!userEmail) {
@@ -301,10 +359,10 @@
             } catch (e) {
                 console.warn("Redirección automática falló.");
                 document.body.innerHTML = `
-                    <div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;text-align:center;font-family:sans-serif;">
+                    <div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;text-align:center;font-family:sans-serif;padding:20px;">
                         <h2 style="color:#121212;">Acceso Requerido</h2>
                         <p style="color:#666;">Debes iniciar sesión para ver el dashboard.</p>
-                        <a href="login.html" style="background:#fcdc11; color:#121212; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; margin-top:15px;">
+                        <a href="login.html" style="background:#fcdc11; color:#121212; padding:12px 25px; text-decoration:none; border-radius:5px; font-weight:bold; margin-top:15px; display:inline-block;">
                             Ir a Iniciar Sesión
                         </a>
                     </div>
@@ -313,19 +371,16 @@
             return;
         }
         
-        document.getElementById('user-name').innerText = userEmail.split('@')[0]; // Mostrar parte del correo
+        document.getElementById('user-name').innerText = userEmail.split('@')[0]; 
 
-        // Pre-cargar Módulos (se cargan pero permanecen ocultos hasta que se elija el modo)
         await fetchModules();
     }
 
-    // 3. OBTENER MÓDULOS DE SUPABASE
     async function fetchModules() {
         const container = document.getElementById('modules-container');
         const loader = document.getElementById('loader');
 
         try {
-            // Consulta a la tabla 'contenido_quizzes'
             const { data: quizzes, error } = await _supabase
                 .from('contenido_quizzes') 
                 .select('*')
@@ -338,28 +393,23 @@
                 return;
             }
 
-            // Agrupar por Materia
             const grouped = quizzes.reduce((acc, item) => {
                 if (!acc[item.materia]) acc[item.materia] = [];
                 acc[item.materia].push(item);
                 return acc;
             }, {});
 
-            // Renderizar HTML
-            container.innerHTML = ''; // Limpiar loader
+            container.innerHTML = ''; 
             
             for (const [materia, items] of Object.entries(grouped)) {
-                // Crear el bloque del acordeón
                 const moduleDiv = document.createElement('div');
                 moduleDiv.className = 'module-item';
                 
-                // Header del acordeón
                 const headerDiv = document.createElement('div');
                 headerDiv.className = 'module-header';
-                headerDiv.innerHTML = `${materia} <span style="font-weight:400; font-size:0.9em; opacity:0.7">(${items.length} Quizzes)</span>`;
+                headerDiv.innerHTML = `<span>${materia}</span> <span style="font-weight:400; font-size:0.9em; opacity:0.7">(${items.length})</span>`;
                 headerDiv.onclick = () => toggleAccordion(moduleDiv);
 
-                // Lista de quizzes oculta
                 const ul = document.createElement('ul');
                 ul.className = 'quiz-list';
 
@@ -367,8 +417,8 @@
                     const li = document.createElement('li');
                     li.innerHTML = `
                         <a href="${quiz.archivo_url}" class="quiz-link">
-                            <span>${quiz.titulo_quiz}</span>
-                            <span class="quiz-status">START EXAM</span>
+                            <span style="flex:1; padding-right:10px;">${quiz.titulo_quiz}</span>
+                            <span class="quiz-status">START</span>
                         </a>
                     `;
                     ul.appendChild(li);
@@ -385,18 +435,13 @@
         }
     }
 
-    // 4. FUNCIONES UI
     function toggleAccordion(element) {
-        // Cierra otros abiertos si quieres modo exclusivo (opcional), por ahora permite múltiples abiertos
         element.classList.toggle('open');
     }
 
-    // NUEVA LÓGICA DE FILTRO
     function filterMode(mode, cardElement) {
-        // 1. Resetear estilos de todos los botones
         document.querySelectorAll('.action-card').forEach(c => c.classList.remove('active'));
         
-        // 2. Activar el botón clickeado
         if (cardElement) {
             cardElement.classList.add('active');
         }
@@ -404,19 +449,14 @@
         const modulesSection = document.getElementById('modules-section');
 
         if (mode === 'simulation') {
-            // MOSTRAR la lista
             modulesSection.style.display = 'block';
-            
-            // Desplazar suavemente hacia la lista
             setTimeout(() => {
                 modulesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
 
         } else if (mode === 'practice') {
-            // OCULTAR la lista (o mostrar otra cosa en el futuro)
             modulesSection.style.display = 'none';
-            alert("Practice Mode is coming soon! Please select Simulation for now.");
-            // Quitar estilo activo si no hay nada que mostrar
+            alert("Practice Mode is coming soon!");
             if (cardElement) cardElement.classList.remove('active');
         }
     }
