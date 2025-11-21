@@ -1,14 +1,3 @@
-Aquí tienes el código **COMPLETO y DEFINITIVO** para `dashboard.html`.
-
-He integrado exitosamente:
-
-1.  **El detector de URL:** Al principio de `initApp` para detectar si `index.html` te redirigió con `?recovery=true`.
-2.  **El detector de Eventos:** Por si acaso Supabase dispara el evento directo.
-3.  **Limpieza de URL:** Para que no se vea feo el enlace en el navegador.
-
-Copia y pega todo esto en tu archivo `dashboard.html`:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -194,6 +183,26 @@ Copia y pega todo esto en tu archivo `dashboard.html`:
     }
     .btn-back:hover { border-color: var(--primary-dark); color: var(--primary-dark); transform: translateY(-2px); }
 
+    /* --- 7. MODAL DE RECUPERACIÓN (NUEVO) --- */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000;
+        backdrop-filter: blur(5px);
+    }
+    .modal-card {
+        background: white; padding: 40px; border-radius: 16px; width: 90%; max-width: 400px;
+        text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    }
+    .modal-title { font-size: 1.5em; font-weight: 800; margin-bottom: 20px; color: var(--primary-dark); }
+    .btn-save {
+        width: 100%; background-color: var(--primary-color); color: var(--primary-dark);
+        font-weight: 800; padding: 15px; border: none; border-radius: 8px; cursor: pointer; margin-top: 15px;
+    }
+    .input-pass {
+        width: 100%; padding: 15px; border: 2px solid var(--border-color);
+        border-radius: 8px; font-size: 1em; box-sizing: border-box; text-align: center;
+    }
+
     @media (max-width: 600px) {
         .menu-grid { grid-template-columns: 1fr; max-width: 320px; }
         .content-container { padding: 20px; }
@@ -209,13 +218,12 @@ Copia y pega todo esto en tu archivo `dashboard.html`:
     <div class="brand-header">
         <span>INBDE Pro</span>
         <div class="header-actions">
-            <button class="btn-pass" onclick="promptNewPassword()">🔑 Password</button>
+            <button class="btn-pass" onclick="openResetModal()">🔑 Password</button>
             <button class="btn-logout" onclick="logout()">Sign Out</button>
         </div>
     </div>
 
     <div class="content-container">
-        
         <div id="home-intro" class="welcome-section">
             <h1 class="welcome-title">Welcome back, <span id="user-name">Doctor</span></h1>
             <div class="welcome-sub">Choose your practice mode</div>
@@ -240,7 +248,6 @@ Copia y pega todo esto en tu archivo `dashboard.html`:
         </div>
 
         <div id="list-view" class="list-view-wrapper">
-            
             <div class="section-header">
                 <div class="current-mode-title">
                     <span id="mode-icon">📂</span> 
@@ -254,21 +261,31 @@ Copia y pega todo esto en tu archivo `dashboard.html`:
             </div>
 
             <div id="loading-state" style="text-align:center; color:#999; padding:20px;">Loading...</div>
-
             <div id="modules-container"></div>
 
             <div class="btn-back-container">
                 <button class="btn-back" onclick="goHome()">⬅ Back to Home</button>
             </div>
         </div>
+    </div>
+</div>
 
+<div id="recovery-modal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-title">Set New Password</div>
+        <p style="color:#666; margin-bottom:20px;">Please create a secure password to access your account.</p>
+        
+        <input type="password" id="new-password-input" class="input-pass" placeholder="New Password (min 6 chars)">
+        
+        <button class="btn-save" onclick="saveNewPassword()">Save & Login</button>
+        
+        <button onclick="document.getElementById('recovery-modal').style.display='none'" style="background:none; border:none; color:#999; margin-top:15px; cursor:pointer;">Cancel</button>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // --- CONFIGURACIÓN ---
     const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -277,33 +294,24 @@ Copia y pega todo esto en tu archivo `dashboard.html`:
     let userCompletedIds = new Set();
     let currentUser = null;
 
-    // --- 1. DETECTOR DE EVENTOS (Respaldo) ---
+    // --- 1. DETECTOR DE EVENTOS (RECUPERACIÓN) ---
     _supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === "PASSWORD_RECOVERY") {
-            console.log("Usuario viene de recuperar contraseña");
-            setTimeout(() => {
-                alert("Recovery successful! Please create your new password now.");
-                promptNewPassword(); 
-            }, 500);
+            // MOSTRAR MODAL EN VEZ DE PROMPT
+            openResetModal();
         }
     });
 
     // --- 2. INICIALIZACIÓN ---
     async function initApp() {
-        // A. Verificar si venimos de recuperación por URL (Desde index.html)
         const urlParams = new URLSearchParams(window.location.search);
         const isRecovery = urlParams.get('recovery') === 'true';
 
         if (isRecovery) {
-            // Limpiamos la URL para que no se vea el ?recovery=true
             window.history.replaceState({}, document.title, "dashboard.html");
-            setTimeout(() => {
-                alert("Recovery successful! Please create your new password now.");
-                promptNewPassword();
-            }, 500);
+            setTimeout(() => { openResetModal(); }, 500);
         }
 
-        // B. Verificar Sesión
         const { data: { session } } = await _supabase.auth.getSession();
         if (!session) {
             window.location.href = 'index.html';
@@ -317,7 +325,33 @@ Copia y pega todo esto en tu archivo `dashboard.html`:
         await loadData();
     }
 
-    // --- 3. NAVEGACIÓN ---
+    // --- 3. LÓGICA MODAL (NUEVO) ---
+    function openResetModal() {
+        document.getElementById('recovery-modal').style.display = 'flex';
+        document.getElementById('new-password-input').focus();
+    }
+
+    async function saveNewPassword() {
+        const newPass = document.getElementById('new-password-input').value;
+        
+        if (!newPass || newPass.length < 6) {
+            alert("Password must be at least 6 characters long.");
+            return;
+        }
+
+        const { data, error } = await _supabase.auth.updateUser({ password: newPass });
+
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            alert("Password updated successfully! Please log in with your new credentials.");
+            // REDIRIGIR AL LOGIN
+            await _supabase.auth.signOut();
+            window.location.href = 'index.html';
+        }
+    }
+
+    // --- 4. NAVEGACIÓN ---
     function openMode(modeName) {
         document.getElementById('menu-view').style.display = 'none';
         document.getElementById('home-intro').style.display = 'none';
@@ -341,7 +375,7 @@ Copia y pega todo esto en tu archivo `dashboard.html`:
         renderQuizzes(allQuizzes);
     }
 
-    // --- 4. CARGA DE DATOS ---
+    // --- 5. CARGA DE DATOS ---
     async function loadData() {
         try {
             const quizzesReq = _supabase.from('contenido_quizzes').select('*').order('materia', { ascending: true });
@@ -362,7 +396,7 @@ Copia y pega todo esto en tu archivo `dashboard.html`:
         }
     }
 
-    // --- 5. RENDERIZADO ---
+    // --- 6. RENDERIZADO ---
     function renderQuizzes(list) {
         const container = document.getElementById('modules-container');
         container.innerHTML = ''; 
@@ -419,26 +453,6 @@ Copia y pega todo esto en tu archivo `dashboard.html`:
         document.querySelectorAll('.module-card').forEach(card => card.classList.add('open'));
     }
 
-    // --- 6. CAMBIAR CONTRASEÑA ---
-    async function promptNewPassword() {
-        const newPass = prompt("Create your new password (min 6 characters):");
-        
-        if (newPass) {
-            if (newPass.length < 6) {
-                alert("Password must be at least 6 characters long.");
-                return;
-            }
-            const { data, error } = await _supabase.auth.updateUser({ password: newPass });
-            if (error) {
-                alert("Error: " + error.message);
-            } else {
-                alert("Success! Password updated.");
-                // Recargar para asegurar sesión limpia
-                window.location.href = 'dashboard.html';
-            }
-        }
-    }
-
     // --- 7. SALIR ---
     async function logout() {
         await _supabase.auth.signOut();
@@ -447,4 +461,3 @@ Copia y pega todo esto en tu archivo `dashboard.html`:
 </script>
 </body>
 </html>
-```
