@@ -13,7 +13,7 @@
         --white: #ffffff;
         --border-color: #e5e7eb;
         --text-muted: #6b7280;
-        --success: #10b981; /* Verde para completado */
+        --success: #10b981;
     }
 
     body {
@@ -28,18 +28,19 @@
         box-sizing: border-box;
     }
 
-    /* --- 2. LAYOUT PRINCIPAL --- */
+    /* --- 2. LAYOUT --- */
     .main-wrapper {
         display: flex;
         flex-direction: column;
         width: 100%;
-        max-width: 1100px;
+        max-width: 900px; /* Un poco más angosto para que se vea más "App" */
         background-color: var(--white);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        border-radius: 16px;
         overflow: hidden;
         border: 1px solid var(--border-color);
         min-height: 85vh;
+        position: relative;
     }
 
     /* --- 3. HEADER --- */
@@ -48,181 +49,133 @@
         color: var(--primary-color);
         padding: 15px 25px;
         font-weight: 800;
-        font-size: 1.2em;
-        border-bottom: 4px solid var(--primary-color);
+        font-size: 1.1em;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
     }
 
     .btn-logout {
-        background: transparent;
-        border: 1px solid #ef4444;
-        color: #ef4444;
+        background: rgba(255,255,255,0.1);
+        border: none;
+        color: #ff6b6b;
         padding: 6px 12px;
         font-size: 0.8em;
-        font-weight: 700;
+        font-weight: 600;
         cursor: pointer;
-        border-radius: 4px;
+        border-radius: 6px;
         transition: all 0.2s;
     }
-    .btn-logout:hover { background: rgba(239, 68, 68, 0.1); }
+    .btn-logout:hover { background: rgba(255, 107, 107, 0.1); }
 
     /* --- 4. CONTENIDO --- */
     .content-container {
         padding: 30px;
         flex: 1;
-    }
-
-    .welcome-section { margin-bottom: 30px; }
-    .welcome-title { font-size: 1.6em; font-weight: 800; margin: 0 0 5px 0; }
-    .welcome-sub { color: var(--text-muted); font-size: 0.95em; }
-
-    /* --- 5. BUSCADOR (NUEVO) --- */
-    .search-container {
-        margin-bottom: 25px;
-        position: relative;
-    }
-    .search-input {
-        width: 100%;
-        padding: 15px 20px;
-        padding-left: 45px; /* Espacio para ícono */
-        font-size: 1em;
-        border: 2px solid var(--border-color);
-        border-radius: 8px;
-        box-sizing: border-box;
-        transition: border-color 0.3s;
-        background-color: #f9fafb;
-    }
-    .search-input:focus {
-        border-color: var(--primary-color);
-        outline: none;
-        background-color: #fff;
-    }
-    .search-icon {
-        position: absolute;
-        left: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 1.2em;
-        opacity: 0.5;
-    }
-
-    /* --- 6. MODOS DE ESTUDIO --- */
-    .mode-selector {
         display: flex;
-        gap: 15px;
-        margin-bottom: 30px;
-        border-bottom: 1px solid var(--border-color);
-        padding-bottom: 15px;
+        flex-direction: column;
     }
-    .mode-btn {
-        background: none;
-        border: none;
-        font-size: 1em;
-        font-weight: 600;
-        color: var(--text-muted);
-        cursor: pointer;
-        padding: 8px 0;
-        position: relative;
-    }
-    .mode-btn.active { color: var(--primary-dark); }
-    .mode-btn.active::after {
-        content: '';
-        position: absolute;
-        bottom: -16px;
-        left: 0;
+
+    .welcome-section { margin-bottom: 40px; text-align: center; }
+    .welcome-title { font-size: 1.8em; font-weight: 800; margin: 0 0 8px 0; color: var(--primary-dark); }
+    .welcome-sub { color: var(--text-muted); font-size: 1em; }
+
+    /* --- 5. MENÚ DE TARJETAS (NUEVO DISEÑO) --- */
+    .menu-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        max-width: 700px;
+        margin: 0 auto;
         width: 100%;
-        height: 3px;
-        background: var(--primary-color);
     }
 
-    /* --- 7. LISTA DE QUIZZES (ACORDEÓN MEJORADO) --- */
-    .modules-container { display: none; animation: fadeUp 0.4s ease; }
-    .modules-container.active { display: block; }
+    .menu-card {
+        background: white;
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        padding: 40px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        position: relative;
+        overflow: hidden;
+    }
 
-    @keyframes fadeUp {
-        from { opacity: 0; transform: translateY(10px); }
+    .menu-card:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(252, 220, 17, 0.15);
+    }
+
+    .menu-card .icon { font-size: 3em; margin-bottom: 15px; display: block; }
+    .menu-card .title { font-size: 1.2em; font-weight: 800; display: block; margin-bottom: 8px; }
+    .menu-card .desc { font-size: 0.9em; color: var(--text-muted); line-height: 1.4; }
+
+    /* --- 6. VISTA DE LISTA (OCULTA POR DEFECTO) --- */
+    .list-view-wrapper { display: none; animation: slideIn 0.3s ease-out; }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
-    .module-card {
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        margin-bottom: 12px;
-        overflow: hidden;
-        background: white;
-    }
-    
-    .module-header {
-        padding: 15px 20px;
-        background: #fff;
-        cursor: pointer;
+    .section-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-weight: 700;
-        border-bottom: 1px solid transparent;
-        transition: background 0.2s;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #f3f4f6;
+        padding-bottom: 15px;
     }
+    .current-mode-title { font-size: 1.2em; font-weight: 700; color: var(--primary-dark); display: flex; align-items: center; gap: 10px; }
+
+    /* Buscador */
+    .search-container { margin-bottom: 20px; position: relative; }
+    .search-input {
+        width: 100%; padding: 14px 20px 14px 45px; font-size: 0.95em;
+        border: 2px solid var(--border-color); border-radius: 10px;
+        background-color: #f9fafb; transition: all 0.3s; box-sizing: border-box;
+    }
+    .search-input:focus { border-color: var(--primary-color); background: white; outline: none; }
+    .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); opacity: 0.4; }
+
+    /* Acordeón */
+    .module-card { border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 12px; overflow: hidden; background: white; }
+    .module-header { padding: 16px 20px; background: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 700; transition: background 0.2s; }
     .module-header:hover { background-color: #fdfdfd; }
-    .module-card.open .module-header {
-        background-color: var(--primary-color);
-        border-bottom-color: rgba(0,0,0,0.1);
-    }
-
-    .quiz-list {
-        display: none;
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-    .module-card.open .quiz-list { display: block; }
-
-    .quiz-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px 20px;
-        border-bottom: 1px solid var(--border-color);
-        text-decoration: none;
-        color: #333;
-        transition: background 0.2s;
-        gap: 10px;
-    }
-    .quiz-item:last-child { border-bottom: none; }
-    .quiz-item:hover { background-color: var(--hover-bg); }
-
-    /* --- 8. ESTADOS (COMPLETADO / NUEVO) --- */
-    .status-badge {
-        font-size: 0.7em;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .status-start {
-        background: var(--primary-dark);
-        color: var(--primary-color);
-    }
-    .status-done {
-        background: var(--success);
-        color: white;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .hidden { display: none !important; }
+    .module-card.open .module-header { background-color: var(--primary-color); border-bottom: 1px solid rgba(0,0,0,0.05); }
     
+    .quiz-list { display: none; margin: 0; padding: 0; }
+    .module-card.open .quiz-list { display: block; }
+    
+    .quiz-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f3f4f6; text-decoration: none; color: #333; transition: background 0.2s; }
+    .quiz-item:hover { background-color: #fffce0; }
+    .quiz-item:last-child { border-bottom: none; }
+
+    /* Badge */
+    .status-badge { font-size: 0.7em; padding: 4px 10px; border-radius: 20px; font-weight: 800; text-transform: uppercase; }
+    .status-start { background: var(--primary-dark); color: var(--primary-color); }
+    .status-done { background: var(--success); color: white; display: flex; align-items: center; gap: 4px; }
+
+    /* --- 7. BOTÓN BACK --- */
+    .btn-back-container { margin-top: 30px; text-align: center; }
+    .btn-back {
+        background: white; border: 2px solid var(--border-color);
+        color: var(--text-muted); padding: 10px 25px;
+        border-radius: 30px; font-weight: 600; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 8px;
+        transition: all 0.2s;
+    }
+    .btn-back:hover { border-color: var(--primary-dark); color: var(--primary-dark); transform: translateY(-2px); }
+
     /* RESPONSIVE */
     @media (max-width: 600px) {
+        .menu-grid { grid-template-columns: 1fr; max-width: 320px; }
         .content-container { padding: 20px; }
-        .quiz-item { flex-direction: column; align-items: flex-start; gap: 8px; }
-        .status-badge { align-self: flex-start; }
+        .menu-card { padding: 30px 20px; display: flex; align-items: center; text-align: left; gap: 20px; }
+        .menu-card .icon { margin-bottom: 0; font-size: 2.5em; }
+        .welcome-title { font-size: 1.4em; }
     }
 </style>
 </head>
@@ -231,36 +184,57 @@
 <div class="main-wrapper">
     <div class="brand-header">
         <span>INBDE Pro</span>
-        <button class="btn-logout" onclick="logout()">Logout</button>
+        <button class="btn-logout" onclick="logout()">Sign Out</button>
     </div>
 
     <div class="content-container">
         
-        <div class="welcome-section">
-            <h1 class="welcome-title">Hello, <span id="user-name">Doctor</span> 👋</h1>
-            <div class="welcome-sub">Ready to practice today?</div>
+        <div id="home-intro" class="welcome-section">
+            <h1 class="welcome-title">Welcome back, <span id="user-name">Doctor</span></h1>
+            <div class="welcome-sub">Choose your practice mode</div>
         </div>
 
-        <div class="search-container">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="search-bar" class="search-input" placeholder="Search quizzes (e.g., 'Oral Surgery', 'Anatomy')..." onkeyup="filterQuizzes()">
+        <div id="menu-view" class="menu-grid">
+            <div class="menu-card" onclick="openMode('Simulation Mode')">
+                <span class="icon">⏱️</span>
+                <div>
+                    <span class="title">Simulation</span>
+                    <span class="desc">Timed exams tailored to simulate the real test environment.</span>
+                </div>
+            </div>
+            
+            <div class="menu-card" onclick="openMode('Single Questions')">
+                <span class="icon">🧠</span>
+                <div>
+                    <span class="title">Single Questions</span>
+                    <span class="desc">Practice specific topics at your own pace with instant feedback.</span>
+                </div>
+            </div>
         </div>
 
-        <div class="mode-selector">
-            <button class="mode-btn active" onclick="switchMode('simulation', this)">Simulation</button>
-            <button class="mode-btn" onclick="switchMode('practice', this)">Practice (Beta)</button>
-        </div>
-
-        <div id="loading-state" style="text-align:center; color:#999; padding:40px;">
-            Loading your progress...
-        </div>
-
-        <div id="simulation-view" class="modules-container">
+        <div id="list-view" class="list-view-wrapper">
+            
+            <div class="section-header">
+                <div class="current-mode-title">
+                    <span id="mode-icon">📂</span> 
+                    <span id="mode-title-text">Select Quiz</span>
+                </div>
             </div>
 
-        <div id="practice-view" class="modules-container" style="text-align:center; padding:40px; color:#666;">
-            Practice mode coming soon! Focus on Simulation for now.
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-bar" class="search-input" placeholder="Search topics (e.g., Anatomy, Pharma)..." onkeyup="filterQuizzes()">
+            </div>
+
+            <div id="loading-state" style="text-align:center; color:#999; padding:20px;">Loading...</div>
+
+            <div id="modules-container"></div>
+
+            <div class="btn-back-container">
+                <button class="btn-back" onclick="goHome()">⬅ Back to Home</button>
+            </div>
         </div>
+
     </div>
 </div>
 
@@ -272,166 +246,138 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Variables Globales
     let allQuizzes = [];
     let userCompletedIds = new Set();
     let currentUser = null;
 
-    // --- 1. INICIALIZACIÓN SEGURA ---
+    // --- 1. INICIALIZACIÓN ---
     async function initApp() {
-        // Verificar sesión real con Supabase
         const { data: { session } } = await _supabase.auth.getSession();
-
         if (!session) {
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
             return;
         }
-
         currentUser = session.user;
-        // Mostrar email del usuario
         document.getElementById('user-name').innerText = currentUser.email.split('@')[0];
-
-        // Cargar Datos
+        
+        // Cargar datos en segundo plano
         await loadData();
     }
 
-    // --- 2. CARGA DE DATOS (Quizzes + Progreso) ---
+    // --- 2. LÓGICA DE NAVEGACIÓN ---
+    function openMode(modeName) {
+        // 1. Ocultar Menú
+        document.getElementById('menu-view').style.display = 'none';
+        document.getElementById('home-intro').style.display = 'none'; // Ocultar saludo grande
+        
+        // 2. Configurar Vista de Lista
+        const listView = document.getElementById('list-view');
+        const titleText = document.getElementById('mode-title-text');
+        const icon = document.getElementById('mode-icon');
+
+        titleText.innerText = modeName;
+        icon.innerText = modeName === 'Simulation Mode' ? '⏱️' : '🧠';
+        
+        // 3. Mostrar Lista
+        listView.style.display = 'block';
+
+        // (Opcional) Aquí podrías filtrar los quizzes según el modo si tuvieras tipos distintos en la BD
+        renderQuizzes(allQuizzes); 
+    }
+
+    function goHome() {
+        document.getElementById('list-view').style.display = 'none';
+        document.getElementById('menu-view').style.display = 'grid'; // Volver a Grid
+        document.getElementById('home-intro').style.display = 'block';
+        
+        // Limpiar buscador al volver
+        document.getElementById('search-bar').value = '';
+        renderQuizzes(allQuizzes);
+    }
+
+    // --- 3. CARGA DE DATOS ---
     async function loadData() {
         try {
-            // A. Obtener todos los quizzes
-            const quizzesReq = _supabase
-                .from('contenido_quizzes')
-                .select('*')
-                .order('materia', { ascending: true });
+            const quizzesReq = _supabase.from('contenido_quizzes').select('*').order('materia', { ascending: true });
+            const progressReq = _supabase.from('user_progress').select('quiz_id').eq('user_id', currentUser.id);
 
-            // B. Obtener progreso del usuario actual
-            // NOTA: Esto requiere haber creado la tabla 'user_progress' en Supabase
-            const progressReq = _supabase
-                .from('user_progress')
-                .select('quiz_id')
-                .eq('user_id', currentUser.id);
-
-            // Ejecutar ambas peticiones en paralelo para velocidad
             const [quizzesRes, progressRes] = await Promise.all([quizzesReq, progressReq]);
 
             if (quizzesRes.error) throw quizzesRes.error;
 
             allQuizzes = quizzesRes.data;
-            
-            // Si existe progreso, guardamos los IDs en un Set para búsqueda rápida
             if (progressRes.data) {
                 userCompletedIds = new Set(progressRes.data.map(p => p.quiz_id));
             }
 
-            renderQuizzes(allQuizzes);
             document.getElementById('loading-state').style.display = 'none';
-            document.getElementById('simulation-view').classList.add('active');
-
+            // No renderizamos todavía, esperamos a que el usuario elija modo
         } catch (err) {
-            console.error("Error loading data:", err);
-            document.getElementById('loading-state').innerText = "Error loading content. Please refresh.";
+            console.error(err);
         }
     }
 
-    // --- 3. RENDERIZADO (HTML GENERATOR) ---
-    function renderQuizzes(quizzesToRender) {
-        const container = document.getElementById('simulation-view');
-        container.innerHTML = ''; // Limpiar
+    // --- 4. RENDERIZADO (Acordeón) ---
+    function renderQuizzes(list) {
+        const container = document.getElementById('modules-container');
+        container.innerHTML = ''; 
 
-        if (quizzesToRender.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:#999;">No quizzes found matching your search.</div>';
+        if (list.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#999;">No quizzes found.</div>';
             return;
         }
 
-        // Agrupar por Materia
-        const grouped = quizzesToRender.reduce((acc, quiz) => {
+        const grouped = list.reduce((acc, quiz) => {
             if (!acc[quiz.materia]) acc[quiz.materia] = [];
             acc[quiz.materia].push(quiz);
             return acc;
         }, {});
 
-        // Crear HTML
         for (const [materia, items] of Object.entries(grouped)) {
-            // Verificar si todos los de esta materia están completados (opcional, para UX visual)
             const completedCount = items.filter(q => userCompletedIds.has(q.id)).length;
-            const isAllDone = completedCount === items.length;
-
+            
             const card = document.createElement('div');
-            card.className = 'module-card'; // Por defecto cerrado
+            card.className = 'module-card'; 
 
-            // Header
             const header = document.createElement('div');
             header.className = 'module-header';
-            header.innerHTML = `
-                <span>${materia}</span>
-                <span style="font-weight:400; font-size:0.85em; color:#666;">
-                    ${completedCount}/${items.length} Done
-                </span>
-            `;
+            header.innerHTML = `<span>${materia}</span><span style="font-size:0.85em; color:#666; font-weight:400">${completedCount}/${items.length}</span>`;
             header.onclick = () => card.classList.toggle('open');
 
-            // Lista
-            const list = document.createElement('div');
-            list.className = 'quiz-list';
+            const ul = document.createElement('div');
+            ul.className = 'quiz-list';
 
             items.forEach(quiz => {
                 const isDone = userCompletedIds.has(quiz.id);
                 const link = document.createElement('a');
                 link.className = 'quiz-item';
-                // Truco: Pasamos el ID del quiz en la URL para que la pagina del quiz sepa cual es
                 link.href = `${quiz.archivo_url}?quiz_id=${quiz.id}`; 
                 
-                // HTML del Item
                 link.innerHTML = `
-                    <div style="flex:1">
-                        <div style="font-weight:600;">${quiz.titulo_quiz}</div>
-                    </div>
-                    ${isDone 
-                        ? `<span class="status-badge status-done">✓ COMPLETED</span>` 
-                        : `<span class="status-badge status-start">START</span>`
-                    }
+                    <span style="font-weight:500;">${quiz.titulo_quiz}</span>
+                    ${isDone ? `<span class="status-badge status-done">✓</span>` : `<span class="status-badge status-start">GO</span>`}
                 `;
-                list.appendChild(link);
+                ul.appendChild(link);
             });
 
             card.appendChild(header);
-            card.appendChild(list);
+            card.appendChild(ul);
             container.appendChild(card);
         }
     }
 
-    // --- 4. BUSCADOR ---
     function filterQuizzes() {
         const query = document.getElementById('search-bar').value.toLowerCase();
+        if (!query) { renderQuizzes(allQuizzes); return; }
         
-        if (!query) {
-            renderQuizzes(allQuizzes); // Si está vacío, mostrar todo
-            return;
-        }
-
-        const filtered = allQuizzes.filter(quiz => 
-            quiz.titulo_quiz.toLowerCase().includes(query) || 
-            quiz.materia.toLowerCase().includes(query)
-        );
-        
+        const filtered = allQuizzes.filter(q => q.titulo_quiz.toLowerCase().includes(query) || q.materia.toLowerCase().includes(query));
         renderQuizzes(filtered);
-        
-        // Auto-abrir acordeones si hay búsqueda
         document.querySelectorAll('.module-card').forEach(card => card.classList.add('open'));
-    }
-
-    // --- 5. UTILIDADES ---
-    function switchMode(mode, btn) {
-        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        document.getElementById('simulation-view').style.display = mode === 'simulation' ? 'block' : 'none';
-        document.getElementById('practice-view').style.display = mode === 'practice' ? 'block' : 'none';
     }
 
     async function logout() {
         await _supabase.auth.signOut();
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
     }
 </script>
 </body>
