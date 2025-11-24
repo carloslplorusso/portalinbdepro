@@ -348,7 +348,7 @@
 
     @media (max-width: 1024px) {
         body { 
-            height: 100dvh; /* Viewport height completa */
+            height: 100dvh; 
             overflow: hidden; 
             align-items: flex-start; 
             padding: 0;
@@ -357,128 +357,88 @@
         .lab-container {
             height: 100dvh;
             display: grid;
-            /* ESTRUCTURA BENTO 2 COLUMNAS */
+            /* FILAS FLUIDAS PARA EVITAR GAPS */
+            /* Header | Banner | Hero (1fr - Expand) | Daily/Metrics (Auto) | Notes/Activity (Auto) | IA (Auto) */
+            grid-template-rows: min-content min-content 1fr min-content min-content min-content;
             grid-template-columns: 1fr 1fr; 
-            /* Header | Banner | Hero Cards | Daily/Metrics | Notes/Activity | IA Lab (Footer) */
-            grid-template-rows: auto auto 1fr 0.8fr 0.8fr auto;
             gap: 8px; 
             padding: 10px 12px 12px 12px;
             width: 100%;
         }
 
-        /* Romper columnas para reordenar libremente */
         .col-side, .col-center { display: contents; }
 
-        /* --- ORDENAMIENTO MÓVIL (Bento Style) --- */
-
         /* 1. HEADER */
-        .header-area { 
-            grid-column: 1 / -1; 
-            order: 0; margin-bottom: 0; padding-bottom: 5px; 
-        }
+        .header-area { grid-column: 1 / -1; order: 0; margin: 0; padding-bottom: 5px; }
         .lab-title { font-size: 1.5rem; }
-        .user-welcome { margin-top: 0; font-size: 0.9rem; gap: 10px; }
         .header-countdown { padding: 2px 8px; font-size: 0.7rem; }
 
         /* 2. BANNER LEARN */
-        .card-learn-banner { 
-            grid-column: 1 / -1; 
-            order: 1; 
-            margin-bottom: 0; padding: 8px; 
-            min-height: 40px;
-        }
+        .card-learn-banner { grid-column: 1 / -1; order: 1; margin: 0; padding: 8px; min-height: 40px; }
         .card-learn-banner h2 { font-size: 0.85rem; }
-        .banner-icon svg { width: 14px; height: 14px; }
 
-        /* 3. HERO CARDS (Fila de 3 verticalmente estilizadas) */
+        /* 3. HERO CARDS (PRINCIPALES - MÁS ALTAS Y GRANDES) */
         .center-row-hero {
             grid-column: 1 / -1; 
             order: 2;
             flex-direction: row !important;
             gap: 6px;
-            margin-bottom: 0;
-            /* Altura automática flexible */
-            min-height: 0;
+            margin: 0;
+            /* Ocupan todo el espacio disponible */
+            height: 100%; 
+            align-items: stretch;
         }
         .hero-card {
             min-height: 0;
-            padding: 8px 4px;
-            gap: 4px;
-            /* Aspecto vertical */
+            padding: 12px 5px;
+            /* VERTICALES */
             flex-direction: column; 
             justify-content: center;
+            flex: 1;
         }
-        .hero-card .icon { margin-bottom: 2px; font-size: 1.8rem; }
-        .hero-card .title { font-size: 0.65rem; line-height: 1.1; }
-        .hero-card .sub { display: none; }
+        /* Texto e Iconos más grandes para armonía */
+        .hero-card .icon { margin-bottom: 8px; font-size: 2.5rem; }
+        .hero-card .title { font-size: 0.9rem; line-height: 1.1; }
 
-        /* 4. DAILY & METRICS (Fila compartida - Pequeños) */
-        
-        /* Daily (Izq) */
-        .col-left .card-promo-style {
-            grid-column: 1 / 2; 
-            order: 3;
-            width: 100%; height: 100%;
-            min-height: 0; 
-            margin: 0;
-            padding: 10px;
+        /* 4. DAILY & METRICS (SECUNDARIAS - MÁS PEQUEÑAS) */
+        .col-left .card-promo-style { /* Daily */
+            grid-column: 1 / 2; order: 3;
+            min-height: 110px; /* Compactas */
+            margin: 0; padding: 10px;
             border: 2px solid var(--accent) !important;
         }
-        .col-left .card-promo-style .promo-title { font-size: 0.75rem; margin-bottom: 2px; }
-        .col-left .card-promo-style .promo-desc { display: none; } /* Ocultar descripción para compactar */
-        .col-left .card-promo-style .btn-start { font-size: 0.6rem; padding: 5px 0; margin-top: auto; }
-        .fire-icon { font-size: 1.1rem; }
-
-        /* Metrics (Der) - Estilo Promo */
-        .card-metrics {
-            grid-column: 2 / 3; 
-            order: 3;
-            width: 100%; height: 100%;
-            min-height: 0;
-            margin: 0;
-            padding: 8px;
+        .card-metrics { /* Metrics */
+            grid-column: 2 / 3; order: 3;
+            min-height: 110px; /* Compactas */
+            margin: 0; padding: 8px;
             background: linear-gradient(145deg, rgba(250, 204, 21, 0.15), rgba(0,0,0,0) 70%);
             border: 2px solid var(--accent);
             box-shadow: 0 0 15px rgba(250, 204, 21, 0.15);
             border-radius: 16px;
         }
-        .metrics-header { margin-bottom: 0; justify-content: center; }
-        .metrics-title { font-size: 0.6rem; color: #fff; font-weight: 700; margin-bottom: 5px; }
-        .metrics-icon { display: none; } /* Ocultar icono para ahorrar espacio */
-        .pie-chart-main { width: 50px; height: 50px; } 
+        /* Ajustes de texto para compactas */
+        .col-left .card-promo-style .promo-title, .metrics-title { font-size: 0.7rem; margin-bottom: 2px; }
+        .col-left .card-promo-style .btn-start { font-size: 0.6rem; padding: 4px 0; margin-top: auto; }
+        .pie-chart-main { width: 45px; height: 45px; }
 
-        /* 5. NOTES & ACTIVITY (Fila compartida - Borde Amarillo) */
-        
-        /* Notes (Izq) */
+        /* 5. NOTES & ACTIVITY (SECUNDARIAS - BORDE AMARILLO) */
         .col-left .card-notes {
-            grid-column: 1 / 2; 
-            order: 4;
-            width: 100%; height: 100%;
-            min-height: 0;
-            margin: 0; padding: 10px;
-            border: 1px solid var(--accent); /* Borde amarillo solicitado */
+            grid-column: 1 / 2; order: 4;
+            min-height: 90px; margin: 0; padding: 8px;
+            border: 1px solid var(--accent);
         }
-        .col-left .card-notes .card-title { font-size: 0.75rem; margin-bottom: 2px; }
-        .col-left .card-notes .card-desc { font-size: 0.65rem; line-height: 1.1; }
-
-        /* Activity (Der) */
         .col-right .usage-container {
-            grid-column: 2 / 3; 
-            order: 4;
-            width: 100%; height: 100%;
-            min-height: 0;
-            margin: 0; padding: 8px;
+            grid-column: 2 / 3; order: 4;
+            min-height: 90px; margin: 0; padding: 8px;
+            border: 1px solid var(--accent);
             flex-direction: column; justify-content: center;
-            border: 1px solid var(--accent); /* Borde amarillo solicitado */
         }
-        .usage-header { text-align: center; margin-bottom: 2px; }
-        .usage-header .card-title { font-size: 0.7rem; }
-        .usage-header .card-desc { display: none; }
-        .ring-chart { width: 35px; height: 35px; margin-bottom: 0; }
-        .ring-chart::after { width: 25px; height: 25px; }
+        .card-notes .card-title, .usage-header .card-title { font-size: 0.7rem; }
+        .ring-chart { width: 30px; height: 30px; margin-bottom: 0; }
+        .ring-chart::after { width: 20px; height: 20px; }
         .activity-dots { display: none; }
 
-        /* 6. IA LAB (Al final - Barra completa) */
+        /* 6. IA LAB (AL FINAL - BARRA COMPLETA) */
         .col-right .card-promo-style {
             grid-column: 1 / -1; 
             order: 5;
@@ -495,7 +455,6 @@
         .col-right .card-promo-style .promo-desc { display: none; } 
         .col-right .card-promo-style .btn-start { width: auto; padding: 5px 12px; font-size: 0.65rem; margin: 0; }
 
-        
         .countdown-box { display: none; }
     }
 </style>
