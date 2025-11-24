@@ -340,7 +340,7 @@
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 
-    /* --- RESPONSIVIDAD (MÓVIL - NATIVE APP STYLE - NO SCROLL) --- */
+    /* --- RESPONSIVIDAD (MÓVIL - NATIVE APP STYLE) --- */
     @media (max-width: 1200px) {
         :root { --col-width: 180px; --sq-size: 180px; }
         .hero-card .title { font-size: 1rem; }
@@ -348,8 +348,7 @@
 
     @media (max-width: 1024px) {
         body { 
-            /* Forzar altura de viewport fija para evitar scroll si es posible */
-            height: 100dvh; 
+            height: 100dvh; /* Viewport height completa */
             overflow: hidden; 
             align-items: flex-start; 
             padding: 0;
@@ -358,142 +357,145 @@
         .lab-container {
             height: 100dvh;
             display: grid;
-            /* GRID DE 2 COLUMNAS PARA MÓVIL (Bento Style) */
+            /* ESTRUCTURA BENTO 2 COLUMNAS */
             grid-template-columns: 1fr 1fr; 
-            /* Filas ajustadas para llenar pantalla: Header | Banner | Hero | Daily/Metrics | IA/Notes/Activity */
-            grid-template-rows: auto auto auto 1fr 0.8fr;
-            gap: 8px; /* Gap reducido para compactar */
-            padding: 10px 15px 15px 15px;
+            /* Header | Banner | Hero Cards | Daily/Metrics | Notes/Activity | IA Lab (Footer) */
+            grid-template-rows: auto auto 1fr 0.8fr 0.8fr auto;
+            gap: 8px; 
+            padding: 10px 12px 12px 12px;
             width: 100%;
         }
 
-        /* Romper columnas originales */
+        /* Romper columnas para reordenar libremente */
         .col-side, .col-center { display: contents; }
 
-        /* --- REUBICACIÓN Y COMPACTACIÓN --- */
+        /* --- ORDENAMIENTO MÓVIL (Bento Style) --- */
 
-        /* 1. HEADER (Compacto) */
+        /* 1. HEADER */
         .header-area { 
             grid-column: 1 / -1; 
             order: 0; margin-bottom: 0; padding-bottom: 5px; 
         }
-        .lab-title { font-size: 1.6rem; }
-        .lab-subtitle { font-size: 0.8rem; margin-top: 2px; }
-        .user-welcome { margin-top: 5px; font-size: 1rem; gap: 10px; }
-        .header-countdown { padding: 3px 8px; font-size: 0.75rem; }
+        .lab-title { font-size: 1.5rem; }
+        .user-welcome { margin-top: 0; font-size: 0.9rem; gap: 10px; }
+        .header-countdown { padding: 2px 8px; font-size: 0.7rem; }
 
-        /* 2. BANNER LEARN (Muy compacto) */
+        /* 2. BANNER LEARN */
         .card-learn-banner { 
             grid-column: 1 / -1; 
             order: 1; 
             margin-bottom: 0; padding: 8px; 
-            min-height: 45px;
+            min-height: 40px;
         }
-        .card-learn-banner h2 { font-size: 0.9rem; }
-        .banner-icon svg { width: 16px; height: 16px; }
+        .card-learn-banner h2 { font-size: 0.85rem; }
+        .banner-icon svg { width: 14px; height: 14px; }
 
-        /* 3. HERO CARDS (Más grandes proporcionalmente) */
+        /* 3. HERO CARDS (Fila de 3 verticalmente estilizadas) */
         .center-row-hero {
             grid-column: 1 / -1; 
             order: 2;
             flex-direction: row !important;
-            gap: 8px;
+            gap: 6px;
             margin-bottom: 0;
-            /* Estirar ligeramente esta fila */
-            align-items: stretch;
+            /* Altura automática flexible */
+            min-height: 0;
         }
         .hero-card {
-            min-height: auto; /* Dejar que Grid/Flex decida altura */
-            padding: 10px 5px;
-            gap: 5px;
+            min-height: 0;
+            padding: 8px 4px;
+            gap: 4px;
+            /* Aspecto vertical */
+            flex-direction: column; 
+            justify-content: center;
         }
-        .hero-card .icon { margin-bottom: 5px; font-size: 1.6rem; }
-        .hero-card .title { font-size: 0.7rem; }
+        .hero-card .icon { margin-bottom: 2px; font-size: 1.8rem; }
+        .hero-card .title { font-size: 0.65rem; line-height: 1.1; }
+        .hero-card .sub { display: none; }
 
-        /* 4. DAILY LAB RUN & METRICS (Ahora más pequeños - Fila 3) */
+        /* 4. DAILY & METRICS (Fila compartida - Pequeños) */
         
-        /* Daily */
+        /* Daily (Izq) */
         .col-left .card-promo-style {
             grid-column: 1 / 2; 
             order: 3;
             width: 100%; height: 100%;
-            min-height: 0; /* Permitir encoger */
+            min-height: 0; 
             margin: 0;
-            padding: 12px;
+            padding: 10px;
             border: 2px solid var(--accent) !important;
         }
-        .col-left .card-promo-style .promo-title { font-size: 0.8rem; margin-bottom: 3px; }
-        .col-left .card-promo-style .promo-desc { font-size: 0.65rem; line-height: 1.1; display: block; max-height: 30px; overflow: hidden; } /* Cortar texto si sobra */
-        .col-left .card-promo-style .btn-start { font-size: 0.65rem; padding: 6px 0; margin-top: auto; }
-        .fire-icon { font-size: 1.2rem; }
+        .col-left .card-promo-style .promo-title { font-size: 0.75rem; margin-bottom: 2px; }
+        .col-left .card-promo-style .promo-desc { display: none; } /* Ocultar descripción para compactar */
+        .col-left .card-promo-style .btn-start { font-size: 0.6rem; padding: 5px 0; margin-top: auto; }
+        .fire-icon { font-size: 1.1rem; }
 
-        /* Metrics */
+        /* Metrics (Der) - Estilo Promo */
         .card-metrics {
             grid-column: 2 / 3; 
             order: 3;
             width: 100%; height: 100%;
             min-height: 0;
             margin: 0;
-            padding: 10px;
-            /* Estilo Promo */
+            padding: 8px;
             background: linear-gradient(145deg, rgba(250, 204, 21, 0.15), rgba(0,0,0,0) 70%);
             border: 2px solid var(--accent);
             box-shadow: 0 0 15px rgba(250, 204, 21, 0.15);
             border-radius: 16px;
         }
-        .metrics-header { margin-bottom: 2px; }
-        .metrics-title { font-size: 0.65rem; }
-        .pie-chart-main { width: 55px; height: 55px; } /* Más pequeña para caber */
+        .metrics-header { margin-bottom: 0; justify-content: center; }
+        .metrics-title { font-size: 0.6rem; color: #fff; font-weight: 700; margin-bottom: 5px; }
+        .metrics-icon { display: none; } /* Ocultar icono para ahorrar espacio */
+        .pie-chart-main { width: 50px; height: 50px; } 
 
-        /* 5. IA LAB (Fila 4 - Barra completa delgada) */
+        /* 5. NOTES & ACTIVITY (Fila compartida - Borde Amarillo) */
+        
+        /* Notes (Izq) */
+        .col-left .card-notes {
+            grid-column: 1 / 2; 
+            order: 4;
+            width: 100%; height: 100%;
+            min-height: 0;
+            margin: 0; padding: 10px;
+            border: 1px solid var(--accent); /* Borde amarillo solicitado */
+        }
+        .col-left .card-notes .card-title { font-size: 0.75rem; margin-bottom: 2px; }
+        .col-left .card-notes .card-desc { font-size: 0.65rem; line-height: 1.1; }
+
+        /* Activity (Der) */
+        .col-right .usage-container {
+            grid-column: 2 / 3; 
+            order: 4;
+            width: 100%; height: 100%;
+            min-height: 0;
+            margin: 0; padding: 8px;
+            flex-direction: column; justify-content: center;
+            border: 1px solid var(--accent); /* Borde amarillo solicitado */
+        }
+        .usage-header { text-align: center; margin-bottom: 2px; }
+        .usage-header .card-title { font-size: 0.7rem; }
+        .usage-header .card-desc { display: none; }
+        .ring-chart { width: 35px; height: 35px; margin-bottom: 0; }
+        .ring-chart::after { width: 25px; height: 25px; }
+        .activity-dots { display: none; }
+
+        /* 6. IA LAB (Al final - Barra completa) */
         .col-right .card-promo-style {
             grid-column: 1 / -1; 
-            order: 4;
+            order: 5;
             width: 100%;
-            min-height: 50px;
+            min-height: 45px;
             padding: 8px 15px;
             margin: 0;
             flex-direction: row; align-items: center; justify-content: space-between;
             border: 2px solid var(--accent);
         }
         .col-right .card-promo-style .promo-header { margin-bottom: 0; gap: 8px; }
-        .col-right .card-promo-style .ai-icon { font-size: 1.2rem; }
-        .col-right .card-promo-style .promo-title { font-size: 0.85rem; }
-        .col-right .card-promo-style .promo-desc { display: block; font-size: 0.7rem; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .col-right .card-promo-style .btn-start { width: auto; padding: 6px 12px; font-size: 0.7rem; margin: 0; }
+        .col-right .card-promo-style .ai-icon { font-size: 1.1rem; }
+        .col-right .card-promo-style .promo-title { font-size: 0.8rem; }
+        .col-right .card-promo-style .promo-desc { display: none; } 
+        .col-right .card-promo-style .btn-start { width: auto; padding: 5px 12px; font-size: 0.65rem; margin: 0; }
 
-        /* 6. NOTES & ACTIVITY (Fila 5 - Footer Cards) */
         
-        /* Notes */
-        .col-left .card-notes {
-            grid-column: 1 / 2; 
-            order: 5;
-            width: 100%; height: 100%;
-            min-height: 0;
-            margin: 0;
-            padding: 12px;
-        }
-        .col-left .card-notes .card-title { font-size: 0.8rem; }
-        .col-left .card-notes .card-desc { font-size: 0.7rem; }
-
-        /* Activity */
-        .col-right .usage-container {
-            grid-column: 2 / 3; 
-            order: 5;
-            width: 100%; height: 100%;
-            min-height: 0;
-            margin: 0;
-            padding: 10px;
-            flex-direction: row; justify-content: space-between;
-        }
-        .usage-header { text-align: left; margin-bottom: 0; }
-        .usage-header .card-title { font-size: 0.8rem; }
-        .usage-header .card-desc { display: none; } /* Ocultar subtítulo para ahorrar espacio */
-        .ring-chart { width: 35px; height: 35px; margin-bottom: 0; }
-        .ring-chart::after { width: 25px; height: 25px; }
-        .activity-dots { display: none; } /* Ocultar dots para simplificar */
-        
-        /* Ocultar Countdown lateral */
         .countdown-box { display: none; }
     }
 </style>
