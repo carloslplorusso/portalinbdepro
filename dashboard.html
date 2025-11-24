@@ -181,6 +181,8 @@
     .card-metrics { background: linear-gradient(180deg, var(--card-bg-hero) 0%, #080808 100%); border-top: 1px solid #333; box-shadow: 0 -10px 40px -20px rgba(0,0,0,1); }
     .metrics-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
     .metrics-title { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+    .metrics-icon { opacity: 0.7; color: #fff; display: flex; align-items: center; }
+
     .pie-container { flex: 1; display: flex; align-items: center; justify-content: center; }
     .pie-chart-main { width: 90px; height: 90px; border-radius: 50%; background: conic-gradient(var(--accent) 0% 65%, #27272a 65% 100%); box-shadow: 0 0 15px rgba(0,0,0,0.5); }
     .usage-container { align-items: center; justify-content: center; gap: 10px; }
@@ -394,7 +396,7 @@
         .col-right .card-promo-style .promo-title { font-size: 0.8rem; }
         .col-right .card-promo-style .promo-desc { display: none; } 
         .col-right .card-promo-style .btn-start { width: auto; padding: 5px 12px; font-size: 0.65rem; margin: 0; }
-
+        
         .countdown-box { display: none; }
 
         /* AJUSTES VISTAS INTERNAS MÓVIL */
@@ -436,6 +438,7 @@
             <div class="card-promo-style">
                 <div class="promo-header"><div class="fire-icon">🔥</div><div class="promo-title">DAILY LAB <br>RUN</div></div>
                 <div class="promo-desc">10-question sprint. Keep the streak alive.</div>
+                <!-- CONECTADO A QUIZ ENGINE -->
                 <button class="btn-start" onclick="startQuizEngine('daily')">START NOW</button>
             </div>
             <div class="card card-secondary card-notes square-card-bottom" onclick="openAIModal('notes')">
@@ -461,6 +464,8 @@
                     <div class="icon">🍅</div><div><div class="title">Pomodoro</div><div class="sub">Focus timer</div></div>
                 </div>
             </div>
+            
+            <!-- CONECTADO A STATS.HTML (Navegación Segura) -->
             <div class="card card-metrics square-card-bottom" onclick="safeNavigate('stats.html')">
                 <div class="metrics-header">
                     <span class="metrics-title">Performance</span>
@@ -485,8 +490,7 @@
         </div>
     </div>
 
-    <!-- VISTAS INTERNAS (Learning, Simulation, Pomodoro, etc.) -->
-    <!-- LEARNING LAB -->
+    <!-- VISTA 2: LEARNING LAB -->
     <div id="learning-view" class="hidden">
         <div class="learning-cards-row">
             <div class="learning-card" onclick="openSelectionView('standalone')">
@@ -499,12 +503,13 @@
         <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Home</button>
     </div>
 
-    <!-- SIMULATION LAB -->
+    <!-- VISTA 3: SIMULATION LAB -->
     <div id="simulation-view" class="hidden">
         <div class="learning-cards-row">
             <div class="learning-card" onclick="openSimulationCustomization()">
                 <div class="learning-icon">🛠️</div><h3>Customize your simulation</h3><p>Adjust time and subjects.</p>
             </div>
+            <!-- CONECTADO A QUIZ ENGINE (Standard Exam) -->
             <div class="learning-card" onclick="startQuizEngine('simulation_standard')">
                 <div class="learning-icon">▶️</div><h3>Start simulation</h3><p>Begin standard exam mode.</p>
             </div>
@@ -512,12 +517,13 @@
         <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Home</button>
     </div>
 
-    <!-- POMODORO LAB -->
+    <!-- VISTA 4: POMODORO LAB -->
     <div id="pomodoro-view" class="hidden">
         <div class="learning-cards-row">
             <div class="learning-card" onclick="openPomodoroCustomization()">
                 <div class="learning-icon">⚙️</div><h3>Customize your experience</h3><p>Set timer intervals.</p>
             </div>
+            <!-- ESTE ABRE EL TIMER (Interno) -->
             <div class="learning-card" onclick="openPomodoroSession()">
                 <div class="learning-icon">🍅</div><h3>IA POMODORO TECHNIQUE</h3><p>Focus timer technique.</p>
             </div>
@@ -525,7 +531,7 @@
         <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Home</button>
     </div>
 
-    <!-- SELECTION VIEW (STAND ALONE / ITEMS) -->
+    <!-- VISTA 5: GENERIC SELECTION VIEW (STAND ALONE) -->
     <div id="selection-view" class="hidden">
         <h2 id="selection-mode-title">Stand Alone Questions</h2>
         <div class="selection-container">
@@ -547,7 +553,7 @@
         <button class="btn-back-small" onclick="goBackToLearning()">← Back to Learning Lab</button>
     </div>
 
-    <!-- SIMULATION CUSTOMIZATION -->
+    <!-- VISTA 6: SIMULATION CUSTOMIZATION -->
     <div id="simulation-customization-view" class="hidden">
         <h2 id="sim-custom-title">Customize Simulation</h2>
         <div class="customization-container">
@@ -578,13 +584,14 @@
                         <div class="diff-option" onclick="selectDifficulty(this, 'hard')">Hard</div>
                     </div>
                 </div>
+                <!-- CONECTADO A QUIZ ENGINE (Custom Sim) -->
                 <button class="btn-start-confirm" onclick="startQuizEngine('simulation_custom')">START SIMULATION 🚀</button>
             </div>
         </div>
         <button class="btn-back-small" onclick="goBackToSimulation()">← Back to Simulation</button>
     </div>
 
-    <!-- POMODORO CUSTOMIZATION -->
+    <!-- VISTA 7: POMODORO CUSTOMIZATION -->
     <div id="pomodoro-customization-view" class="hidden">
         <h2 id="pomodoro-custom-title">Customize Experience</h2>
         <div class="customization-container">
@@ -598,6 +605,7 @@
                  </div>
             </div>
             <div class="custom-section config-panel" style="display: flex; flex-direction: column; justify-content: center;">
+                <!-- CONECTADO A QUIZ ENGINE (Pomodoro Mode) -->
                 <div class="card-start-quiz" onclick="startQuizEngine('pomodoro_mode')">
                     <div class="start-icon">🍅</div>
                     <h3>Start Pomodoro Study</h3>
@@ -608,7 +616,7 @@
         <button class="btn-back-small" onclick="goBackToPomodoro()">← Back to Pomodoro Lab</button>
     </div>
 
-    <!-- POMODORO TIMER SESSION -->
+    <!-- VISTA 8: POMODORO TIMER SESSION -->
     <div id="pomodoro-timer-view" class="hidden">
         <h2 style="color:#fff; margin-bottom:5px;">POMODORO FOCUS</h2>
         <div class="pomo-modes">
@@ -635,44 +643,66 @@
 
 <div id="quiz-settings-modal" class="modal-overlay quiz-settings-modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">⚙️ Quiz Settings</div><button class="close-btn" onclick="closeQuizSettings()">×</button></div><p style="color:#aaa; margin-bottom:20px;">Configure your practice session.</p><label class="settings-label">Number of Questions:</label><select class="question-count-select" id="quiz-count"><option value="20">20 Questions</option><option value="25">25 Questions</option><option value="30">30 Questions</option><option value="50">50 Questions</option></select><button class="btn-start-confirm" onclick="startQuizEngine('practice_custom')">START NOW 🚀</button></div></div>
 
+<!-- NEW DATE SETUP MODAL -->
 <div id="date-setup-modal" class="modal-overlay active"><div class="modal-content"><div class="modal-header"><div class="modal-title">📅 Set Exam Date</div></div><p style="color:#aaa; margin-bottom:20px;">When is your INBDE exam?</p><input type="date" id="exam-date-input" class="date-input"><button class="btn-start-confirm" onclick="saveExamDate()">Start Prep 🚀</button></div></div>
 
 <script>
-    // CONFIG SUPABASE
+    // CONFIGURACIÓN SUPABASE (Tus claves)
     const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    const apiKey = ""; 
+    const apiKey = ""; // Gemini Key
+    
     const headerWelcome = document.getElementById('header-welcome-section');
 
-    // --- AUTH CHECK ---
+    // --- 1. AUTHENTICATION CHECK (DISABLED) ---
     document.addEventListener('DOMContentLoaded', async () => {
-        const { data: { session } } = await _supabase.auth.getSession();
-        if (!session) safeNavigate('index.html');
-        else {
-            const userEmail = session.user.email;
-            const name = session.user.user_metadata.full_name || userEmail.split('@')[0];
-            document.getElementById('user-name-display').innerText = name;
-            initCountdown();
-        }
+        // LOGIN BYPASS: Inicializamos directamente sin verificar sesión
+        document.getElementById('user-name-display').innerText = "Doctor"; // Nombre por defecto
+        initCountdown();
     });
 
+    // --- UTILS FOR SAFE NAVIGATION ---
     function safeNavigate(url) {
-        try { window.location.href = url; } catch (e) { if (url === 'index.html') document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;color:white;"><h2>Session Expired. Please reload.</h2></div>'; }
+        try {
+            window.location.href = url;
+        } catch (e) {
+            console.warn("Redirect failed (Preview Mode):", e);
+            // Fallback visual si estamos en preview y falla
+            if (url === 'index.html') {
+                document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;color:white;"><h2>Session Expired. Please reload.</h2></div>';
+            } else {
+                console.log("Navegación simulada a: " + url);
+            }
+        }
     }
 
+    // --- QUIZ ENGINE REDIRECTOR ---
     function startQuizEngine(mode) {
-        let count = 10; 
-        if (document.getElementById('quiz-count')) count = document.getElementById('quiz-count').value;
-        if (document.getElementById('sim-count') && mode === 'simulation_custom') count = document.getElementById('sim-count').value;
+        // Recolectar parámetros si es necesario (ej: cantidad de preguntas)
+        let count = 10; // Default
+        if (document.getElementById('quiz-count')) {
+            count = document.getElementById('quiz-count').value;
+        }
+        if (document.getElementById('sim-count') && mode === 'simulation_custom') {
+            count = document.getElementById('sim-count').value;
+        }
+        
+        // Redirigir a la página del motor de quiz con parámetros
         const url = `quiz_engine.html?mode=${mode}&count=${count}`;
         safeNavigate(url);
     }
 
+    // --- DATE LOGIC ---
     function initCountdown() {
         const storedDate = localStorage.getItem('examDate');
-        if (!storedDate) document.getElementById('date-setup-modal').classList.add('active'); 
-        else { document.getElementById('date-setup-modal').classList.remove('active'); updateDaysLeft(storedDate); }
+        // Solo mostramos modal si no hay fecha Y no estamos en el modal ya (evita loop si recarga)
+        if (!storedDate) { 
+            document.getElementById('date-setup-modal').classList.add('active'); 
+        } else { 
+            document.getElementById('date-setup-modal').classList.remove('active'); 
+            updateDaysLeft(storedDate); 
+        }
     }
     function saveExamDate() {
         const dateInput = document.getElementById('exam-date-input').value;
@@ -689,6 +719,7 @@
     }
     function openDateModal() { document.getElementById('date-setup-modal').classList.add('active'); }
 
+    // --- NAVIGATION ---
     function showLearningLab() { switchView('learning-view'); }
     function showSimulationLab() { switchView('simulation-view'); }
     function showPomodoro() { switchView('pomodoro-view'); }
@@ -699,6 +730,7 @@
     function openSimulationCustomization() { switchView('simulation-customization-view'); }
     function openPomodoroCustomization() { switchView('pomodoro-customization-view'); }
     function openPomodoroSession() { switchView('pomodoro-timer-view'); resetTimer(); }
+
     function goBackToDashboard() { switchView('dashboard-content', true); }
     function goBackToLearning() { switchView('learning-view'); }
     function goBackToSimulation() { switchView('simulation-view'); }
@@ -734,9 +766,11 @@
         option.classList.add('active');
     }
     
+    // Quiz Settings for Stand Alone (uses startQuizEngine now)
     function openQuizSettings() { document.getElementById('quiz-settings-modal').classList.add('active'); }
     function closeQuizSettings() { document.getElementById('quiz-settings-modal').classList.remove('active'); }
 
+    // --- POMODORO LOGIC ---
     let timerInterval; let timeLeft = 1500; let isRunning = false; let currentCycle = 0; let isBreak = false; let pMode = 'classic'; 
     function updateTimerDisplay() {
         const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
@@ -785,6 +819,7 @@
         resetTimer();
     }
 
+    // AI Logic
     const modal = document.getElementById('ai-modal');
     const inputArea = document.getElementById('ai-input');
     const outputArea = document.getElementById('ai-output');
