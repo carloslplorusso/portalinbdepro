@@ -402,7 +402,7 @@
                     <div class="icon">🍅</div><div><div class="title">Pomodoro</div><div class="sub">Focus timer</div></div>
                 </div>
             </div>
-            <div class="card card-metrics square-card-bottom">
+            <div class="card card-metrics square-card-bottom" onclick="window.location.href='stats.html'">
                 <div class="metrics-header">
                     <span class="metrics-title">Performance</span>
                     <span class="metrics-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg></span>
@@ -795,9 +795,17 @@
         const count = document.getElementById('quiz-count').value;
         const selectedSubjects = Array.from(document.querySelectorAll('#dynamic-cat-list .subject-item.active:not(.special-select-all)')).map(el => el.dataset.subject);
         
+        if (selectedSubjects.length === 0) {
+            alert("Please select at least one subject.");
+            return;
+        }
+
         console.log("Starting Quiz:", {count, subjects: selectedSubjects});
-        alert(`Starting Quiz with ${count} questions from: ${selectedSubjects.join(', ')}`);
-        // Aquí iría la lógica para cargar el componente del Quiz real
+        
+        // FIX: Redirect to quiz_engine.html with parameters
+        // Encoding subjects to ensure URL safety
+        const subjectsParam = encodeURIComponent(selectedSubjects.join(','));
+        window.location.href = `quiz_engine.html?mode=practice&count=${count}&subjects=${subjectsParam}`;
     }
 
     // --- POMODORO LOGIC (Manteniendo la existente) ---
