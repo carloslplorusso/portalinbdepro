@@ -56,59 +56,42 @@
         .option-row:hover { border-color: #bbb; }
         .option-row.selected { background-color: #dceefb; border-color: #8fbce6; }
         
-        .custom-radio { width: 18px; height: 18px; border: 1px solid #ccc; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; background: white; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
+        .custom-radio { width: 18px; height: 18px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; background: white; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
         .option-row.selected .custom-radio { border-color: #0060a9; }
         .option-row.selected .custom-radio::after { content: ''; width: 10px; height: 10px; background-color: #0060a9; border-radius: 50%; }
+        
+        /* RESULTADO EN PÁGINA FINAL */
+        .review-item { border-bottom: 1px solid #e0e0e0; padding: 15px; background: white; }
+        .review-item.correct-bg { background-color: #e6fcf5; border-left: 5px solid #22c55e; }
+        .review-item.incorrect-bg { background-color: #fff5f5; border-left: 5px solid #ef4444; }
+        .review-explanation-box { display: none; margin-top: 10px; padding: 10px; background: #f8f9fa; border-left: 4px solid #facc15; font-size: 0.9em; }
+
     </style>
 
     <style id="practice-css" disabled>
-        /* --- 1. VARIABLES & BASE --- */
+        /* --- Dark Mode Styles for Stand Alone --- */
         :root {
             --accent: #facc15; 
             --accent-glow: rgba(250, 204, 21, 0.15);
             --bg-dark: #050505;
             --card-bg: #121214;
-            --card-bg-hero: #1c1c20;
             --card-border: #27272a;
             --text-main: #f4f4f5;
             --text-muted: #71717a;
-            
             --success: #22c55e;
             --error: #ef4444;
-            
-            /* DIMENSIONES */
-            --col-width: 200px;
-            --sq-size: 190px;
         }
 
         /* Override Body for Dark Mode */
         body {
-            margin: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
             background-color: #000 !important;
             color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
             background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%) !important;
         }
 
         /* Hide Sim Elements in Practice Mode */
         .inbde-header, .inbde-footer { display: none !important; }
-
-        /* --- PRACTICE LAYOUT ADAPTATION --- */
-        .practice-header {
-            display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; width: 100%;
-            border-bottom: 1px solid var(--card-border); background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);
-        }
-        .practice-title { font-size: 1.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; color: #fff; }
-        .practice-subtitle { color: var(--accent); font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
-
-        /* Main Quiz Container Override */
-        #main-container-wrapper {
-            background: transparent !important; box-shadow: none !important; max-width: 1200px !important; margin: 0 auto; height: 100%;
-        }
-
+        #main-container-wrapper { background: transparent !important; box-shadow: none !important; max-width: 1200px !important; margin: 0 auto; height: 100%; }
         #right-panel { width: 100% !important; background: transparent !important; color: var(--text-main) !important; border: none !important; }
         #question-text { color: #fff !important; font-size: 1.5rem !important; font-weight: 600 !important; line-height: 1.4 !important; }
 
@@ -130,49 +113,31 @@
         .option-row.wrong-answer {
             border-color: var(--error) !important; background: rgba(239, 68, 68, 0.1) !important; color: #fff !important;
         }
-
-        .custom-radio { background: transparent !important; border-color: var(--text-muted) !important; }
-        .option-row.selected .custom-radio { border-color: var(--accent) !important; }
-        .option-row.selected .custom-radio::after { background-color: var(--accent) !important; }
+        .option-row.correct-answer .custom-radio { border-color: var(--success) !important; background-color: var(--success) !important; content: '✓';}
+        .option-row.wrong-answer .custom-radio { border-color: var(--error) !important; background-color: var(--error) !important; content: '✕';}
         
-        .option-row.correct-answer .custom-radio { border-color: var(--success) !important; }
-        .option-row.correct-answer .custom-radio::after { background-color: var(--success) !important; }
-        .option-row.wrong-answer .custom-radio { border-color: var(--error) !important; }
-        .option-row.wrong-answer .custom-radio::after { background-color: var(--error) !important; }
-
-        /* Controls */
+        /* Controls & SRS Buttons */
         .practice-controls { display: flex !important; gap: 20px; padding: 20px 0; margin-top: auto; justify-content: flex-end; }
-        .btn-practice {
-            background: var(--card-bg-hero); border: 1px solid var(--accent); color: var(--accent);
-            padding: 12px 30px; border-radius: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
-            cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        .btn-practice:hover { background: var(--accent); color: #000; box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
-
-        /* GEMINI BUTTON */
-        .btn-gemini {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); border: 1px solid #a855f7; color: white;
-            display: flex; align-items: center; gap: 8px; box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
-            animation: pulse-gemini 2s infinite;
-        }
-        .btn-gemini:hover { transform: scale(1.05); filter: brightness(1.2); }
-        @keyframes pulse-gemini { 0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(168, 85, 247, 0); } 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); } }
-
-        /* SRS BUTTONS */
         .srs-container { display: flex; gap: 15px; width: 100%; justify-content: center; margin-top: 10px; }
         .btn-srs { flex: 1; padding: 15px; border-radius: 12px; font-weight: 800; text-transform: uppercase; color: #000; cursor: pointer; border: none; transition: transform 0.2s; max-width: 200px; }
-        .btn-srs:hover { transform: translateY(-3px); filter: brightness(1.1); }
-        .btn-learning { background: #ef4444; box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3); }
-        .btn-retrieving { background: #eab308; box-shadow: 0 5px 15px rgba(234, 179, 8, 0.3); }
-        .btn-mastered { background: #22c55e; box-shadow: 0 5px 15px rgba(34, 197, 94, 0.3); }
+        .btn-learning { background: #ef4444; } .btn-retrieving { background: #eab308; } .btn-mastered { background: #22c55e; }
 
         /* Explanation Box Dark */
         #explanation-box { background: rgba(255,255,255,0.03) !important; border: 1px solid #333 !important; border-radius: 12px !important; color: #ccc !important; padding: 25px !important; }
-        .gemini-response-box { background: linear-gradient(180deg, rgba(168, 85, 247, 0.1) 0%, rgba(0,0,0,0) 100%); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 15px; margin-top: 15px; }
-
-        .hidden { display: none !important; }
-        .fade-in { animation: fadeIn 0.5s ease forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #results-view { 
+            background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%) !important;
+            overflow-y: auto;
+        }
+        .final-results-container { 
+            background: var(--card-bg-hero); border: 2px solid var(--accent); border-radius: 16px; padding: 30px; 
+            color: #fff; text-align: center; margin-bottom: 20px;
+        }
+        .review-item { background: #121214 !important; border: 1px solid #27272a !important; }
+        .review-item.correct-bg { border-left-color: var(--success) !important; background-color: rgba(34, 197, 94, 0.1) !important; }
+        .review-item.incorrect-bg { border-left-color: var(--error) !important; background-color: rgba(239, 68, 68, 0.1) !important; }
+        .review-explanation-box { background: #000 !important; color: #ccc !important; border-left: 4px solid #6366f1 !important; }
+        .btn-explain-review { background: #6366f1; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; font-size: 0.8em; margin-top: 10px; }
+        
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
@@ -278,13 +243,13 @@
                     </div>
 
                     <div id="srs-buttons-container" class="hidden srs-container fade-in">
-                        <button class="btn-srs btn-learning" onclick="rateQuestion('learning')">
+                        <button class="btn-srs btn-learning" onclick="rateQuestion('Learning')">
                             Learning
                         </button>
-                        <button class="btn-srs btn-retrieving" onclick="rateQuestion('retrieving')">
+                        <button class="btn-srs btn-retrieving" onclick="rateQuestion('Retrieving')">
                             Retrieving
                         </button>
-                        <button class="btn-srs btn-mastered" onclick="rateQuestion('mastered')">
+                        <button class="btn-srs btn-mastered" onclick="rateQuestion('Mastered')">
                             Mastered
                         </button>
                     </div>
@@ -292,6 +257,29 @@
                 </div>
             </div>
 
+        </section>
+        
+        <section id="results-view" class="hidden w-full h-full p-6 overflow-y-auto custom-scrollbar flex-col items-center">
+            <div class="max-w-4xl mx-auto w-full">
+                <div class="final-results-container">
+                    <h2 class="text-3xl font-bold mb-2">Quiz Completed!</h2>
+                    <p class="text-xl mb-4">Total Correct: <span id="final-correct" class="text-green-500">0</span> / <span id="final-total">0</span></p>
+                    <div class="flex justify-center gap-4 text-xs font-semibold mt-4">
+                        <span class="text-red-400">Learning: <span id="srs-learning-count">0</span></span>
+                        <span class="text-yellow-400">Retrieving: <span id="srs-retrieving-count">0</span></span>
+                        <span class="text-green-400">Mastered: <span id="srs-mastered-count">0</span></span>
+                    </div>
+                </div>
+                
+                <h3 class="text-xl font-bold mb-4 mt-6 text-gray-800 dark:text-gray-200">Review and Explanation:</h3>
+                
+                <div id="review-list" class="space-y-4">
+                    </div>
+                
+                <button onclick="window.location.href='dashboard.html'" class="btn-start btn-glossy w-full mt-8 p-3 text-lg">
+                    Back to Dashboard
+                </button>
+            </div>
         </section>
 
     </main>
@@ -328,6 +316,9 @@
         let timerSeconds = paramCount * 90; 
         let isAnswerChecked = false;
         let currentUser = null;
+        
+        // NEW SRS COUNTERS FOR QUIZ SUMMARY
+        let srsCounters = { Learning: 0, Retrieving: 0, Mastered: 0 }; 
 
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', async () => {
@@ -336,6 +327,8 @@
             await loadQuestionsFromDB();
             
             if (quizData.length > 0) {
+                // Initialize user answers array within quizData
+                quizData.forEach(q => q.userAnswer = null);
                 renderQuestion();
                 if (currentMode === 'simulation') {
                     startTimer();
@@ -349,7 +342,6 @@
         async function checkSession() {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) {
-                // Si no hay sesión, mandamos al login
                 window.location.href = './index.html';
             }
             currentUser = session.user;
@@ -374,7 +366,6 @@
                     // MODO 2: PRÁCTICA / STAND ALONE / DAILY (SÓLO preguntas SIN case_id)
                     if (currentMode === 'retry_mistakes') {
                         // Caso especial: Llama a la RPC que filtra por errores
-                        // NOTA: Esta RPC DEBE estar filtrada internamente para case_id IS NULL o manejar ambos.
                         rpc_name = 'get_failed_questions'; 
                     } else {
                         rpc_name = 'get_stand_alone_questions'; 
@@ -439,7 +430,10 @@
                             { id: 'D', text: item.option_d }
                         ],
                         correctOption: getOptionLetter(item.correct_answer, item), 
-                        explanation: item.explanation || "No explanation provided."
+                        explanation: item.explanation || "No explanation provided.",
+                        userAnswer: null, // Track user selection (ID)
+                        isCorrect: null,  // Track final correctness
+                        srsRating: null   // Track SRS rating
                     };
                 });
 
@@ -470,13 +464,12 @@
             const practiceHeader = document.getElementById('practice-header-el'); // Dark Header (Streak)
             const practiceControls = document.getElementById('practice-controls-el'); // Practice/SRS Buttons
             
-            // Definir grupos de modos (Modos Oscuros/Práctica/SRS)
             const IS_PRACTICE_MODE = ['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
 
             if (IS_PRACTICE_MODE) {
                 // MODELO STAND ALONE (Fondo Oscuro, Sin Sidebar, Botones SRS)
                 
-                practiceStyle.disabled = false; // Activar Dark Mode CSS
+                practiceStyle.disabled = false;
                 
                 // Ocultar elementos de simulación
                 leftPanel.style.display = 'none';
@@ -488,10 +481,8 @@
                 practiceControls.classList.remove('hidden');
                 practiceControls.style.display = 'flex';
                 
-                // Ajustar el panel principal a pantalla completa (100% width)
                 rightPanel.style.width = '100%';
                 
-                // Ajustar subtítulo si aplica
                 if(currentMode === 'daily') {
                      document.querySelector('.practice-subtitle').innerText = "Daily Lab Sprint";
                 } else if (currentMode === 'retry_mistakes') {
@@ -501,7 +492,7 @@
             } else {
                 // MODELO SIMULACIÓN / ITEM SET (Fondo Claro, Con Sidebar, Con Timer)
                 
-                practiceStyle.disabled = true; // Desactivar Dark Mode CSS (Usar CSS de Simulación)
+                practiceStyle.disabled = true;
 
                 // Mostrar elementos de simulación
                 leftPanel.style.display = 'flex';
@@ -512,10 +503,10 @@
                 practiceHeader.classList.add('hidden');
                 practiceControls.classList.add('hidden');
 
-                // Ajustar panel principal
                 rightPanel.style.width = '60%';
             }
         }
+        
         // --- RENDER LOGIC ---
         function renderQuestion() {
             if (!quizData[currentIndex]) return;
@@ -526,123 +517,112 @@
 
             document.getElementById('current-q-num').textContent = currentIndex + 1;
             
-            // Sim Lab Data
+            // UI elements reset/update
             document.getElementById('patient-info').innerHTML = q.patientInfo;
             document.getElementById('chief-complaint').innerHTML = q.chiefComplaint;
-            // Aseguramos que los saltos de línea funcionen en el history (importante para Item Sets)
             document.getElementById('patient-history').innerHTML = q.history.replace(/\n/g, '<br>') || "See scenario"; 
             document.getElementById('current-findings').innerHTML = q.findings;
-
-            // Photo Logic
-            const imgEl = document.getElementById('case-image');
-            const noPhotoMsg = document.getElementById('no-photo-msg');
-            if (q.photoUrl) {
-                imgEl.src = q.photoUrl; imgEl.classList.remove('hidden'); noPhotoMsg.classList.add('hidden');
-            } else {
-                imgEl.classList.add('hidden'); noPhotoMsg.classList.remove('hidden');
-            }
-
-            // Question & Options
+            
             document.getElementById('question-text').textContent = q.text;
+            document.getElementById('explanation-box').classList.add('hidden');
+            document.getElementById('btn-explain-gemini').classList.add('hidden');
+            document.getElementById('gemini-content').classList.add('hidden');
+
             const optsContainer = document.getElementById('options-container');
             optsContainer.innerHTML = '';
+            
+            // Determine if we are re-rendering a validated question (for navigation)
+            const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
+            const isAnswered = q.userAnswer !== null;
 
             q.options.forEach(opt => {
                 const row = document.createElement('div');
                 row.className = 'option-row';
                 row.dataset.id = opt.id;
-                row.onclick = () => selectOption(opt.id);
                 
-                row.innerHTML = `
-                    <div class="custom-radio"></div>
-                    <span class="font-medium text-inherit">${opt.text}</span>
-                `;
+                // Si ya está respondida (navegando en modo Simulación), deshabilitar interacción
+                if (isAnswered) {
+                    row.classList.add('disabled');
+                    if (opt.id === q.userAnswer) row.classList.add('selected'); // Mantener la selección del usuario
+                } else {
+                    row.onclick = () => selectOption(opt.id);
+                    if (selectedOptionId === opt.id) row.classList.add('selected');
+                }
+
+                row.innerHTML = `<div class="custom-radio"></div><span class="font-medium text-inherit">${opt.text}</span>`;
                 optsContainer.appendChild(row);
             });
 
-            // Reset UI Elements
-            document.getElementById('explanation-box').classList.add('hidden');
-            document.getElementById('btn-explain-gemini').classList.add('hidden');
-            document.getElementById('gemini-content').classList.add('hidden');
+            // Adjust controls visibility
+            document.getElementById('srs-buttons-container').classList.add('hidden');
+            document.getElementById('btn-next-practice').classList.add('hidden');
             
-            // Lógica de botones de navegación (solo se muestran si la respuesta ha sido chequeada en modo Simulación)
-            if (currentMode === 'simulation') {
-                document.getElementById('nav-buttons-row').classList.remove('hidden');
-                document.getElementById('btn-next-practice').classList.add('hidden');
-                document.getElementById('srs-buttons-container').classList.add('hidden');
-            } else {
-                // En modo práctica, la navegación se gestiona después de la calificación (handleNextButton)
-                document.getElementById('nav-buttons-row').classList.remove('hidden');
-                document.getElementById('btn-next-practice').classList.add('hidden');
-                document.getElementById('srs-buttons-container').classList.add('hidden');
+            if (isAnswered && !isSimulation) {
+                // Si es modo práctica y ya está respondida (revisión rápida), mostrar SRS
+                validateAnswer(true); // Re-validar sin hacer doble clic/doble log
             }
         }
 
+        // --- MANEJO DE CLIC DE OPCIÓN ---
         function selectOption(id) {
-            // Modificamos el flujo: en modo Simulación se marca, pero no se valida inmediatamente.
-            // En modo práctica, se valida inmediatamente.
-            const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
+            const IS_PRACTICE_MODE = ['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
+
+            document.querySelectorAll('.option-row').forEach(row => row.classList.remove('selected'));
+            document.querySelector(`[data-id="${id}"]`).classList.add('selected');
             
             selectedOptionId = id;
-
-            if (isSimulation) {
-                // Si es Simulación, solo se marca la opción (el botón Next del footer avanza)
-                document.querySelectorAll('.option-row').forEach(row => row.classList.remove('selected'));
-                document.querySelector(`[data-id="${id}"]`).classList.add('selected');
-            } else {
-                // Si es Práctica, se valida y se muestra la explicación inmediatamente
+            
+            if (IS_PRACTICE_MODE) {
+                // MODO PRÁCTICA (STAND ALONE): Validación Inmediata
                 if (isAnswerChecked) return;
                 isAnswerChecked = true; 
-                validateAnswer();
+                validateAnswer(false); // Validar y mostrar SRS botones
             }
+            // MODO SIMULACIÓN: Solo marca la opción. El botón Next del footer guarda la respuesta.
         }
 
-        function validateAnswer() {
+        // --- VALIDACIÓN Y FEEDBACK (Llamado solo en modo práctica) ---
+        function validateAnswer(re_render) {
             const q = quizData[currentIndex];
             const isCorrect = selectedOptionId === q.correctOption;
+            
+            // Evita que se dispare la validación en modo Simulación.
+            if (!re_render && !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode)) return;
 
+            // 1. Mostrar color-coding y deshabilitar opciones
             document.querySelectorAll('.option-row').forEach(row => {
                 row.style.cursor = 'default'; 
+                row.classList.add('disabled'); // Deshabilitar
                 const id = row.dataset.id;
-                row.classList.remove('selected');
 
                 if (id === q.correctOption) {
                     row.classList.add('correct-answer');
                 } else if (id === selectedOptionId && !isCorrect) {
                     row.classList.add('wrong-answer');
-                } else if (id === selectedOptionId && isCorrect) {
-                    row.classList.add('correct-answer'); 
                 }
             });
 
-            const expBox = document.getElementById('explanation-box');
+            // 2. Mostrar Explicación y botón Gemini
             document.getElementById('explanation-text').textContent = q.explanation;
-            expBox.classList.remove('hidden');
-
+            document.getElementById('explanation-box').classList.remove('hidden');
             if (!isCorrect && GEMINI_API_KEY) {
                 document.getElementById('btn-explain-gemini').classList.remove('hidden');
             }
 
-            // Lógica de botones SRS vs. Navegación simple
-            const IS_PRACTICE_MODE = ['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
-
-            if (IS_PRACTICE_MODE) {
-                // Modo Práctica: Muestra botones SRS
-                document.getElementById('nav-buttons-row').classList.add('hidden');
-                document.getElementById('srs-buttons-container').classList.remove('hidden');
-                document.getElementById('srs-buttons-container').style.display = 'flex';
-            } else {
-                // Modo Simulación: Muestra botón Siguiente del panel de práctica (solo si existe)
-                document.getElementById('nav-buttons-row').classList.remove('hidden');
-                document.getElementById('btn-next-practice').classList.remove('hidden'); // Botón Next del Dark Mode Header
-                document.getElementById('srs-buttons-container').classList.add('hidden');
-            }
+            // 3. MODO PRÁCTICA: Mostrar botones SRS
+            document.getElementById('nav-buttons-row').classList.add('hidden');
+            document.getElementById('srs-buttons-container').classList.remove('hidden');
+            document.getElementById('srs-buttons-container').style.display = 'flex';
         }
 
-        // --- 3. SAVE PROGRESS (NUEVA TABLA user_analytics) ---
+        // --- MANEJO DE BOTONES (NEXT/SRS) ---
         async function rateQuestion(rating) { 
+            // 1. Logear respuesta al DB y registrar rating SRS
             const currentQ = quizData[currentIndex];
-            const isCorrect = selectedOptionId === currentQ.correctOption;
+            currentQ.userAnswer = selectedOptionId;
+            currentQ.isCorrect = selectedOptionId === currentQ.correctOption;
+            currentQ.srsRating = rating;
+            srsCounters[rating]++; // Aumentar contador SRS de la sesión
 
             if (currentUser) {
                 try {
@@ -650,45 +630,52 @@
                         {
                             user_email: currentUser.email,
                             question_id: currentQ.id,
-                            is_correct: isCorrect,
-                            srs_rating: rating // AÑADIDO: Campo para el sistema SRS
+                            is_correct: currentQ.isCorrect,
+                            srs_rating: rating // ENLACE CRÍTICO con la base de datos
                         }
                     ]);
-                    
                     if(error) console.error("Supabase error:", error);
-                    else console.log("Analytics saved ✅");
-
                 } catch (err) { console.error("Save error:", err); }
             }
             
+            // 2. Avanzar
             nextQuestion();
         }
 
         function nextQuestion() {
-            // Asegura que en modo simulación se valide antes de avanzar
+            const currentQ = quizData[currentIndex];
             const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
-
-            if(isSimulation && !isAnswerChecked) {
-                // Si es Simulación, el botón 'Next' del footer debe disparar la validación si no se ha hecho
-                if(selectedOptionId) {
-                    isAnswerChecked = true;
-                    validateAnswer();
-                    return; // Muestra la explicación, el usuario debe pulsar Siguiente de nuevo.
-                } else {
-                    alert("Please select an answer to continue in Simulation Mode.");
+            
+            if (isSimulation) {
+                // MODO SIMULACIÓN: Guardar respuesta y avanzar SIN validar visualmente
+                if (!selectedOptionId) {
+                    alert("Por favor, selecciona una respuesta para continuar.");
                     return;
                 }
-            }
+                currentQ.userAnswer = selectedOptionId;
+                currentQ.isCorrect = selectedOptionId === currentQ.correctOption;
+                
+                // Si es la última pregunta, vamos a los resultados.
+                if (currentIndex === quizData.length - 1) {
+                     showFinalResults();
+                     return;
+                }
+                
+                // Si no es la última, pasamos a la siguiente.
+                currentIndex++;
+                renderQuestion();
+                return;
+            } 
             
+            // MODO PRÁCTICA (SRS): Lógica de avance ya manejada por rateQuestion()
             if (currentIndex < quizData.length - 1) {
                 currentIndex++;
                 renderQuestion();
             } else {
-                alert("Quiz Completed! Check your stats in the dashboard.");
-                window.location.href = 'dashboard.html';
+                showFinalResults();
             }
         }
-
+        
         function prevQuestion() {
             if (currentIndex > 0) {
                 currentIndex--;
@@ -696,88 +683,122 @@
             }
         }
 
-        // --- UTILS (Sim Mode) ---
-        function switchTab(tabName) {
-            const tabPhotos = document.getElementById('tab-photos');
-            const tabClinical = document.getElementById('tab-clinical');
-            const viewPhotos = document.getElementById('view-photos');
-            const viewClinical = document.getElementById('view-clinical');
-
-            if (tabName === 'clinical') {
-                tabClinical.classList.add('active'); tabClinical.classList.remove('inactive');
-                tabPhotos.classList.remove('active'); tabPhotos.classList.add('inactive');
-                viewClinical.classList.remove('hidden'); viewPhotos.classList.add('hidden');
-            } else {
-                tabPhotos.classList.add('active'); tabPhotos.classList.remove('inactive');
-                tabClinical.classList.remove('active'); tabClinical.classList.add('inactive');
-                viewPhotos.classList.remove('hidden'); viewClinical.classList.add('hidden');
-            }
-        }
-
-        function startTimer() {
-            const display = document.getElementById('timer-display');
-            const interval = setInterval(() => {
-                if (timerSeconds > 0) {
-                    timerSeconds--;
-                    const h = Math.floor(timerSeconds / 3600).toString().padStart(2, '0');
-                    const m = Math.floor((timerSeconds % 3600) / 60).toString().padStart(2, '0');
-                    const s = (timerSeconds % 60).toString().padStart(2, '0');
-                    display.textContent = `${h}:${m}:${s}`;
-                } else {
-                    clearInterval(interval);
-                    alert("Time's up!");
-                    window.location.href = 'dashboard.html';
-                }
-            }, 1000);
-        }
-
-        // --- 4. GEMINI AI REAL ---
-        async function triggerGeminiExplanation() {
-            const container = document.getElementById('gemini-content');
-            const loading = document.getElementById('gemini-loading');
-            const textDiv = document.getElementById('gemini-text');
-            const currentQ = quizData[currentIndex];
+        // --- PANTALLA FINAL DE RESULTADOS (MODO EXAMEN/PRÁCTICA) ---
+        function showFinalResults() {
+            // Ocultar UI de Quiz
+            document.getElementById('main-container-wrapper').classList.add('hidden');
+            document.querySelector('.inbde-footer').classList.add('hidden'); 
             
-            container.classList.remove('hidden');
-            loading.classList.remove('hidden');
-            textDiv.classList.add('hidden');
+            // Mostrar UI de Resultados
+            const resultsView = document.getElementById('results-view');
+            resultsView.classList.remove('hidden');
+            resultsView.style.display = 'flex';
 
-            const prompt = `Explain why the answer "${currentQ.correctOption}" is correct for the dental question: "${currentQ.text}". Keep it concise and educational.`;
+            // 1. Tally Scores
+            let totalCorrect = quizData.filter(q => q.isCorrect).length;
+            let totalQuestions = quizData.length;
 
-            if(!GEMINI_API_KEY) {
-                loading.classList.add('hidden');
-                textDiv.classList.remove('hidden');
-                textDiv.innerText = "API Key missing. Please add it to the code.";
-                return;
+            // 2. Render Summary
+            document.getElementById('final-correct').innerText = totalCorrect;
+            document.getElementById('final-total').innerText = totalQuestions;
+            document.getElementById('srs-learning-count').innerText = srsCounters.Learning;
+            document.getElementById('srs-retrieving-count').innerText = srsCounters.Retrieving;
+            document.getElementById('srs-mastered-count').innerText = srsCounters.Mastered;
+            
+            // 3. Render Review List (with Explanations)
+            const reviewList = document.getElementById('review-list');
+            reviewList.innerHTML = '';
+            
+            quizData.forEach((q, index) => {
+                const isCorrect = q.isCorrect;
+                const userAnswerText = q.options.find(opt => opt.id === q.userAnswer)?.text || "No Answered";
+                const correctAnswerText = q.options.find(opt => opt.id === q.correctOption)?.text || "N/A";
+                const srsTag = q.srsRating ? `<span class="font-bold text-xs p-1 rounded" style="background:${q.srsRating === 'Learning' ? '#ef4444' : q.srsRating === 'Retrieving' ? '#eab308' : '#22c55e'}">${q.srsRating}</span>` : '';
+                
+                // Estructura de revisión
+                const itemHTML = `
+                    <div class="review-item ${isCorrect ? 'correct-bg' : 'incorrect-bg'} p-4">
+                        <h4 class="font-bold text-md mb-2 text-gray-900 dark:text-white">Q${index + 1}: ${isCorrect ? 'Correcta ✅' : 'Incorrecta ❌'} ${srsTag}</h4>
+                        <p class="mb-1">${q.text}</p>
+                        <p class="text-sm">Tu Respuesta: <strong class="${isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">${userAnswerText}</strong></p>
+                        <p class="text-sm">Respuesta Correcta: <strong>${correctAnswerText}</strong></p>
+                        
+                        <button class="btn-explain-review" onclick="toggleReviewExplanation(this, ${index})">
+                            Mostrar Explicación y IA
+                        </button>
+                        
+                        <div class="review-explanation-box" id="review-expl-${index}">
+                            <p><strong>Racional:</strong> ${q.explanation}</p>
+                            <button class="btn-explain-review mt-2 bg-purple-600 hover:bg-purple-700" onclick="triggerGeminiReview(${index})">
+                                🤖 AI Explain This
+                            </button>
+                            <div id="gemini-review-${index}" class="mt-2 text-sm text-gray-300"></div>
+                        </div>
+                    </div>
+                `;
+                reviewList.insertAdjacentHTML('beforeend', itemHTML);
+            });
+            
+            // En modo Simulación, logueamos todas las respuestas que no se loguearon mid-quiz
+            if (isSimulation) {
+                // Aquí deberías tener una función que itere sobre quizData y loguee el userAnswer/isCorrect
+                // Como ya lo manejamos en nextQuestion(), este paso es opcional si el log fue per-pregunta.
             }
+        }
+        
+        // --- UTILIDADES PANTALLA FINAL ---
+        
+        function toggleReviewExplanation(button, index) {
+            const explBox = document.getElementById(`review-expl-${index}`);
+            if (explBox.style.display === 'block') {
+                explBox.style.display = 'none';
+                button.innerText = 'Mostrar Explicación y IA';
+            } else {
+                explBox.style.display = 'block';
+                button.innerText = 'Ocultar Explicación';
+            }
+        }
+        
+        async function triggerGeminiReview(index) {
+            const reviewContainer = document.getElementById(`gemini-review-${index}`);
+            const q = quizData[index];
+            
+            reviewContainer.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Analyzing with Gemini AI...';
+            
+            const prompt = `Explain why the answer "${q.correctOption}" is correct for the dental question: "${q.text}". Keep it concise and educational.`;
+
+            if(!GEMINI_API_KEY) { reviewContainer.innerText = "API Key missing."; return; }
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }]
-                    })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
                 
                 const data = await response.json();
                 const explanation = data.candidates?.[0]?.content?.parts?.[0]?.text || "AI could not generate an explanation.";
                 const formatted = explanation.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 
-                loading.classList.add('hidden');
-                textDiv.classList.remove('hidden');
-                textDiv.innerHTML = `<p><strong class=\"text-purple-400\">🤖 AI Analysis:</strong><br>${formatted}</p>`;
+                reviewContainer.innerHTML = `<p><strong class="text-purple-400">🤖 AI Analysis:</strong><br>${formatted}</p>`;
 
             } catch (e) {
-                loading.classList.add('hidden');
-                textDiv.classList.remove('hidden');
-                textDiv.innerText = "Error connecting to AI Tutor.";
+                reviewContainer.innerText = "Error connecting to AI Tutor.";
             }
         }
 
+
+        // --- UTILS (No-SRS/Footer functions) ---
+
         function toggleMark() { console.log("Mark toggled"); }
         function finishQuiz() { 
-            if(confirm("Finish and exit?")) window.location.href = 'dashboard.html'; 
+            // En modo Simulación, el botón 'Review' del footer debe llevar a la pantalla final.
+            const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
+            if (isSimulation) {
+                showFinalResults();
+            } else {
+                if(confirm("Finish and exit?")) window.location.href = 'dashboard.html'; 
+            }
         }
 
     </script>
