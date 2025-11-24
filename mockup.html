@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INBDE PRO Lab - AI Powered</title>
+<style>
+    /* --- 1. VARIABLES & BASE --- */
+    :root {
+        --accent: #facc15; 
+        --accent-glow: rgba(250, 204, 21, 0.15);
+        --bg-dark: #050505;
+        --card-bg: #121214;
+        --card-bg-hero: #1c1c20;
+        --card-border: #27272a;
+        --text-main: #f4f4f5;
+        --text-muted: #71717a;
+        
+        /* DIMENSIONES DE ESCRITORIO */
+        --col-width: 200px;
+        --sq-size: 190px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background-color: #000;
+        color: var(--text-main);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%);
+    }
+
+    /* --- 2. GRID LAYOUT (DESKTOP) --- */
+    .lab-container {
+        width: 100%;
+        max-width: 1500px;
+        height: 96vh;
+        display: grid;
+        grid-template-columns: var(--col-width) 1fr var(--col-width);
+        grid-template-rows: auto 1fr;
+        gap: 25px; 
+        padding: 20px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* --- 3. HEADER AREA --- */
+    .header-area {
+        grid-column: 2 / 3;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding-bottom: 20px;
+        z-index: 10;
+    }
+
+    .lab-title {
+        font-size: 2.2rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: -1px;
+        margin: 0;
+        color: #fff;
+    }
+
+    .lab-subtitle {
+        color: var(--accent);
+        font-weight: 600;
+        font-size: 0.9rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-top: 5px;
+        opacity: 0.8;
+    }
+
+    .user-welcome {
+        margin-top: 10px;
+        font-size: 1.2rem;
+        color: var(--text-muted);
+        font-weight: 400;
+        display: flex; align-items: center; gap: 15px;
+    }
+
+    /* Nueva ubicación del Countdown (Badge en Header) */
+    .header-countdown {
+        background: rgba(250, 204, 21, 0.1);
+        border: 1px solid rgba(250, 204, 21, 0.3);
+        color: var(--accent);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        display: inline-flex; align-items: center; gap: 6px;
+    }
+
+    /* --- 4. ESTRUCTURA DE COLUMNAS --- */
+    .col-side {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between; 
+        padding-top: 40px;
+        gap: 20px;
+        opacity: 0.9;
+        transition: opacity 0.3s;
+    }
+    .col-side:hover { opacity: 1; }
+
+    .col-left { grid-column: 1 / 2; grid-row: 1 / 3; }
+    .col-right { grid-column: 3 / 4; grid-row: 1 / 3; }
+
+    .col-center {
+        grid-column: 2 / 3;
+        grid-row: 2 / 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center; 
+        gap: 25px;
+        position: relative;
+    }
+
+    /* --- 5. TARJETAS BASE --- */
+    .card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        padding: 15px; 
+        position: relative;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        cursor: pointer;
+    }
+    .card-secondary { box-shadow: none; }
+    .card-secondary:hover { background: #18181b; border-color: #52525b; }
+    .card-secondary .card-title { font-size: 0.85rem; opacity: 0.9; margin-bottom: 5px; } 
+    .card-secondary .card-desc { font-size: 0.75rem; }
+
+
+    /* --- 6. SUPER CARDS (PROMO STYLE) - AHORA PARA DAILY & IA --- */
+    .card-promo-style {
+        width: 100%;
+        background: linear-gradient(145deg, rgba(250, 204, 21, 0.15), rgba(0,0,0,0) 70%);
+        border: 2px solid var(--accent);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 0 20px rgba(250, 204, 21, 0.15);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        overflow: hidden;
+        /* Asegura altura consistente */
+        min-height: 160px; 
+        display: flex; flex-direction: column; justify-content: center;
+    }
+
+    .card-promo-style:hover {
+        transform: scale(1.05) translateY(-5px);
+        box-shadow: 0 10px 30px rgba(250, 204, 21, 0.3);
+        background: linear-gradient(145deg, rgba(250, 204, 21, 0.25), rgba(0,0,0,0) 80%);
+    }
+
+    .promo-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    
+    @keyframes pulse-fire {
+        0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(255, 100, 0, 0)); }
+        50% { transform: scale(1.2); filter: drop-shadow(0 0 10px rgba(255, 165, 0, 0.8)); }
+        100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(255, 100, 0, 0)); }
+    }
+    .fire-icon { font-size: 1.5rem; animation: pulse-fire 2s infinite ease-in-out; }
+    .ai-icon { font-size: 1.5rem; filter: drop-shadow(0 0 5px var(--accent)); }
+
+    .promo-title { font-size: 1rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
+    .promo-desc { font-size: 0.8rem; color: #ddd; margin-bottom: 15px; line-height: 1.3; }
+
+    .btn-start {
+        display: inline-block;
+        background: var(--accent);
+        color: #000;
+        font-weight: 800;
+        font-size: 0.75rem;
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        align-self: flex-start;
+    }
+
+
+    /* --- 7. ELEMENTOS CENTRALES --- */
+    .card-learn-banner {
+        width: 100%;
+        padding: 20px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        border: 2px solid var(--accent);
+        background: rgba(250, 204, 21, 0.05);
+        margin-bottom: 20px; 
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .card-learn-banner:hover {
+        background: rgba(250, 204, 21, 0.12);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(250, 204, 21, 0.15);
+    }
+    .card-learn-banner h2 { 
+        margin: 0; font-size: 1.2rem; font-weight: 700; color: #fff; letter-spacing: 0.5px;
+    }
+    .banner-icon { color: var(--accent); display: flex; align-items: center; }
+
+    .center-row-hero {
+        width: 100%; display: flex; justify-content: center; gap: 25px; flex: 1; align-items: flex-start;
+    }
+
+    .hero-card {
+        flex: 1; max-width: 260px; aspect-ratio: 1 / 1; 
+        background: var(--card-bg-hero); border: 1px solid var(--accent); 
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow);
+        border-radius: 20px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; padding: 15px; cursor: pointer; position: relative;
+    }
+    .hero-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.6), 0 0 40px var(--accent-glow);
+        background: #23232a;
+    }
+    .hero-card .icon { font-size: 3rem; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+    .hero-card .title { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 5px; }
+    .hero-card .sub { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+
+
+    /* --- 8. TARJETAS INFERIORES --- */
+    .square-card-bottom {
+        width: var(--sq-size); height: var(--sq-size); margin-top: auto; 
+        display: flex; flex-direction: column;
+    }
+
+    .card-notes { background-image: radial-gradient(#333 1px, transparent 1px); background-size: 12px 12px; }
+    
+    .card-metrics {
+        background: linear-gradient(180deg, var(--card-bg-hero) 0%, #080808 100%);
+        border-top: 1px solid #333; box-shadow: 0 -10px 40px -20px rgba(0,0,0,1);
+    }
+    .metrics-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    .metrics-title { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+    .metrics-icon { opacity: 0.7; color: #fff; display: flex; align-items: center; }
+
+    .pie-container { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+    .pie-chart-main {
+        width: 90px; height: 90px; border-radius: 50%;
+        background: conic-gradient(var(--accent) 0% 65%, #27272a 65% 100%);
+        box-shadow: 0 0 15px rgba(0,0,0,0.5); position: relative;
+    }
+
+    .usage-container { align-items: center; justify-content: center; gap: 10px; }
+    .usage-header { width: 100%; text-align: left; }
+    .ring-chart {
+        width: 60px; height: 60px; border-radius: 50%;
+        background: conic-gradient(var(--accent) 65%, #27272a 0);
+        display: flex; justify-content: center; align-items: center;
+    }
+    .ring-chart::after { content: ""; width: 48px; height: 48px; background: var(--card-bg); border-radius: 50%; }
+    .activity-dots { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; width: 100%; }
+    .dot { width: 6px; height: 6px; background: #333; border-radius: 1px; }
+    .dot.active { background: var(--accent); }
+
+
+    /* --- 9. MODALS & AI UI --- */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+        display: flex; justify-content: center; align-items: center;
+        z-index: 1000;
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+    .modal-content {
+        background: #18181b;
+        border: 1px solid var(--card-border);
+        border-radius: 20px;
+        width: 90%; max-width: 500px;
+        padding: 30px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        transform: translateY(20px); transition: transform 0.3s ease;
+        display: flex; flex-direction: column; gap: 15px;
+    }
+    .modal-overlay.active .modal-content { transform: translateY(0); }
+
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .modal-title { font-size: 1.5rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; }
+    .close-btn { background: none; border: none; color: #666; font-size: 1.5rem; cursor: pointer; }
+    .close-btn:hover { color: #fff; }
+
+    .ai-input-area {
+        width: 100%;
+        background: #000;
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 15px;
+        color: #fff;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 100px;
+        font-size: 1rem;
+    }
+    .ai-input-area:focus { outline: none; border-color: var(--accent); }
+
+    .ai-action-btn {
+        background: var(--accent);
+        color: #000;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex; justify-content: center; align-items: center; gap: 8px;
+        transition: transform 0.2s;
+    }
+    .ai-action-btn:hover { transform: scale(1.02); background: #fff; }
+    .ai-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .ai-response {
+        background: rgba(255,255,255,0.03);
+        border-radius: 12px;
+        padding: 20px;
+        color: #ccc;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        max-height: 300px;
+        overflow-y: auto;
+        border-left: 3px solid var(--accent);
+        display: none; /* Hidden initially */
+    }
+    .ai-response h3 { color: #fff; margin-top: 0; font-size: 1.1rem; }
+    .ai-response ul { padding-left: 20px; }
+    .ai-response li { margin-bottom: 5px; }
+
+    .loader {
+        border: 3px solid rgba(255,255,255,0.1);
+        border-top: 3px solid var(--accent);
+        border-radius: 50%;
+        width: 20px; height: 20px;
+        animation: spin 1s linear infinite;
+        display: none;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+
+    /* --- RESPONSIVIDAD (SIMETRÍA MÓVIL) --- */
+    @media (max-width: 1200px) {
+        :root { --col-width: 180px; --sq-size: 180px; }
+        .hero-card .title { font-size: 1rem; }
+    }
+    @media (max-width: 1024px) {
+        body { height: auto; overflow-y: auto; align-items: flex-start; padding-top: 20px; }
+        .lab-container { height: auto; display: flex; flex-direction: column; padding: 15px; gap: 20px; }
+        .header-area { order: 1; padding-bottom: 10px; }
+        .col-center  { order: 2; width: 100%; padding: 0; }
+        .col-left    { order: 3; width: 100%; padding: 0; }
+        .col-right   { order: 4; width: 100%; padding: 0; }
+        
+        /* En móvil, alineamos las columnas para que se vean igual */
+        .col-side, .col-center { align-items: stretch; gap: 20px; }
+        
+        .center-row-hero { flex-direction: column; gap: 15px; }
+        .hero-card { max-width: none; aspect-ratio: auto; min-height: 100px; flex-direction: row; text-align: left; justify-content: flex-start; padding: 20px; gap: 20px; }
+        .hero-card .icon { margin-bottom: 0; font-size: 2.5rem; }
+        .hero-card > div { text-align: left; }
+        
+        /* Las tarjetas cuadradas ahora son rectangulares en móvil para aprovechar el ancho */
+        .square-card-bottom { width: 100%; height: 160px; margin-top: 0; flex-direction: row; align-items: center; justify-content: space-between; padding: 0 25px; }
+        
+        .card-metrics { flex-direction: row; justify-content: space-between; }
+        .metrics-header { width: auto; flex-direction: column; align-items: flex-start; gap: 10px; }
+        .pie-container { justify-content: flex-end; }
+        .usage-container { justify-content: space-between; }
+        .usage-header { width: auto; }
+        .activity-dots { width: auto; max-width: 120px; }
+        .card-learn-banner { flex-direction: column; gap: 10px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="lab-container">
+
+    <!-- 1. HEADER -->
+    <header class="header-area">
+        <h1 class="lab-title">INBDE PRO <span style="font-weight:300; opacity:0.5;">Lab</span></h1>
+        <div class="lab-subtitle">Train in our lab. Become a Pro.</div>
+        <div class="user-welcome">
+            <span>Welcome back, <span style="color:var(--accent); font-weight:700;">Doctor</span></span>
+            <!-- COUNTDOWN AHORA AQUÍ PARA SIMETRÍA -->
+            <div class="header-countdown">
+                <span style="font-size:1.1em">⏱</span> 45 Days Left
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. COLUMNA IZQUIERDA -->
+    <div class="col-side col-left">
+        
+        <!-- CARD DAILY (PROMO STYLE) -->
+        <div class="card-promo-style">
+            <div class="promo-header">
+                <div class="fire-icon">🔥</div>
+                <div class="promo-title">Daily Lab Run</div>
+            </div>
+            <div class="promo-desc">10-question sprint. Keep the streak alive.</div>
+            <div class="btn-start">Start Now</div>
+        </div>
+
+        <!-- NOTES -->
+        <div class="card card-secondary card-notes square-card-bottom" onclick="openAIModal('notes')">
+            <div class="card-title">📝 Notes ✨</div>
+            <div class="card-desc" style="font-style:italic; opacity:0.5;">Click to organize notes with AI...</div>
+        </div>
+    </div>
+
+    <!-- 3. COLUMNA CENTRAL -->
+    <div class="col-center">
+        <!-- Banner -->
+        <div class="card-learn-banner">
+            <div class="banner-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+            </div>
+            <h2>Learn about the INBDE our way</h2>
+        </div>
+
+        <!-- HERO CARDS -->
+        <div class="center-row-hero">
+            <div class="hero-card">
+                <div class="icon">🧪</div>
+                <div>
+                    <div class="title">Learning Lab</div>
+                    <div class="sub">Deep dive study</div>
+                </div>
+            </div>
+
+            <div class="hero-card">
+                <div class="icon">⚡</div>
+                <div>
+                    <div class="title">Simulation Lab</div>
+                    <div class="sub">Exam mode</div>
+                </div>
+            </div>
+
+            <div class="hero-card">
+                <div class="icon">🍅</div>
+                <div>
+                    <div class="title">Pomodoro</div>
+                    <div class="sub">Focus timer</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- METRICS -->
+        <div class="card card-metrics square-card-bottom">
+            <div class="metrics-header">
+                <span class="metrics-title">Performance</span>
+                <span class="metrics-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                        <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                    </svg>
+                </span>
+            </div>
+            
+            <div class="pie-container">
+                <div class="pie-chart-main"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. COLUMNA DERECHA -->
+    <div class="col-side col-right">
+        
+        <!-- IA LAB: AHORA ESTILO PROMO (SIMÉTRICO A DAILY RUN) -->
+        <div class="card-promo-style" onclick="openAIModal('ia_search')">
+            <div class="promo-header">
+                <div class="ai-icon">🤖</div>
+                <div class="promo-title">IA Lab ✨</div>
+            </div>
+            <div class="promo-desc">Smart Search. Find or generate questions instantly.</div>
+            <div class="btn-start">Ask AI</div>
+        </div>
+
+        <!-- ACTIVITY -->
+        <div class="card card-secondary usage-container square-card-bottom">
+            <div class="usage-header">
+                <div class="card-title" style="font-size:0.85rem;">Activity Log</div>
+            </div>
+            <div class="ring-chart"></div>
+            <div class="activity-dots">
+                <div class="dot active"></div><div class="dot active"></div><div class="dot"></div>
+                <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot active"></div><div class="dot active"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot active"></div><div class="dot"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- AI MODAL -->
+<div id="ai-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">
+                <span id="ai-modal-icon">🧪</span>
+                <span id="ai-modal-title">AI Tutor</span>
+            </div>
+            <button class="close-btn" onclick="closeAIModal()">×</button>
+        </div>
+        
+        <p id="ai-modal-desc" style="color:#aaa; font-size:0.9rem;">Ask any dental question or topic.</p>
+        
+        <textarea id="ai-input" class="ai-input-area" placeholder="E.g. Explain Amelogenesis Imperfecta..."></textarea>
+        
+        <button id="ai-submit-btn" class="ai-action-btn" onclick="callGemini()">
+            <span class="loader" id="ai-loader"></span>
+            <span id="ai-btn-text">Generate with AI ✨</span>
+        </button>
+
+        <div id="ai-output" class="ai-response"></div>
+    </div>
+</div>
+
+<script>
+    const apiKey = ""; // The execution environment provides this key at runtime
+
+    const modal = document.getElementById('ai-modal');
+    const modalTitle = document.getElementById('ai-modal-title');
+    const modalIcon = document.getElementById('ai-modal-icon');
+    const modalDesc = document.getElementById('ai-modal-desc');
+    const inputArea = document.getElementById('ai-input');
+    const outputArea = document.getElementById('ai-output');
+    const submitBtn = document.getElementById('ai-submit-btn');
+    const loader = document.getElementById('ai-loader');
+    const btnText = document.getElementById('ai-btn-text');
+
+    let currentMode = 'tutor'; // 'tutor' or 'notes' or 'ia_search'
+
+    function openAIModal(mode) {
+        currentMode = mode;
+        modal.classList.add('active');
+        outputArea.style.display = 'none';
+        outputArea.innerHTML = '';
+        inputArea.value = '';
+
+        if (mode === 'ia_search') {
+            modalTitle.textContent = "INBDE Pro IA";
+            modalIcon.textContent = "🤖";
+            modalDesc.textContent = "Intelligent Question Searcher. Ask me to find or generate practice questions.";
+            inputArea.placeholder = "e.g., Generate 5 questions about Pharmacology...";
+            btnText.textContent = "Find Questions ✨";
+        } else if (mode === 'notes') {
+            modalTitle.textContent = "Smart Notes";
+            modalIcon.textContent = "📝";
+            modalDesc.textContent = "Paste your rough notes here. I will organize and summarize them.";
+            inputArea.placeholder = "Paste raw notes here...";
+            btnText.textContent = "Organize Notes ✨";
+        } else {
+             modalTitle.textContent = "AI Assistant";
+             modalIcon.textContent = "✨";
+             modalDesc.textContent = "How can I help you today?";
+             inputArea.placeholder = "Type your query...";
+             btnText.textContent = "Generate ✨";
+        }
+    }
+
+    function closeAIModal() {
+        modal.classList.remove('active');
+    }
+
+    async function callGemini() {
+        const userQuery = inputArea.value.trim();
+        if (!userQuery) return;
+
+        submitBtn.disabled = true;
+        loader.style.display = 'inline-block';
+        btnText.style.display = 'none';
+        outputArea.style.display = 'none';
+
+        let systemPrompt = "";
+        if (currentMode === 'ia_search') {
+            systemPrompt = "You are an intelligent assistant for INBDE candidates. Your role is to generate or find practice questions based on the user's query. Provide the question, multiple choice options, and the correct answer with a brief explanation.";
+        } else if (currentMode === 'notes') {
+            systemPrompt = "You are a study assistant. Organize the following notes into a structured study guide with headers and bullet points. Fix any typos.";
+        } else {
+             systemPrompt = "You are a helpful dental study assistant.";
+        }
+
+        try {
+            const response = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: userQuery }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                }
+            );
+
+            const data = await response.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+
+            const formattedText = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\* (.*?)\n/g, '<li>$1</li>')
+                .replace(/\n/g, '<br>');
+
+            outputArea.innerHTML = formattedText;
+            outputArea.style.display = 'block';
+
+        } catch (error) {
+            console.error(error);
+            outputArea.innerHTML = "Error contacting Gemini API. Please try again.";
+            outputArea.style.display = 'block';
+        } finally {
+            submitBtn.disabled = false;
+            loader.style.display = 'none';
+            btnText.style.display = 'inline';
+        }
+    }
+</script>
+
+</body>
+</html>
