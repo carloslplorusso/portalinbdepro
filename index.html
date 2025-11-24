@@ -4,50 +4,200 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>INBDE Pro - Access</title>
+<!-- Importamos la fuente Inter para coincidir con el diseño del Dashboard -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-    :root { --primary-color: #fcdc11; --primary-dark: #121212; --light-bg: #f3f4f6; --border-color: #e5e7eb; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--light-bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-    .auth-card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; border: 1px solid var(--border-color); }
-    .brand-title { color: var(--primary-dark); font-size: 2em; font-weight: 800; margin-bottom: 10px; }
-    .form-view { display: none; animation: fadeIn 0.3s ease; }
+    /* --- 1. VARIABLES & BASE (Extraídas de tu CSS) --- */
+    :root {
+        --accent: #facc15; 
+        --accent-glow: rgba(250, 204, 21, 0.15);
+        --bg-dark: #050505;
+        --card-bg: #121214;
+        --card-border: #27272a;
+        --text-main: #f4f4f5;
+        --text-muted: #71717a;
+        --input-bg: #000;
+        --danger: #ef4444;
+        --success: #10b981;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+        margin: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background-color: var(--bg-dark);
+        color: var(--text-main);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        /* Fondo radial idéntico a tu Dashboard */
+        background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%);
+        padding: 20px;
+    }
+
+    /* --- 2. AUTH CARD (Adaptada al estilo Dashboard) --- */
+    .auth-card {
+        background: var(--card-bg);
+        padding: 40px;
+        border-radius: 24px; /* Bordes más redondeados como en learning-card */
+        width: 100%;
+        max-width: 420px;
+        text-align: center;
+        border: 1px solid var(--card-border);
+        position: relative;
+        /* Sutil resplandor amarillo inspirado en el dashboard */
+        box-shadow: 0 0 40px rgba(0,0,0,0.5), 0 0 20px var(--accent-glow);
+        transition: all 0.3s ease;
+    }
+
+    .auth-card:hover {
+        border-color: #3f3f46;
+        box-shadow: 0 0 50px rgba(0,0,0,0.6), 0 0 30px var(--accent-glow);
+    }
+
+    .brand-title {
+        color: #fff;
+        font-size: 2.2rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: -1px;
+        margin-bottom: 5px;
+    }
+
+    .brand-subtitle {
+        color: var(--accent);
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 30px;
+        opacity: 0.9;
+    }
+
+    /* --- 3. ANIMACIONES --- */
+    .form-view { display: none; animation: fadeIn 0.4s ease forwards; }
     .form-view.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .input-group { margin-bottom: 15px; text-align: left; }
-    .input-group label { display: block; font-size: 0.9em; font-weight: 600; margin-bottom: 5px; color: #444; }
-    input { width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 1em; box-sizing: border-box; transition: border-color 0.2s; }
-    input:focus { border-color: var(--primary-color); outline: none; }
-    .btn-main { width: 100%; background-color: var(--primary-color); color: var(--primary-dark); font-weight: 800; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 10px; transition: transform 0.1s; }
-    .btn-main:hover { transform: scale(1.02); }
-    .btn-main:disabled { background-color: #ddd; cursor: wait; }
-    .divider { display: flex; align-items: center; margin: 25px 0; color: #999; font-size: 0.8em; }
-    .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #eee; }
-    .divider span { padding: 0 10px; }
-    .btn-google { width: 100%; background-color: white; color: #333; font-weight: 600; padding: 12px; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; font-size: 0.95em; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background 0.2s; }
-    .btn-google:hover { background-color: #f9f9f9; border-color: #bbb; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* --- 4. INPUTS & LABELS (Estilo Dark) --- */
+    .input-group { margin-bottom: 20px; text-align: left; }
+    
+    .input-group label { 
+        display: block; 
+        font-size: 0.85rem; 
+        font-weight: 600; 
+        margin-bottom: 8px; 
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    input { 
+        width: 100%; 
+        padding: 14px; 
+        background: var(--input-bg);
+        border: 1px solid var(--card-border); 
+        color: #fff;
+        border-radius: 12px; 
+        font-size: 1rem; 
+        transition: all 0.3s;
+        font-family: inherit;
+    }
+
+    input:focus { 
+        border-color: var(--accent); 
+        outline: none; 
+        box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.1);
+    }
+
+    input::placeholder { color: #444; }
+
+    /* --- 5. BOTONES --- */
+    .btn-main { 
+        width: 100%; 
+        background-color: var(--accent); 
+        color: #000; 
+        font-weight: 900; 
+        padding: 14px; 
+        border: none; 
+        border-radius: 12px; 
+        cursor: pointer; 
+        font-size: 0.95rem; 
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 10px; 
+        transition: transform 0.2s, box-shadow 0.2s; 
+        box-shadow: 0 4px 15px rgba(250, 204, 21, 0.2);
+    }
+
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(250, 204, 21, 0.3); }
+    .btn-main:active { transform: translateY(0); }
+    .btn-main:disabled { background-color: #333; color: #666; cursor: not-allowed; box-shadow: none; }
+
+    /* --- 6. GOOGLE & UTILIDADES --- */
+    .divider { display: flex; align-items: center; margin: 25px 0; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; letter-spacing: 1px; }
+    .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #333; }
+    .divider span { padding: 0 15px; }
+
+    .btn-google { 
+        width: 100%; 
+        background-color: #fff; 
+        color: #000; 
+        font-weight: 700; 
+        padding: 12px; 
+        border: none; 
+        border-radius: 12px; 
+        cursor: pointer; 
+        font-size: 0.95rem; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        gap: 12px; 
+        transition: background 0.2s; 
+    }
+    .btn-google:hover { background-color: #f0f0f0; }
     .btn-google img { width: 20px; height: 20px; }
-    .switch-link { margin-top: 20px; font-size: 0.9em; color: #666; }
-    .switch-link span { color: var(--primary-dark); font-weight: 700; cursor: pointer; text-decoration: underline; }
-    .msg-box { padding: 10px; border-radius: 6px; font-size: 0.9em; margin-top: 15px; display: none; }
-    .msg-error { background: #fee2e2; color: #ef4444; }
-    .msg-success { background: #dcfce7; color: #166534; }
+
+    .switch-link { margin-top: 25px; font-size: 0.9rem; color: var(--text-muted); }
+    .switch-link span { color: var(--accent); font-weight: 700; cursor: pointer; text-decoration: none; transition: opacity 0.2s; }
+    .switch-link span:hover { text-decoration: underline; opacity: 0.8; }
+
+    .forgot-pass-link { color: var(--text-muted); font-size: 0.75rem; font-weight: 500; cursor: pointer; transition: color 0.2s; }
+    .forgot-pass-link:hover { color: #fff; }
+
+    /* --- 7. MENSAJES DE ERROR/EXITO --- */
+    .msg-box { 
+        padding: 12px; 
+        border-radius: 8px; 
+        font-size: 0.85rem; 
+        margin-top: 20px; 
+        display: none; 
+        font-weight: 600;
+        animation: fadeIn 0.3s ease;
+    }
+    .msg-error { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+    .msg-success { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
 </style>
 </head>
 <body>
 
 <div class="auth-card">
     <div class="brand-title">INBDE Pro</div>
+    <div class="brand-subtitle">Student Access Portal</div>
     
+    <!-- LOGIN VIEW -->
     <div id="view-login" class="form-view active">
-        <p style="color:#666; margin-bottom:20px;">Student Access Portal</p>
         
         <div class="input-group">
-            <label>Email</label>
+            <label>Email Address</label>
             <input type="email" id="login-email" placeholder="student@university.edu" autocapitalize="off" autocorrect="off">
         </div>
         <div class="input-group">
-            <div style="display:flex; justify-content:space-between;">
-                <label>Password</label>
-                <label style="color:#666; font-weight:400; cursor:pointer; font-size:0.8em;" onclick="switchView('forgot')">Forgot Password?</label>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <label style="margin:0;">Password</label>
+                <span class="forgot-pass-link" onclick="switchView('forgot')">Forgot Password?</span>
             </div>
             <input type="password" id="login-password" onkeydown="if(event.key==='Enter') handleLogin()">
         </div>
@@ -62,29 +212,33 @@
         </button>
     </div>
 
+    <!-- FORGOT PASSWORD VIEW -->
     <div id="view-forgot" class="form-view">
-        <p style="color:#666; margin-bottom:20px;">We'll send you a recovery link.</p>
+        <p style="color:var(--text-muted); margin-bottom:25px; line-height: 1.5; font-size: 0.9rem;">
+            Enter your email address and we'll send you a link to reset your password.
+        </p>
         <div class="input-group">
-            <label>Enter your registered email</label>
-            <input type="email" id="reset-email">
+            <label>Registered Email</label>
+            <input type="email" id="reset-email" placeholder="name@example.com">
         </div>
         <button class="btn-main" onclick="handleReset()" id="btn-reset">Send Recovery Link</button>
         <div class="switch-link">
-            <span onclick="switchView('login')">⬅ Back to Login</span>
+            <span onclick="switchView('login')">← Back to Login</span>
         </div>
     </div>
 
     <div id="msg-box" class="msg-box"></div>
 </div>
 
+<!-- SUPABASE LOGIC -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
+    // --- CONFIGURACIÓN DE SUPABASE ---
     const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // --- AUTO-REDIRECT ---
+    // --- MANEJO DE ESTADO DE AUTENTICACIÓN ---
     _supabase.auth.onAuthStateChange((event, session) => {
         if (session) {
             if (event === "PASSWORD_RECOVERY") {
@@ -95,13 +249,14 @@
         }
     });
 
+    // --- NAVEGACIÓN ENTRE VISTAS ---
     function switchView(viewName) {
         hideMsg();
         document.querySelectorAll('.form-view').forEach(el => el.classList.remove('active'));
         document.getElementById(`view-${viewName}`).classList.add('active');
     }
 
-    // --- 1. LOGIN EMAIL ---
+    // --- 1. LOGIN CON EMAIL ---
     async function handleLogin() {
         const email = document.getElementById('login-email').value;
         const pass = document.getElementById('login-password').value;
@@ -109,55 +264,73 @@
 
         if(!email || !pass) return showMsg('Please fill all fields', 'error');
 
-        btn.innerText = 'Checking...'; btn.disabled = true;
+        btn.innerText = 'Verifying...'; 
+        btn.disabled = true;
         
         const { data, error } = await _supabase.auth.signInWithPassword({ email, password: pass });
 
         if (error) {
-            showMsg('Incorrect email or password.', 'error');
-            btn.innerText = 'Sign In'; btn.disabled = false;
+            showMsg('Invalid credentials. Please try again.', 'error');
+            btn.innerText = 'Sign In'; 
+            btn.disabled = false;
         } else {
-            // ¡AQUÍ FALTABA LA REDIRECCIÓN!
-            window.location.href = './dashboard.html';
+            // Éxito: onAuthStateChange manejará la redirección
+            btn.innerText = 'Success!';
         }
     }
 
-    // --- 2. LOGIN GOOGLE ---
+    // --- 2. LOGIN CON GOOGLE ---
     async function handleGoogleLogin() {
         const { data, error } = await _supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                // Redirige a la raíz para que el script de arriba haga el trabajo
                 redirectTo: 'https://carloslplorusso.github.io/portalinbdepro/' 
             }
         });
         if (error) showMsg(error.message, 'error');
     }
 
-    // --- 3. RECUPERAR PASS ---
+    // --- 3. RECUPERAR CONTRASEÑA ---
     async function handleReset() {
         const email = document.getElementById('reset-email').value;
         const btn = document.getElementById('btn-reset');
-        if(!email) return showMsg('Please enter your email', 'error');
-        btn.innerText = 'Sending...'; btn.disabled = true;
+        
+        if(!email) return showMsg('Please enter your email address', 'error');
+        
+        btn.innerText = 'Sending...'; 
+        btn.disabled = true;
 
         const { data, error } = await _supabase.auth.resetPasswordForEmail(email, {
-            // Redirige a la raíz del proyecto
             redirectTo: 'https://carloslplorusso.github.io/portalinbdepro/', 
         });
 
-        showMsg('If the email exists, we sent a recovery link.', 'success');
-        btn.innerText = 'Sent ✓';
+        if (error) {
+            showMsg(error.message, 'error');
+            btn.innerText = 'Try Again';
+            btn.disabled = false;
+        } else {
+            showMsg('Check your email for the recovery link.', 'success');
+            btn.innerText = 'Link Sent ✓';
+        }
     }
 
+    // --- UTILIDADES DE UI ---
     function showMsg(text, type) {
         const box = document.getElementById('msg-box');
         box.innerText = text;
         box.className = `msg-box msg-${type}`;
         box.style.display = 'block';
-        setTimeout(() => { if(type === 'error') box.style.display = 'none'; }, 5000);
+        // Auto-ocultar solo si es error, el éxito suele requerir lectura
+        if(type === 'error') {
+            setTimeout(() => { 
+                box.style.display = 'none'; 
+            }, 4000);
+        }
     }
-    function hideMsg() { document.getElementById('msg-box').style.display = 'none'; }
+
+    function hideMsg() { 
+        document.getElementById('msg-box').style.display = 'none'; 
+    }
 </script>
 </body>
 </html>
