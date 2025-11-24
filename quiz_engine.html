@@ -355,7 +355,7 @@
             currentUser = session.user;
         }
 
-        // --- 2. LOAD DATA (NUEVA LÓGICA RPC) ---
+        // --- 2. LOAD DATA (CORRECCIÓN DE LÓGICA RPC) ---
         async function loadQuestionsFromDB() {
             try {
                 let data, error;
@@ -367,16 +367,17 @@
                 // 1. DETERMINACIÓN DEL MODO Y DE LA RPC A LLAMAR
                 if (currentMode.includes('simulation') || currentMode === 'itemsets') {
                     // MODO 1: SIMULACIÓN / ITEM SET (SÓLO preguntas CON case_id)
-                    rpc_name = 'get_simulation_questions'; // Asumimos esta RPC fue creada con filtro IS NOT NULL
+                    rpc_name = 'get_simulation_questions'; 
                     document.getElementById('mode-subtitle').innerText = "Clinical Simulation";
                 } 
                 else if (STAND_ALONE_MODES.includes(currentMode)) {
                     // MODO 2: PRÁCTICA / STAND ALONE / DAILY (SÓLO preguntas SIN case_id)
                     if (currentMode === 'retry_mistakes') {
                         // Caso especial: Llama a la RPC que filtra por errores
+                        // NOTA: Esta RPC DEBE estar filtrada internamente para case_id IS NULL o manejar ambos.
                         rpc_name = 'get_failed_questions'; 
                     } else {
-                        rpc_name = 'get_stand_alone_questions'; // Asumimos esta RPC fue creada con filtro IS NULL
+                        rpc_name = 'get_stand_alone_questions'; 
                     }
                     document.getElementById('mode-subtitle').innerText = "Interactive Practice";
                 }
@@ -396,7 +397,7 @@
 
                 if (error) throw error;
                 if (!data || data.length === 0) {
-                    document.getElementById('question-text').innerText = "No se encontraron preguntas para este modo. Intente con otro filtro.";
+                    document.getElementById('question-text').innerText = `No se encontraron preguntas para el modo '${currentMode}'. Asegúrese de que hay datos con el filtro correcto.`;
                     return;
                 }
 
@@ -415,7 +416,6 @@
 
                 // --- MAPEO DE DATOS ---
                 quizData = data.map(item => {
-                    // Verificar si pertenece a un caso
                     const relatedCase = item.case_id ? casesMap[item.case_id] : null;
                     const patient = relatedCase && relatedCase.patient_data ? relatedCase.patient_data : {};
 
@@ -581,7 +581,7 @@
         function selectOption(id) {
             // Modificamos el flujo: en modo Simulación se marca, pero no se valida inmediatamente.
             // En modo práctica, se valida inmediatamente.
-            const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone'].includes(currentMode);
+            const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
             
             selectedOptionId = id;
 
@@ -650,7 +650,8 @@
                         {
                             user_email: currentUser.email,
                             question_id: currentQ.id,
-                            is_correct: isCorrect
+                            is_correct: isCorrect,
+                            srs_rating: rating // AÑADIDO: Campo para el sistema SRS
                         }
                     ]);
                     
