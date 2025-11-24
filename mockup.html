@@ -251,7 +251,6 @@
 
     .card-notes { background-image: radial-gradient(#333 1px, transparent 1px); background-size: 12px 12px; }
     
-    /* ESTILO METRICS (Escritorio) - Manteniendo estilo previo */
     .card-metrics {
         background: linear-gradient(180deg, var(--card-bg-hero) 0%, #080808 100%);
         border-top: 1px solid #333; box-shadow: 0 -10px 40px -20px rgba(0,0,0,1);
@@ -341,7 +340,7 @@
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 
-    /* --- RESPONSIVIDAD (MÓVIL - ESTRUCTURA APP GRID) --- */
+    /* --- RESPONSIVIDAD (MÓVIL - NATIVE APP STYLE - NO SCROLL) --- */
     @media (max-width: 1200px) {
         :root { --col-width: 180px; --sq-size: 180px; }
         .hero-card .title { font-size: 1rem; }
@@ -349,135 +348,152 @@
 
     @media (max-width: 1024px) {
         body { 
-            height: auto; 
-            overflow-y: auto; 
+            /* Forzar altura de viewport fija para evitar scroll si es posible */
+            height: 100dvh; 
+            overflow: hidden; 
             align-items: flex-start; 
-            padding-top: 15px; 
-            padding-bottom: 40px;
+            padding: 0;
         }
         
         .lab-container {
-            height: auto;
+            height: 100dvh;
             display: grid;
             /* GRID DE 2 COLUMNAS PARA MÓVIL (Bento Style) */
             grid-template-columns: 1fr 1fr; 
-            gap: 15px;
-            padding: 15px;
+            /* Filas ajustadas para llenar pantalla: Header | Banner | Hero | Daily/Metrics | IA/Notes/Activity */
+            grid-template-rows: auto auto auto 1fr 0.8fr;
+            gap: 8px; /* Gap reducido para compactar */
+            padding: 10px 15px 15px 15px;
             width: 100%;
         }
 
-        /* Romper columnas originales para distribuir libremente */
+        /* Romper columnas originales */
         .col-side, .col-center { display: contents; }
 
-        /* --- REUBICACIÓN DE ELEMENTOS EN GRID MÓVIL --- */
+        /* --- REUBICACIÓN Y COMPACTACIÓN --- */
 
-        /* 1. HEADER (Full width) */
+        /* 1. HEADER (Compacto) */
         .header-area { 
             grid-column: 1 / -1; 
-            order: 0; margin-bottom: 5px; padding-bottom: 5px; 
+            order: 0; margin-bottom: 0; padding-bottom: 5px; 
         }
+        .lab-title { font-size: 1.6rem; }
+        .lab-subtitle { font-size: 0.8rem; margin-top: 2px; }
+        .user-welcome { margin-top: 5px; font-size: 1rem; gap: 10px; }
+        .header-countdown { padding: 3px 8px; font-size: 0.75rem; }
 
-        /* 2. BANNER LEARN (Full width) */
+        /* 2. BANNER LEARN (Muy compacto) */
         .card-learn-banner { 
             grid-column: 1 / -1; 
             order: 1; 
-            margin-bottom: 5px; padding: 12px; 
+            margin-bottom: 0; padding: 8px; 
+            min-height: 45px;
         }
-        .card-learn-banner h2 { font-size: 1rem; }
+        .card-learn-banner h2 { font-size: 0.9rem; }
+        .banner-icon svg { width: 16px; height: 16px; }
 
-        /* 3. HERO CARDS (Full width container, items en fila) */
+        /* 3. HERO CARDS (Más grandes proporcionalmente) */
         .center-row-hero {
             grid-column: 1 / -1; 
             order: 2;
             flex-direction: row !important;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 8px;
+            margin-bottom: 0;
+            /* Estirar ligeramente esta fila */
+            align-items: stretch;
         }
         .hero-card {
-            min-height: 90px; 
+            min-height: auto; /* Dejar que Grid/Flex decida altura */
             padding: 10px 5px;
-            max-width: none;
-            aspect-ratio: auto;
+            gap: 5px;
         }
-        .hero-card .icon { font-size: 1.8rem; margin-bottom: 5px; }
+        .hero-card .icon { margin-bottom: 5px; font-size: 1.6rem; }
         .hero-card .title { font-size: 0.7rem; }
-        .hero-card .sub { display: none; }
 
-        /* 4. DAILY LAB RUN (Columna Izquierda - Row 3) */
-        /* Usamos selectores específicos para ubicar con grid */
+        /* 4. DAILY LAB RUN & METRICS (Ahora más pequeños - Fila 3) */
+        
+        /* Daily */
         .col-left .card-promo-style {
             grid-column: 1 / 2; 
-            grid-row: 4; /* Fila 4 en el flujo */
             order: 3;
             width: 100%; height: 100%;
-            min-height: 170px; 
+            min-height: 0; /* Permitir encoger */
             margin: 0;
-            justify-content: space-between;
+            padding: 12px;
+            border: 2px solid var(--accent) !important;
         }
-        .col-left .card-promo-style .promo-title { font-size: 0.9rem; line-height: 1.2; margin-bottom: 5px; }
-        .col-left .card-promo-style .promo-desc { font-size: 0.7rem; margin-bottom: 10px; line-height: 1.2; }
-        .col-left .card-promo-style .btn-start { font-size: 0.75rem; padding: 10px 0; margin-top: auto; }
+        .col-left .card-promo-style .promo-title { font-size: 0.8rem; margin-bottom: 3px; }
+        .col-left .card-promo-style .promo-desc { font-size: 0.65rem; line-height: 1.1; display: block; max-height: 30px; overflow: hidden; } /* Cortar texto si sobra */
+        .col-left .card-promo-style .btn-start { font-size: 0.65rem; padding: 6px 0; margin-top: auto; }
+        .fire-icon { font-size: 1.2rem; }
 
-        /* 5. PERFORMANCE METRICS (Columna Derecha - Row 3) */
-        /* MODIFICADO: Ahora tiene apariencia "Promo" en móvil */
+        /* Metrics */
         .card-metrics {
             grid-column: 2 / 3; 
-            grid-row: 4;
             order: 3;
             width: 100%; height: 100%;
-            min-height: 170px; 
+            min-height: 0;
             margin: 0;
-            flex-direction: column; justify-content: center;
-            /* APARIENCIA PROMO SOLO MÓVIL */
+            padding: 10px;
+            /* Estilo Promo */
             background: linear-gradient(145deg, rgba(250, 204, 21, 0.15), rgba(0,0,0,0) 70%);
             border: 2px solid var(--accent);
-            box-shadow: 0 0 20px rgba(250, 204, 21, 0.15);
+            box-shadow: 0 0 15px rgba(250, 204, 21, 0.15);
             border-radius: 16px;
         }
-        .metrics-header { margin-bottom: 5px; }
-        .metrics-title { color: #fff; font-weight: 800; } /* Texto más brillante en móvil */
-        .pie-chart-main { width: 75px; height: 75px; }
+        .metrics-header { margin-bottom: 2px; }
+        .metrics-title { font-size: 0.65rem; }
+        .pie-chart-main { width: 55px; height: 55px; } /* Más pequeña para caber */
 
-        /* 6. IA LAB (Full Width Centrado - Row 4) */
+        /* 5. IA LAB (Fila 4 - Barra completa delgada) */
         .col-right .card-promo-style {
             grid-column: 1 / -1; 
-            grid-row: 5;
             order: 4;
             width: 100%;
-            min-height: auto;
-            padding: 15px;
-            margin: 10px 0;
+            min-height: 50px;
+            padding: 8px 15px;
+            margin: 0;
             flex-direction: row; align-items: center; justify-content: space-between;
             border: 2px solid var(--accent);
-            box-shadow: 0 0 15px rgba(250, 204, 21, 0.15);
         }
-        .col-right .card-promo-style .promo-header { margin-bottom: 0; gap: 10px; }
-        .col-right .card-promo-style .promo-desc { display: block; font-size: 0.75rem; margin: 0; max-width: 120px; line-height: 1.2; opacity: 0.8; }
-        .col-right .card-promo-style .btn-start { width: auto; padding: 8px 15px; font-size: 0.75rem; margin: 0; }
+        .col-right .card-promo-style .promo-header { margin-bottom: 0; gap: 8px; }
+        .col-right .card-promo-style .ai-icon { font-size: 1.2rem; }
+        .col-right .card-promo-style .promo-title { font-size: 0.85rem; }
+        .col-right .card-promo-style .promo-desc { display: block; font-size: 0.7rem; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .col-right .card-promo-style .btn-start { width: auto; padding: 6px 12px; font-size: 0.7rem; margin: 0; }
 
-        /* 7. NOTES (Columna Izquierda - Row 5) */
+        /* 6. NOTES & ACTIVITY (Fila 5 - Footer Cards) */
+        
+        /* Notes */
         .col-left .card-notes {
             grid-column: 1 / 2; 
-            grid-row: 6;
             order: 5;
-            width: 100%; height: 140px;
+            width: 100%; height: 100%;
+            min-height: 0;
             margin: 0;
+            padding: 12px;
         }
+        .col-left .card-notes .card-title { font-size: 0.8rem; }
+        .col-left .card-notes .card-desc { font-size: 0.7rem; }
 
-        /* 8. ACTIVITY (Columna Derecha - Row 5) */
+        /* Activity */
         .col-right .usage-container {
             grid-column: 2 / 3; 
-            grid-row: 6;
             order: 5;
-            width: 100%; height: 140px;
+            width: 100%; height: 100%;
+            min-height: 0;
             margin: 0;
-            flex-direction: column; justify-content: center;
+            padding: 10px;
+            flex-direction: row; justify-content: space-between;
         }
-        .usage-header { text-align: center; margin-bottom: 10px; }
-        .ring-chart { width: 50px; height: 50px; margin-bottom: 10px; }
-        .ring-chart::after { width: 40px; height: 40px; }
-        .activity-dots { justify-content: center; }
+        .usage-header { text-align: left; margin-bottom: 0; }
+        .usage-header .card-title { font-size: 0.8rem; }
+        .usage-header .card-desc { display: none; } /* Ocultar subtítulo para ahorrar espacio */
+        .ring-chart { width: 35px; height: 35px; margin-bottom: 0; }
+        .ring-chart::after { width: 25px; height: 25px; }
+        .activity-dots { display: none; } /* Ocultar dots para simplificar */
         
+        /* Ocultar Countdown lateral */
         .countdown-box { display: none; }
     }
 </style>
