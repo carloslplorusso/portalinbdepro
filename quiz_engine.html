@@ -4,14 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>INBDE Pro Lab Engine</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- 1. CSS BASE (SIMULATION MODE - INBDE STYLE) -->
     <style id="simulation-css">
         /* Base styles shared or specific to Simulation */
         body { 
@@ -64,7 +61,6 @@
         .option-row.selected .custom-radio::after { content: ''; width: 10px; height: 10px; background-color: #0060a9; border-radius: 50%; }
     </style>
 
-    <!-- 2. CSS PRACTICE MODE (DARK THEME - INJECTED) -->
     <style id="practice-css" disabled>
         /* --- 1. VARIABLES & BASE --- */
         :root {
@@ -181,10 +177,9 @@
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
 
-    <!-- HEADER SIMULACIÓN (INBDE Style) -->
     <header class="inbde-header h-14 flex items-center justify-between px-4 shrink-0 shadow-md z-20">
         <div class="text-lg font-normal w-1/4">
-            Question <span id="current-q-num">12</span> of <span id="total-q-num">100</span>
+            Question <span id="current-q-num">1</span> of <span id="total-q-num">--</span>
         </div>
         <div class="text-center flex flex-col justify-center w-2/4">
             <div class="text-sm font-bold tracking-wide">INBDE Pro Lab</div>
@@ -192,13 +187,12 @@
         </div>
         <div class="flex items-center justify-end gap-3 w-1/4">
             <div id="timer-container" class="text-lg">
-                Time remaining: <span id="timer-display" class="font-mono">01:42:34</span>
+                Time remaining: <span id="timer-display" class="font-mono">--:--:--</span>
             </div>
             <button class="text-white hover:text-blue-200"><i class="fa-solid fa-gear text-xl"></i></button>
         </div>
     </header>
 
-    <!-- HEADER PRACTICE (Dark Mode Style) -->
     <header class="practice-header hidden" id="practice-header-el">
         <div>
             <h1 class="practice-title">INBDE Pro Lab</h1>
@@ -208,16 +202,14 @@
             <div class="header-countdown bg-yellow-900/30 text-yellow-400 border border-yellow-600/50 px-3 py-1 rounded-full text-xs font-bold">
                 <i class="fa-solid fa-fire mr-1"></i> Streak: 3 Days
             </div>
-            <button onclick="window.location.reload()" class="text-gray-400 hover:text-white transition">
+            <button onclick="window.location.href='dashboard.html'" class="text-gray-400 hover:text-white transition">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
         </div>
     </header>
 
-    <!-- MAIN CONTENT -->
     <main id="main-container-wrapper" class="flex-1 flex overflow-hidden w-full max-w-7xl mx-auto bg-white shadow-xl">
         
-        <!-- LEFT PANEL (Sim only) -->
         <section id="left-panel" class="w-[40%] flex flex-col border-r border-gray-300 bg-white p-4 overflow-hidden transition-all duration-300">
             <div class="flex border-b border-black mb-0 z-10">
                 <button id="tab-photos" class="tab-btn inactive" onclick="switchTab('photos')">PHOTOS</button>
@@ -243,27 +235,21 @@
             </div>
         </section>
 
-        <!-- RIGHT PANEL (Questions) -->
         <section id="right-panel" class="w-[60%] flex flex-col p-6 overflow-y-auto custom-scrollbar relative transition-all duration-300">
             
             <div class="max-w-4xl mx-auto w-full flex flex-col h-full"> 
                 
-                <!-- Question Area -->
                 <div class="mb-6 fade-in">
                     <p id="question-text" class="text-lg text-gray-900 leading-snug">Loading...</p>
                 </div>
 
-                <!-- Options -->
                 <div id="options-container" class="space-y-3 mb-8 fade-in" style="animation-delay: 0.1s;">
-                    <!-- Injected via JS -->
-                </div>
+                    </div>
 
-                <!-- Explanation Area -->
                 <div id="explanation-box" class="hidden mt-6 fade-in">
                     <div class="flex justify-between items-start mb-4">
                         <h4 class="font-bold text-lg text-white">Explanation</h4>
                         
-                        <!-- GEMINI BUTTON (Solo aparece si falla) -->
                         <button id="btn-explain-gemini" class="hidden btn-practice btn-gemini px-4 py-2 text-xs rounded-full" onclick="triggerGeminiExplanation()">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> Explain this
                         </button>
@@ -271,32 +257,26 @@
 
                     <p id="explanation-text" class="leading-relaxed text-gray-300"></p>
                     
-                    <!-- GEMINI CONTENT AREA -->
                     <div id="gemini-content" class="hidden gemini-response-box">
                         <div id="gemini-loading" class="flex items-center gap-3 text-purple-400">
                             <i class="fa-solid fa-circle-notch fa-spin"></i> Analyzing with Gemini AI...
                         </div>
                         <div id="gemini-text" class="hidden text-sm text-gray-300 space-y-2">
-                            <!-- Inyectado via JS -->
-                        </div>
+                            </div>
                     </div>
                 </div>
 
-                <!-- CONTROLES DARK MODE (Practice) -->
                 <div id="practice-controls-el" class="practice-controls hidden flex-col w-full">
                     
-                    <!-- Navigation (Check button removed) -->
                     <div id="nav-buttons-row" class="flex justify-end gap-4 w-full">
                         <button class="btn-practice border-gray-600 text-gray-400 hover:text-white" onclick="prevQuestion()">
                             <i class="fa-solid fa-arrow-left mr-2"></i> Prev
                         </button>
-                        <!-- Button Check Removed - Auto check on select -->
                         <button id="btn-next-practice" class="btn-practice hidden" onclick="nextQuestion()">
                             Next <i class="fa-solid fa-arrow-right ml-2"></i>
                         </button>
                     </div>
 
-                    <!-- SRS BUTTONS (Learning, Retrieving, Mastered) - Inicialmente ocultos -->
                     <div id="srs-buttons-container" class="hidden srs-container fade-in">
                         <button class="btn-srs btn-learning" onclick="rateQuestion('learning')">
                             Learning
@@ -316,7 +296,6 @@
 
     </main>
 
-    <!-- FOOTER SIMULACIÓN (INBDE Style) -->
     <footer class="inbde-footer h-16 flex items-center justify-between px-6 shrink-0 z-30">
         <div class="flex gap-4">
             <button class="btn-glossy px-6 py-2 rounded-sm text-sm" onclick="prevQuestion()">Previous</button>
@@ -328,67 +307,99 @@
         </div>
     </footer>
 
-    <!-- LOGIC -->
     <script>
-        // --- DATA ---
-        const mockQuestions = [
-            {
-                id: 12, 
-                text: "Which is the best treatment for tooth 8?",
-                patientInfo: "Male, 14 years old, accompanied by parent",
-                chiefComplaint: "Parent: \"My son was playing soccer...\"",
-                history: "Tooth 8 was avulsed...",
-                findings: "No response to pulp vitality tests...",
-                photoUrl: "https://via.placeholder.com/600x800/000000/FFFFFF?text=X-RAY",
-                options: [
-                    { id: 'A', text: "Extraction" },
-                    { id: 'B', text: "Root canal treatment" },
-                    { id: 'C', text: "Apexogenesis" },
-                    { id: 'D', text: "Apexification" }
-                ],
-                correctOption: 'D', 
-                explanation: "Given the necrotic pulp and open apex (implied by age and history), Apexification or Regenerative Endodontics is indicated."
-            },
-            {
-                id: 13,
-                text: "What is the most likely diagnosis?",
-                patientInfo: "Female, 30 years old",
-                chiefComplaint: "Pain when biting.",
-                history: "Recent crown placement...",
-                findings: "Percussion positive.",
-                photoUrl: null,
-                options: [
-                    { id: 'A', text: "Reversible pulpitis" },
-                    { id: 'B', text: "Symptomatic apical periodontitis" },
-                    { id: 'C', text: "Acute apical abscess" },
-                    { id: 'D', text: "Cracked tooth syndrome" }
-                ],
-                correctOption: 'B',
-                explanation: "Positive percussion suggests apical inflammation. Reversible pulpitis typically presents with cold sensitivity, not percussion pain."
-            }
-        ];
+        // --- SUPABASE CONFIG ---
+        const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
+        const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // --- STATE & MODE CONFIG ---
         const urlParams = new URLSearchParams(window.location.search);
         
-        // MODES: 'simulation' OR 'practice'
-        const defaultMode = 'practice'; 
-        const currentMode = urlParams.get('mode') || defaultMode;
+        const currentMode = urlParams.get('mode') || 'practice';
+        const paramSubjects = urlParams.get('subjects'); 
+        const paramCount = parseInt(urlParams.get('count')) || 10;
 
+        let quizData = []; // Array dinámico
         let currentIndex = 0;
         let selectedOptionId = null; 
-        let timerSeconds = 6154; 
+        let timerSeconds = paramCount * 90; // ~1.5 min por pregunta
         let isAnswerChecked = false;
+        let currentUser = null;
 
         // --- INIT ---
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkSession();
             configureLayoutMode();
-            renderQuestion();
+            await loadQuestionsFromDB();
             
-            if (currentMode === 'simulation') {
-                startTimer();
+            if (quizData.length > 0) {
+                renderQuestion();
+                if (currentMode === 'simulation') {
+                    startTimer();
+                }
+            } else {
+                document.getElementById('question-text').textContent = "No questions found for selected criteria.";
             }
         });
+
+        // --- AUTH CHECK ---
+        async function checkSession() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) {
+                window.location.href = './index.html';
+            }
+            currentUser = session.user;
+        }
+
+        // --- LOAD DATA FROM SUPABASE ---
+        async function loadQuestionsFromDB() {
+            try {
+                let query = _supabase.from('contenido_quizzes').select('*');
+
+                // Filtrar por materias si vienen en la URL
+                if (paramSubjects) {
+                    const subjectsArray = decodeURIComponent(paramSubjects).split(',');
+                    // Usar filtro 'in' para múltiples valores
+                    query = query.in('materia', subjectsArray);
+                }
+
+                // Limitar cantidad
+                query = query.limit(paramCount);
+
+                // Ejecutar consulta
+                const { data, error } = await query;
+
+                if (error) throw error;
+
+                // Transformar datos de Supabase al formato interno
+                quizData = data.map(item => ({
+                    id: item.id,
+                    text: item.titulo_quiz, // Asumiendo que titulo_quiz es la pregunta
+                    // Datos clínicos (Mapea tus columnas reales aquí)
+                    patientInfo: item.patient_info || "No patient info available",
+                    chiefComplaint: item.chief_complaint || "N/A",
+                    history: item.history || "N/A",
+                    findings: item.findings || "N/A",
+                    photoUrl: item.archivo_url, // Asumiendo que archivo_url es la imagen
+                    options: [
+                        { id: 'A', text: item.opcion_a || "Option A" },
+                        { id: 'B', text: item.opcion_b || "Option B" },
+                        { id: 'C', text: item.opcion_c || "Option C" },
+                        { id: 'D', text: item.opcion_d || "Option D" }
+                    ],
+                    correctOption: item.respuesta_correcta, // Debe ser 'A', 'B', 'C' o 'D'
+                    explanation: item.explicacion || "No explanation provided."
+                }));
+
+                // Actualizar total en UI
+                document.getElementById('total-q-num').textContent = quizData.length;
+
+            } catch (err) {
+                console.error("Error loading questions:", err);
+                document.getElementById('question-text').innerText = "Error loading questions from database.";
+            }
+        }
 
         // --- LAYOUT MANAGER ---
         function configureLayoutMode() {
@@ -398,15 +409,13 @@
             const practiceHeader = document.getElementById('practice-header-el');
             const practiceControls = document.getElementById('practice-controls-el');
             
-            console.log("Initializing Mode:", currentMode);
-
             if (currentMode === 'practice' || currentMode === 'stand_alone') {
                 // PRACTICE MODE
                 practiceStyle.disabled = false;
                 leftPanel.style.display = 'none';
                 practiceHeader.classList.remove('hidden');
                 practiceControls.classList.remove('hidden');
-                practiceControls.style.display = 'flex'; // Ensure flex
+                practiceControls.style.display = 'flex';
             } else {
                 // SIMULATION MODE
                 practiceStyle.disabled = true;
@@ -419,12 +428,14 @@
 
         // --- RENDER LOGIC ---
         function renderQuestion() {
-            const q = mockQuestions[currentIndex];
+            if (!quizData[currentIndex]) return;
+
+            const q = quizData[currentIndex];
             isAnswerChecked = false;
             selectedOptionId = null;
 
             // 1. Data Population
-            document.getElementById('current-q-num').textContent = q.id;
+            document.getElementById('current-q-num').textContent = currentIndex + 1;
             document.getElementById('patient-info').innerHTML = q.patientInfo;
             document.getElementById('chief-complaint').innerHTML = q.chiefComplaint;
             document.getElementById('patient-history').innerHTML = q.history;
@@ -470,26 +481,22 @@
         }
 
         function selectOption(id) {
-            // Prevent changing selection once validated
             if (isAnswerChecked) return;
 
             selectedOptionId = id;
-            isAnswerChecked = true; // Lock the answer
+            isAnswerChecked = true; 
             
-            // Trigger validation logic immediately
             validateAnswer();
         }
 
         function validateAnswer() {
-            const q = mockQuestions[currentIndex];
+            const q = quizData[currentIndex];
             const isCorrect = selectedOptionId === q.correctOption;
 
-            // 1. Visual Validation (Green/Red)
+            // 1. Visual Validation
             document.querySelectorAll('.option-row').forEach(row => {
-                row.style.cursor = 'default'; // Disable clicks visually
+                row.style.cursor = 'default'; 
                 const id = row.dataset.id;
-                
-                // Remove generic selected class first to apply specific colors
                 row.classList.remove('selected');
 
                 if (id === q.correctOption) {
@@ -497,7 +504,6 @@
                 } else if (id === selectedOptionId && !isCorrect) {
                     row.classList.add('wrong-answer');
                 } else if (id === selectedOptionId && isCorrect) {
-                    // Ensures green if clicked correctly
                     row.classList.add('correct-answer'); 
                 }
             });
@@ -512,53 +518,47 @@
                 document.getElementById('btn-explain-gemini').classList.remove('hidden');
             }
 
-            // 4. Swap Navigation for SRS Buttons
-            document.getElementById('nav-buttons-row').classList.add('hidden');
-            document.getElementById('srs-buttons-container').classList.remove('hidden');
-            document.getElementById('srs-buttons-container').style.display = 'flex';
+            // 4. Swap Navigation for SRS Buttons (Only in Practice Mode)
+            if (currentMode === 'practice') {
+                document.getElementById('nav-buttons-row').classList.add('hidden');
+                document.getElementById('srs-buttons-container').classList.remove('hidden');
+                document.getElementById('srs-buttons-container').style.display = 'flex';
+            }
         }
 
-        function triggerGeminiExplanation() {
-            const container = document.getElementById('gemini-content');
-            const loading = document.getElementById('gemini-loading');
-            const text = document.getElementById('gemini-text');
-            
-            container.classList.remove('hidden');
-            loading.classList.remove('hidden');
-            text.classList.add('hidden');
+        async function rateQuestion(rating) {
+            const currentQ = quizData[currentIndex];
+            const isCorrect = selectedOptionId === currentQ.correctOption;
 
-            // Simulate AI Delay
-            setTimeout(() => {
-                loading.classList.add('hidden');
-                text.classList.remove('hidden');
+            // Guardar en Supabase (Tabla 'resultados' o 'user_progress')
+            try {
+                const { error } = await _supabase.from('resultados').insert([
+                    {
+                        username: currentUser.email,
+                        quiz_id: currentQ.id, // Asumiendo que guardas el ID de la pregunta
+                        correct: isCorrect ? 1 : 0,
+                        total: 1,
+                        rating: rating // Nuevo campo para SRS
+                    }
+                ]);
                 
-                // Simulated AI Response in English
-                text.innerHTML = `
-                    <p><strong class="text-purple-400">🤖 Gemini Analysis:</strong></p>
-                    <p>The key to this question lies in identifying the <strong>necrotic pulp</strong> status combined with an <strong>open apex</strong>.</p>
-                    <ul class="list-disc pl-5 my-2 text-gray-400">
-                        <li><strong>Why D is correct:</strong> Apexification induces a calcified barrier at the apex, allowing for subsequent obturation in non-vital immature teeth.</li>
-                        <li><strong>Why you might have chosen others:</strong> Root canal treatment (B) is contraindicated because the open apex prevents proper seal. Apexogenesis (C) is for <em>vital</em> teeth only.</li>
-                    </ul>
-                    <p class="text-xs italic text-gray-500">Note: In modern practice, Regenerative Endodontics is also a strong consideration.</p>
-                `;
-            }, 1500);
-        }
+                if(error) console.error("Error saving progress:", error);
+                else console.log("Progress saved.");
 
-        function rateQuestion(rating) {
-            console.log(`User rated question ${mockQuestions[currentIndex].id} as: ${rating}`);
-            // Logic to save to database would go here
+            } catch (err) {
+                console.error("Save error:", err);
+            }
             
             nextQuestion();
         }
 
         function nextQuestion() {
-            if (currentIndex < mockQuestions.length - 1) {
+            if (currentIndex < quizData.length - 1) {
                 currentIndex++;
                 renderQuestion();
             } else {
-                alert("Set completed! Returning to dashboard...");
-                // window.location.href = 'dashboard.html';
+                alert("Quiz Completed! Returning to Dashboard.");
+                window.location.href = 'dashboard.html';
             }
         }
 
@@ -588,19 +588,42 @@
         }
 
         function startTimer() {
-            setInterval(() => {
+            const display = document.getElementById('timer-display');
+            const interval = setInterval(() => {
                 if (timerSeconds > 0) {
                     timerSeconds--;
                     const h = Math.floor(timerSeconds / 3600).toString().padStart(2, '0');
                     const m = Math.floor((timerSeconds % 3600) / 60).toString().padStart(2, '0');
                     const s = (timerSeconds % 60).toString().padStart(2, '0');
-                    document.getElementById('timer-display').textContent = `${h}:${m}:${s}`;
+                    display.textContent = `${h}:${m}:${s}`;
+                } else {
+                    clearInterval(interval);
+                    alert("Time's up!");
+                    window.location.href = 'dashboard.html';
                 }
             }, 1000);
         }
 
+        function triggerGeminiExplanation() {
+            const container = document.getElementById('gemini-content');
+            const loading = document.getElementById('gemini-loading');
+            const text = document.getElementById('gemini-text');
+            
+            container.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            text.classList.add('hidden');
+
+            setTimeout(() => {
+                loading.classList.add('hidden');
+                text.classList.remove('hidden');
+                text.innerHTML = `<p><strong class="text-purple-400">🤖 AI Analysis:</strong> Detailed explanation generated by AI would appear here.</p>`;
+            }, 1500);
+        }
+
         function toggleMark() { console.log("Mark toggled"); }
-        function finishQuiz() { alert("Review Mode"); }
+        function finishQuiz() { 
+            if(confirm("Finish and exit?")) window.location.href = 'dashboard.html'; 
+        }
 
     </script>
 </body>
