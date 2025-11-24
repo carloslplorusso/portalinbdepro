@@ -376,6 +376,7 @@
                 quizData = data.map(item => ({
                     id: item.id,
                     text: item.titulo_quiz, // Asumiendo que titulo_quiz es la pregunta
+                    materia: item.materia, // <--- IMPORTANTE: Guardar materia para stats
                     // Datos clínicos (Mapea tus columnas reales aquí)
                     patientInfo: item.patient_info || "No patient info available",
                     chiefComplaint: item.chief_complaint || "N/A",
@@ -535,7 +536,8 @@
                 const { error } = await _supabase.from('resultados').insert([
                     {
                         username: currentUser.email,
-                        quiz_id: currentQ.id, // Asumiendo que guardas el ID de la pregunta
+                        quiz_id: currentQ.id, 
+                        materia: currentQ.materia, // <--- CORREGIDO: Se agrega el campo materia
                         correct: isCorrect ? 1 : 0,
                         total: 1,
                         rating: rating // Nuevo campo para SRS
