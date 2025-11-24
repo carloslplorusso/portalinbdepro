@@ -223,7 +223,7 @@
                         <tr><th>Chief Complaint</th></tr>
                         <tr><td><div id="chief-complaint"></div></td></tr>
                         <tr><th>Background and/or Patient History</th></tr>
-                        <tr><td><div id="patient-history" class="space-y-1"></div></td></tr>
+                        <tr><td><div id="patient-history"></div></td></tr>
                         <tr><th>Current Findings</th></tr>
                         <tr><td><div id="current-findings"></div></td></tr>
                     </table>
@@ -450,29 +450,60 @@
 
         // --- LAYOUT MANAGER ---
         function configureLayoutMode() {
-            const leftPanel = document.getElementById('left-panel');
+            const leftPanel = document.getElementById('left-panel'); // Sidebar/Patient Info
             const rightPanel = document.getElementById('right-panel');
-            const practiceStyle = document.getElementById('practice-css');
-            const practiceHeader = document.getElementById('practice-header-el');
-            const practiceControls = document.getElementById('practice-controls-el');
+            const practiceStyle = document.getElementById('practice-css'); // Dark Mode CSS
+            const simHeader = document.querySelector('.inbde-header'); // Timer/Blue Header
+            const simFooter = document.querySelector('.inbde-footer'); // Blue Footer
+            const practiceHeader = document.getElementById('practice-header-el'); // Dark Header (Streak)
+            const practiceControls = document.getElementById('practice-controls-el'); // Practice/SRS Buttons
             
-            if (currentMode === 'practice' || currentMode === 'daily') { // Daily usa estilo Practice
-                practiceStyle.disabled = false;
+            // Definir grupos de modos (Modos Oscuros/Práctica/SRS)
+            const IS_PRACTICE_MODE = ['practice', 'daily', 'retry_mistakes', 'standalone'].includes(currentMode);
+
+            if (IS_PRACTICE_MODE) {
+                // MODELO STAND ALONE (Fondo Oscuro, Sin Sidebar, Botones SRS)
+                
+                practiceStyle.disabled = false; // Activar Dark Mode CSS
+                
+                // Ocultar elementos de simulación
                 leftPanel.style.display = 'none';
+                simHeader.classList.add('hidden');
+                simFooter.classList.add('hidden');
+
+                // Mostrar elementos de práctica
                 practiceHeader.classList.remove('hidden');
                 practiceControls.classList.remove('hidden');
                 practiceControls.style.display = 'flex';
-                if(currentMode === 'daily') document.querySelector('.practice-subtitle').innerText = "Daily Lab Sprint";
+                
+                // Ajustar el panel principal a pantalla completa (100% width)
+                rightPanel.style.width = '100%';
+                
+                // Ajustar subtítulo si aplica
+                if(currentMode === 'daily') {
+                     document.querySelector('.practice-subtitle').innerText = "Daily Lab Sprint";
+                } else if (currentMode === 'retry_mistakes') {
+                     document.querySelector('.practice-subtitle').innerText = "Retry Mistakes Session";
+                }
+                
             } else {
-                // SIMULATION MODE
-                practiceStyle.disabled = true;
+                // MODELO SIMULACIÓN / ITEM SET (Fondo Claro, Con Sidebar, Con Timer)
+                
+                practiceStyle.disabled = true; // Desactivar Dark Mode CSS (Usar CSS de Simulación)
+
+                // Mostrar elementos de simulación
                 leftPanel.style.display = 'flex';
-                rightPanel.classList.add('w-[60%]');
+                simHeader.classList.remove('hidden');
+                simFooter.classList.remove('hidden');
+
+                // Ocultar elementos de práctica
                 practiceHeader.classList.add('hidden');
                 practiceControls.classList.add('hidden');
+
+                // Ajustar panel principal
+                rightPanel.style.width = '60%';
             }
         }
-
         // --- RENDER LOGIC ---
         function renderQuestion() {
             if (!quizData[currentIndex]) return;
@@ -486,7 +517,8 @@
             // Sim Lab Data
             document.getElementById('patient-info').innerHTML = q.patientInfo;
             document.getElementById('chief-complaint').innerHTML = q.chiefComplaint;
-            document.getElementById('patient-history').innerHTML = q.history;
+            // Aseguramos que los saltos de línea funcionen en el history (importante para Item Sets)
+            document.getElementById('patient-history').innerHTML = q.history.replace(/\n/g, '<br>') || "See scenario"; 
             document.getElementById('current-findings').innerHTML = q.findings;
 
             // Photo Logic
@@ -521,7 +553,13 @@
             document.getElementById('btn-explain-gemini').classList.add('hidden');
             document.getElementById('gemini-content').classList.add('hidden');
             
-            if (currentMode === 'practice' || currentMode === 'daily') {
+            // Lógica de botones de navegación (solo se muestran si la respuesta ha sido chequeada en modo Simulación)
+            if (currentMode === 'simulation') {
+                document.getElementById('nav-buttons-row').classList.remove('hidden');
+                document.getElementById('btn-next-practice').classList.add('hidden');
+                document.getElementById('srs-buttons-container').classList.add('hidden');
+            } else {
+                // En modo práctica, la navegación se gestiona después de la calificación (handleNextButton)
                 document.getElementById('nav-buttons-row').classList.remove('hidden');
                 document.getElementById('btn-next-practice').classList.add('hidden');
                 document.getElementById('srs-buttons-container').classList.add('hidden');
@@ -529,11 +567,22 @@
         }
 
         function selectOption(id) {
-            if (isAnswerChecked) return;
-
+            // Modificamos el flujo: en modo Simulación se marca, pero no se valida inmediatamente.
+            // En modo práctica, se valida inmediatamente.
+            const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone'].includes(currentMode);
+            
             selectedOptionId = id;
-            isAnswerChecked = true; 
-            validateAnswer();
+
+            if (isSimulation) {
+                // Si es Simulación, solo se marca la opción (el botón Next del footer avanza)
+                document.querySelectorAll('.option-row').forEach(row => row.classList.remove('selected'));
+                document.querySelector(`[data-id="${id}"]`).classList.add('selected');
+            } else {
+                // Si es Práctica, se valida y se muestra la explicación inmediatamente
+                if (isAnswerChecked) return;
+                isAnswerChecked = true; 
+                validateAnswer();
+            }
         }
 
         function validateAnswer() {
@@ -562,12 +611,19 @@
                 document.getElementById('btn-explain-gemini').classList.remove('hidden');
             }
 
-            if (currentMode === 'practice' || currentMode === 'daily') {
+            // Lógica de botones SRS vs. Navegación simple
+            const IS_PRACTICE_MODE = ['practice', 'daily', 'retry_mistakes', 'standalone'].includes(currentMode);
+
+            if (IS_PRACTICE_MODE) {
+                // Modo Práctica: Muestra botones SRS
                 document.getElementById('nav-buttons-row').classList.add('hidden');
                 document.getElementById('srs-buttons-container').classList.remove('hidden');
                 document.getElementById('srs-buttons-container').style.display = 'flex';
-                // Si es Daily o Practice, guardamos automático al responder, no al hacer click en SRS
-                // Pero como tu UI tiene botones SRS, esperaremos el click en ellos para ratear
+            } else {
+                // Modo Simulación: Muestra botón Siguiente del panel de práctica (solo si existe)
+                document.getElementById('nav-buttons-row').classList.remove('hidden');
+                document.getElementById('btn-next-practice').classList.remove('hidden'); // Botón Next del Dark Mode Header
+                document.getElementById('srs-buttons-container').classList.add('hidden');
             }
         }
 
@@ -596,6 +652,22 @@
         }
 
         function nextQuestion() {
+            // Asegura que en modo simulación se valide antes de avanzar
+            const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone'].includes(currentMode);
+
+            if(isSimulation && !isAnswerChecked) {
+                // En modo simulación, el botón de navegación del footer no debería avanzar si no se ha seleccionado
+                // Pero el botón 'Next' del panel de práctica (si existe) debe disparar la validación si no se ha hecho
+                if(selectedOptionId) {
+                    isAnswerChecked = true;
+                    validateAnswer();
+                    return; // Muestra la explicación, el usuario debe pulsar Siguiente de nuevo.
+                } else {
+                    alert("Please select an answer to continue in Simulation Mode.");
+                    return;
+                }
+            }
+            
             if (currentIndex < quizData.length - 1) {
                 currentIndex++;
                 renderQuestion();
