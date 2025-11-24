@@ -200,7 +200,7 @@
         </div>
         <div class="flex items-center gap-4">
             <div class="header-countdown bg-yellow-900/30 text-yellow-400 border border-yellow-600/50 px-3 py-1 rounded-full text-xs font-bold">
-                <i class="fa-solid fa-fire mr-1"></i> Streak: 3 Days
+                <i class="fa-solid fa-fire mr-1"></i> Streak: <span id="streak-num">3</span> Days
             </div>
             <button onclick="window.location.href='dashboard.html'" class="text-gray-400 hover:text-white transition">
                 <i class="fa-solid fa-xmark text-xl"></i>
@@ -308,22 +308,24 @@
     </footer>
 
     <script>
-        // --- SUPABASE CONFIG ---
+        // --- 1. CONFIGURACIÓN SUPABASE & GEMINI ---
         const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
         const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // ⚠️ IMPORTANTE: PEGA TU CLAVE DE GEMINI AQUÍ ABAJO ⚠️
+        const GEMINI_API_KEY = "AIzaSyCGdQ_3ZkPdqdtvM4TRa59t14ZxqDlxxlY"; 
 
         // --- STATE & MODE CONFIG ---
         const urlParams = new URLSearchParams(window.location.search);
-        
         const currentMode = urlParams.get('mode') || 'practice';
         const paramSubjects = urlParams.get('subjects'); 
         const paramCount = parseInt(urlParams.get('count')) || 10;
 
-        let quizData = []; // Array dinámico
+        let quizData = []; 
         let currentIndex = 0;
         let selectedOptionId = null; 
-        let timerSeconds = paramCount * 90; // ~1.5 min por pregunta
+        let timerSeconds = paramCount * 90; 
         let isAnswerChecked = false;
         let currentUser = null;
 
@@ -339,7 +341,7 @@
                     startTimer();
                 }
             } else {
-                document.getElementById('question-text').textContent = "No questions found for selected criteria.";
+                document.getElementById('question-text').textContent = "No questions found in the database. Please run the SQL setup script.";
             }
         });
 
@@ -347,59 +349,103 @@
         async function checkSession() {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) {
+                // Si no hay sesión, mandamos al login
                 window.location.href = './index.html';
             }
             currentUser = session.user;
         }
 
-        // --- LOAD DATA FROM SUPABASE ---
+        // --- 2. LOAD DATA (NUEVA LÓGICA RPC) ---
         async function loadQuestionsFromDB() {
             try {
-                let query = _supabase.from('contenido_quizzes').select('*');
+                let data, error;
 
-                // Filtrar por materias si vienen en la URL
-                if (paramSubjects) {
-                    const subjectsArray = decodeURIComponent(paramSubjects).split(',');
-                    // Usar filtro 'in' para múltiples valores
-                    query = query.in('materia', subjectsArray);
+                // A. MODO SIMULACIÓN O DAILY -> RPC RANDOM
+                if (currentMode === 'simulation' || currentMode === 'daily') {
+                    const response = await _supabase.rpc('get_random_questions', { 
+                        quantity: paramCount 
+                    });
+                    data = response.data;
+                    error = response.error;
+                } 
+                // B. MODO CATEGORÍA -> RPC POR CATEGORÍA (Simplificado)
+                else if (paramSubjects) {
+                    const firstSubject = decodeURIComponent(paramSubjects).split(',')[0];
+                    const response = await _supabase.rpc('get_questions_by_category', { 
+                        category_input: firstSubject, 
+                        quantity: paramCount
+                    });
+                    data = response.data;
+                    error = response.error;
+                }
+                // C. FALLBACK
+                else {
+                    const response = await _supabase.rpc('get_random_questions', { quantity: 10 });
+                    data = response.data;
+                    error = response.error;
                 }
 
-                // Limitar cantidad
-                query = query.limit(paramCount);
-
-                // Ejecutar consulta
-                const { data, error } = await query;
-
                 if (error) throw error;
+                if (!data || data.length === 0) return;
 
-                // Transformar datos de Supabase al formato interno
-                quizData = data.map(item => ({
-                    id: item.id,
-                    text: item.titulo_quiz, // Asumiendo que titulo_quiz es la pregunta
-                    materia: item.materia, // <--- IMPORTANTE: Guardar materia para stats
-                    // Datos clínicos (Mapea tus columnas reales aquí)
-                    patientInfo: item.patient_info || "No patient info available",
-                    chiefComplaint: item.chief_complaint || "N/A",
-                    history: item.history || "N/A",
-                    findings: item.findings || "N/A",
-                    photoUrl: item.archivo_url, // Asumiendo que archivo_url es la imagen
-                    options: [
-                        { id: 'A', text: item.opcion_a || "Option A" },
-                        { id: 'B', text: item.opcion_b || "Option B" },
-                        { id: 'C', text: item.opcion_c || "Option C" },
-                        { id: 'D', text: item.opcion_d || "Option D" }
-                    ],
-                    correctOption: item.respuesta_correcta, // Debe ser 'A', 'B', 'C' o 'D'
-                    explanation: item.explicacion || "No explanation provided."
-                }));
+                // --- GESTIÓN DE CASOS CLÍNICOS (FETCH ADICIONAL) ---
+                const caseIds = [...new Set(data.map(q => q.case_id).filter(id => id !== null))];
+                let casesMap = {};
 
-                // Actualizar total en UI
+                if (caseIds.length > 0) {
+                    const { data: casesData } = await _supabase
+                        .from('clinical_cases')
+                        .select('*')
+                        .in('id', caseIds);
+                    
+                    if(casesData) casesData.forEach(c => casesMap[c.id] = c);
+                }
+
+                // --- MAPEO DE DATOS ---
+                quizData = data.map(item => {
+                    // Verificar si pertenece a un caso
+                    const relatedCase = item.case_id ? casesMap[item.case_id] : null;
+                    const patient = relatedCase && relatedCase.patient_data ? relatedCase.patient_data : {};
+
+                    return {
+                        id: item.id,
+                        text: item.question_text,        
+                        materia: item.category,          
+                        
+                        // Datos del Caso
+                        patientInfo: relatedCase ? `Age: ${patient.age || 'N/A'}, Gender: ${patient.gender || 'N/A'}` : "Stand Alone Question",
+                        chiefComplaint: relatedCase ? (patient.cc || "N/A") : "N/A",
+                        history: relatedCase ? (patient.history || "See scenario") : "N/A",
+                        findings: relatedCase ? (patient.findings || "See scenario") : "N/A",
+                        
+                        photoUrl: item.image_url,        
+                        
+                        options: [
+                            { id: 'A', text: item.option_a }, 
+                            { id: 'B', text: item.option_b },
+                            { id: 'C', text: item.option_c },
+                            { id: 'D', text: item.option_d }
+                        ],
+                        correctOption: getOptionLetter(item.correct_answer, item), 
+                        explanation: item.explanation || "No explanation provided."
+                    };
+                });
+
                 document.getElementById('total-q-num').textContent = quizData.length;
 
             } catch (err) {
                 console.error("Error loading questions:", err);
-                document.getElementById('question-text').innerText = "Error loading questions from database.";
+                document.getElementById('question-text').innerText = "Error loading database.";
             }
+        }
+
+        // Helper para deducir la letra correcta
+        function getOptionLetter(correctText, item) {
+            if (correctText === item.option_a) return 'A';
+            if (correctText === item.option_b) return 'B';
+            if (correctText === item.option_c) return 'C';
+            if (correctText === item.option_d) return 'D';
+            return 'A'; 
         }
 
         // --- LAYOUT MANAGER ---
@@ -410,13 +456,13 @@
             const practiceHeader = document.getElementById('practice-header-el');
             const practiceControls = document.getElementById('practice-controls-el');
             
-            if (currentMode === 'practice' || currentMode === 'stand_alone') {
-                // PRACTICE MODE
+            if (currentMode === 'practice' || currentMode === 'daily') { // Daily usa estilo Practice
                 practiceStyle.disabled = false;
                 leftPanel.style.display = 'none';
                 practiceHeader.classList.remove('hidden');
                 practiceControls.classList.remove('hidden');
                 practiceControls.style.display = 'flex';
+                if(currentMode === 'daily') document.querySelector('.practice-subtitle').innerText = "Daily Lab Sprint";
             } else {
                 // SIMULATION MODE
                 practiceStyle.disabled = true;
@@ -435,8 +481,9 @@
             isAnswerChecked = false;
             selectedOptionId = null;
 
-            // 1. Data Population
             document.getElementById('current-q-num').textContent = currentIndex + 1;
+            
+            // Sim Lab Data
             document.getElementById('patient-info').innerHTML = q.patientInfo;
             document.getElementById('chief-complaint').innerHTML = q.chiefComplaint;
             document.getElementById('patient-history').innerHTML = q.history;
@@ -451,7 +498,7 @@
                 imgEl.classList.add('hidden'); noPhotoMsg.classList.remove('hidden');
             }
 
-            // 2. Question & Options
+            // Question & Options
             document.getElementById('question-text').textContent = q.text;
             const optsContainer = document.getElementById('options-container');
             optsContainer.innerHTML = '';
@@ -469,14 +516,14 @@
                 optsContainer.appendChild(row);
             });
 
-            // 3. Reset UI Elements
+            // Reset UI Elements
             document.getElementById('explanation-box').classList.add('hidden');
             document.getElementById('btn-explain-gemini').classList.add('hidden');
             document.getElementById('gemini-content').classList.add('hidden');
             
-            // Practice Controls Reset
-            if (currentMode === 'practice') {
+            if (currentMode === 'practice' || currentMode === 'daily') {
                 document.getElementById('nav-buttons-row').classList.remove('hidden');
+                document.getElementById('btn-next-practice').classList.add('hidden');
                 document.getElementById('srs-buttons-container').classList.add('hidden');
             }
         }
@@ -486,7 +533,6 @@
 
             selectedOptionId = id;
             isAnswerChecked = true; 
-            
             validateAnswer();
         }
 
@@ -494,7 +540,6 @@
             const q = quizData[currentIndex];
             const isCorrect = selectedOptionId === q.correctOption;
 
-            // 1. Visual Validation
             document.querySelectorAll('.option-row').forEach(row => {
                 row.style.cursor = 'default'; 
                 const id = row.dataset.id;
@@ -509,46 +554,42 @@
                 }
             });
 
-            // 2. Show Explanation
             const expBox = document.getElementById('explanation-box');
             document.getElementById('explanation-text').textContent = q.explanation;
             expBox.classList.remove('hidden');
 
-            // 3. Show Gemini Button ONLY if Incorrect
-            if (!isCorrect) {
+            if (!isCorrect && GEMINI_API_KEY) {
                 document.getElementById('btn-explain-gemini').classList.remove('hidden');
             }
 
-            // 4. Swap Navigation for SRS Buttons (Only in Practice Mode)
-            if (currentMode === 'practice') {
+            if (currentMode === 'practice' || currentMode === 'daily') {
                 document.getElementById('nav-buttons-row').classList.add('hidden');
                 document.getElementById('srs-buttons-container').classList.remove('hidden');
                 document.getElementById('srs-buttons-container').style.display = 'flex';
+                // Si es Daily o Practice, guardamos automático al responder, no al hacer click en SRS
+                // Pero como tu UI tiene botones SRS, esperaremos el click en ellos para ratear
             }
         }
 
-        async function rateQuestion(rating) {
+        // --- 3. SAVE PROGRESS (NUEVA TABLA user_analytics) ---
+        async function rateQuestion(rating) { 
             const currentQ = quizData[currentIndex];
             const isCorrect = selectedOptionId === currentQ.correctOption;
 
-            // Guardar en Supabase (Tabla 'resultados' o 'user_progress')
-            try {
-                const { error } = await _supabase.from('resultados').insert([
-                    {
-                        username: currentUser.email,
-                        quiz_id: currentQ.id, 
-                        materia: currentQ.materia, // <--- CORREGIDO: Se agrega el campo materia
-                        correct: isCorrect ? 1 : 0,
-                        total: 1,
-                        rating: rating // Nuevo campo para SRS
-                    }
-                ]);
-                
-                if(error) console.error("Error saving progress:", error);
-                else console.log("Progress saved.");
+            if (currentUser) {
+                try {
+                    const { error } = await _supabase.from('user_analytics').insert([
+                        {
+                            user_email: currentUser.email,
+                            question_id: currentQ.id,
+                            is_correct: isCorrect
+                        }
+                    ]);
+                    
+                    if(error) console.error("Supabase error:", error);
+                    else console.log("Analytics saved ✅");
 
-            } catch (err) {
-                console.error("Save error:", err);
+                } catch (err) { console.error("Save error:", err); }
             }
             
             nextQuestion();
@@ -559,7 +600,7 @@
                 currentIndex++;
                 renderQuestion();
             } else {
-                alert("Quiz Completed! Returning to Dashboard.");
+                alert("Quiz Completed! Check your stats in the dashboard.");
                 window.location.href = 'dashboard.html';
             }
         }
@@ -606,20 +647,48 @@
             }, 1000);
         }
 
-        function triggerGeminiExplanation() {
+        // --- 4. GEMINI AI REAL ---
+        async function triggerGeminiExplanation() {
             const container = document.getElementById('gemini-content');
             const loading = document.getElementById('gemini-loading');
-            const text = document.getElementById('gemini-text');
+            const textDiv = document.getElementById('gemini-text');
+            const currentQ = quizData[currentIndex];
             
             container.classList.remove('hidden');
             loading.classList.remove('hidden');
-            text.classList.add('hidden');
+            textDiv.classList.add('hidden');
 
-            setTimeout(() => {
+            const prompt = `Explain why the answer "${currentQ.correctOption}" is correct for the dental question: "${currentQ.text}". Keep it concise and educational.`;
+
+            if(!GEMINI_API_KEY) {
                 loading.classList.add('hidden');
-                text.classList.remove('hidden');
-                text.innerHTML = `<p><strong class="text-purple-400">🤖 AI Analysis:</strong> Detailed explanation generated by AI would appear here.</p>`;
-            }, 1500);
+                textDiv.classList.remove('hidden');
+                textDiv.innerText = "API Key missing. Please add it to the code.";
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+                
+                const data = await response.json();
+                const explanation = data.candidates?.[0]?.content?.parts?.[0]?.text || "AI could not generate an explanation.";
+                const formatted = explanation.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+
+                loading.classList.add('hidden');
+                textDiv.classList.remove('hidden');
+                textDiv.innerHTML = `<p><strong class="text-purple-400">🤖 AI Analysis:</strong><br>${formatted}</p>`;
+
+            } catch (e) {
+                loading.classList.add('hidden');
+                textDiv.classList.remove('hidden');
+                textDiv.innerText = "Error connecting to AI Tutor.";
+            }
         }
 
         function toggleMark() { console.log("Mark toggled"); }
