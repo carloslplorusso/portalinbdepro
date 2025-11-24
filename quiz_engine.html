@@ -8,27 +8,29 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
-    <style>
-        /* --- INBDE SPECIFIC STYLES --- */
+    <!-- 1. CSS BASE (SIMULATION MODE - INBDE STYLE) -->
+    <style id="simulation-css">
+        /* Base styles shared or specific to Simulation */
         body { 
             font-family: Arial, Helvetica, sans-serif; 
-            background-color: #f0f0f0;
+            background-color: #f0f0f0; 
+            margin: 0;
         }
 
-        /* Header Gradient/Color */
+        /* --- INBDE SPECIFIC HEADER/FOOTER --- */
         .inbde-header {
-            background-color: #0060a9; /* Main Blue matches image */
+            background-color: #0060a9;
             color: white;
         }
-
-        /* Footer Gradient */
         .inbde-footer {
             background: linear-gradient(to bottom, #0060a9 0%, #004b8d 100%);
             border-top: 4px solid #004b8d;
         }
 
-        /* Custom 3D Buttons (glossy effect) */
+        /* Glossy Buttons */
         .btn-glossy {
             background: linear-gradient(to bottom, #4c96d7 0%, #1a6cb0 50%, #1a6cb0 100%);
             border: 1px solid #0d4e85;
@@ -40,147 +42,188 @@
             text-shadow: 0 -1px 0 rgba(0,0,0,0.3);
             font-family: 'Arial Narrow', Arial, sans-serif;
         }
-        .btn-glossy:hover {
-            background: linear-gradient(to bottom, #5ba4e5 0%, #257bc4 50%, #257bc4 100%);
-        }
-        .btn-glossy:active {
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-            transform: translateY(1px);
+        .btn-glossy:hover { background: linear-gradient(to bottom, #5ba4e5 0%, #257bc4 50%, #257bc4 100%); }
+        .btn-glossy:active { box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); transform: translateY(1px); }
+
+        /* Tables & Tabs (Sim Mode) */
+        .clinical-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .clinical-table th { background-color: #dceefb; color: #000; text-align: left; padding: 8px; border: 1px solid #888; font-weight: bold; }
+        .clinical-table td { background-color: #fff; padding: 8px; border: 1px solid #888; vertical-align: top; color: #000; }
+
+        .tab-btn { border: 1px solid #000; background-color: #fff; padding: 8px 16px; font-size: 13px; cursor: pointer; margin-right: 4px; border-bottom: none; position: relative; top: 1px; min-width: 100px; }
+        .tab-btn.active { font-weight: bold; z-index: 10; border-bottom: 1px solid #fff; }
+        .tab-btn.inactive { background-color: #e0e0e0; color: #555; }
+
+        /* Option Styling (Default/Sim) */
+        .option-row { display: flex; align-items: center; border: 1px solid #e0e0e0; background: white; padding: 12px; margin-bottom: 8px; border-radius: 4px; cursor: pointer; transition: all 0.1s; }
+        .option-row:hover { border-color: #bbb; }
+        .option-row.selected { background-color: #dceefb; border-color: #8fbce6; }
+        
+        .custom-radio { width: 18px; height: 18px; border: 1px solid #ccc; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; background: white; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
+        .option-row.selected .custom-radio { border-color: #0060a9; }
+        .option-row.selected .custom-radio::after { content: ''; width: 10px; height: 10px; background-color: #0060a9; border-radius: 50%; }
+    </style>
+
+    <!-- 2. CSS PRACTICE MODE (DARK THEME - INJECTED) -->
+    <style id="practice-css" disabled>
+        /* --- 1. VARIABLES & BASE --- */
+        :root {
+            --accent: #facc15; 
+            --accent-glow: rgba(250, 204, 21, 0.15);
+            --bg-dark: #050505;
+            --card-bg: #121214;
+            --card-bg-hero: #1c1c20;
+            --card-border: #27272a;
+            --text-main: #f4f4f5;
+            --text-muted: #71717a;
+            
+            --success: #22c55e;
+            --error: #ef4444;
+            
+            /* DIMENSIONES */
+            --col-width: 200px;
+            --sq-size: 190px;
         }
 
-        /* Left Panel Tables */
-        .clinical-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        .clinical-table th {
-            background-color: #dceefb; /* Light blue header */
-            color: #000;
-            text-align: left;
-            padding: 8px;
-            border: 1px solid #888;
-            font-weight: bold;
-        }
-        .clinical-table td {
-            background-color: #fff;
-            padding: 8px;
-            border: 1px solid #888;
-            vertical-align: top;
-            color: #000;
-        }
-
-        /* Tabs */
-        .tab-btn {
-            border: 1px solid #000;
-            background-color: #fff;
-            padding: 8px 16px;
-            font-size: 13px;
-            cursor: pointer;
-            margin-right: 4px;
-            border-bottom: none;
-            position: relative;
-            top: 1px;
-            min-width: 100px;
-        }
-        .tab-btn.active {
-            font-weight: bold;
-            z-index: 10;
-            border-bottom: 1px solid #fff; /* Hide border to merge with content */
-        }
-        .tab-btn.inactive {
-            background-color: #e0e0e0;
-            color: #555;
-        }
-
-        /* Option Styling */
-        .option-row {
+        /* Override Body for Dark Mode */
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+            background-color: #000 !important;
+            color: var(--text-main);
+            min-height: 100vh;
             display: flex;
-            align-items: center;
-            border: 1px solid #e0e0e0;
-            background: white;
-            padding: 12px;
-            margin-bottom: 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.1s;
+            flex-direction: column;
+            background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%) !important;
         }
-        .option-row:hover {
-            border-color: #bbb;
+
+        /* Hide Sim Elements in Practice Mode */
+        .inbde-header, .inbde-footer { display: none !important; }
+
+        /* --- PRACTICE LAYOUT ADAPTATION --- */
+        .practice-header {
+            display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; width: 100%;
+            border-bottom: 1px solid var(--card-border); background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);
         }
+        .practice-title { font-size: 1.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; color: #fff; }
+        .practice-subtitle { color: var(--accent); font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+
+        /* Main Quiz Container Override */
+        #main-container-wrapper {
+            background: transparent !important; box-shadow: none !important; max-width: 1200px !important; margin: 0 auto; height: 100%;
+        }
+
+        #right-panel { width: 100% !important; background: transparent !important; color: var(--text-main) !important; border: none !important; }
+        #question-text { color: #fff !important; font-size: 1.5rem !important; font-weight: 600 !important; line-height: 1.4 !important; }
+
+        /* Option Cards Override (Dark Theme) */
+        .option-row {
+            background: var(--card-bg) !important; border: 1px solid var(--card-border) !important; color: var(--text-muted) !important;
+            border-radius: 12px !important; padding: 20px !important; transition: all 0.3s !important;
+        }
+        .option-row:hover { transform: translateY(-2px); border-color: #52525b !important; background: #18181b !important; color: #fff !important; }
         .option-row.selected {
-            background-color: #dceefb; /* Match Image Selection Color */
-            border-color: #8fbce6;
+            background: linear-gradient(90deg, rgba(250, 204, 21, 0.1), transparent) !important; border-color: var(--accent) !important;
+            color: #fff !important; box-shadow: 0 0 20px var(--accent-glow) !important;
         }
         
-        /* Radio Button Simulation */
-        .custom-radio {
-            width: 18px;
-            height: 18px;
-            border: 1px solid #ccc;
-            border-radius: 50%;
-            margin-right: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: white;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        /* VALIDATION STATES (CORRECT/INCORRECT) */
+        .option-row.correct-answer {
+            border-color: var(--success) !important; background: rgba(34, 197, 94, 0.1) !important; color: #fff !important;
         }
-        .option-row.selected .custom-radio {
-            border-color: #0060a9;
+        .option-row.wrong-answer {
+            border-color: var(--error) !important; background: rgba(239, 68, 68, 0.1) !important; color: #fff !important;
         }
-        .option-row.selected .custom-radio::after {
-            content: '';
-            width: 10px;
-            height: 10px;
-            background-color: #0060a9;
-            border-radius: 50%;
+
+        .custom-radio { background: transparent !important; border-color: var(--text-muted) !important; }
+        .option-row.selected .custom-radio { border-color: var(--accent) !important; }
+        .option-row.selected .custom-radio::after { background-color: var(--accent) !important; }
+        
+        .option-row.correct-answer .custom-radio { border-color: var(--success) !important; }
+        .option-row.correct-answer .custom-radio::after { background-color: var(--success) !important; }
+        .option-row.wrong-answer .custom-radio { border-color: var(--error) !important; }
+        .option-row.wrong-answer .custom-radio::after { background-color: var(--error) !important; }
+
+        /* Controls */
+        .practice-controls { display: flex !important; gap: 20px; padding: 20px 0; margin-top: auto; justify-content: flex-end; }
+        .btn-practice {
+            background: var(--card-bg-hero); border: 1px solid var(--accent); color: var(--accent);
+            padding: 12px 30px; border-radius: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
+        .btn-practice:hover { background: var(--accent); color: #000; box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
+
+        /* GEMINI BUTTON */
+        .btn-gemini {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); border: 1px solid #a855f7; color: white;
+            display: flex; align-items: center; gap: 8px; box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+            animation: pulse-gemini 2s infinite;
+        }
+        .btn-gemini:hover { transform: scale(1.05); filter: brightness(1.2); }
+        @keyframes pulse-gemini { 0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(168, 85, 247, 0); } 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); } }
+
+        /* SRS BUTTONS */
+        .srs-container { display: flex; gap: 15px; width: 100%; justify-content: center; margin-top: 10px; }
+        .btn-srs { flex: 1; padding: 15px; border-radius: 12px; font-weight: 800; text-transform: uppercase; color: #000; cursor: pointer; border: none; transition: transform 0.2s; max-width: 200px; }
+        .btn-srs:hover { transform: translateY(-3px); filter: brightness(1.1); }
+        .btn-learning { background: #ef4444; box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3); }
+        .btn-retrieving { background: #eab308; box-shadow: 0 5px 15px rgba(234, 179, 8, 0.3); }
+        .btn-mastered { background: #22c55e; box-shadow: 0 5px 15px rgba(34, 197, 94, 0.3); }
+
+        /* Explanation Box Dark */
+        #explanation-box { background: rgba(255,255,255,0.03) !important; border: 1px solid #333 !important; border-radius: 12px !important; color: #ccc !important; padding: 25px !important; }
+        .gemini-response-box { background: linear-gradient(180deg, rgba(168, 85, 247, 0.1) 0%, rgba(0,0,0,0) 100%); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 15px; margin-top: 15px; }
+
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
 
-    <!-- 1. HEADER -->
+    <!-- HEADER SIMULACIÓN (INBDE Style) -->
     <header class="inbde-header h-14 flex items-center justify-between px-4 shrink-0 shadow-md z-20">
-        <!-- Left: Question Counter -->
         <div class="text-lg font-normal w-1/4">
             Question <span id="current-q-num">12</span> of <span id="total-q-num">100</span>
         </div>
-        
-        <!-- Center: Branding -->
         <div class="text-center flex flex-col justify-center w-2/4">
             <div class="text-sm font-bold tracking-wide">INBDE Pro Lab</div>
             <div id="mode-subtitle" class="text-xs text-blue-200">INBDE | Simulation Exam</div>
         </div>
-
-        <!-- Right: Time & Settings -->
         <div class="flex items-center justify-end gap-3 w-1/4">
-            <!-- TIMER CONTAINER: Hidden in Practice Mode -->
             <div id="timer-container" class="text-lg">
                 Time remaining: <span id="timer-display" class="font-mono">01:42:34</span>
             </div>
-            <button class="text-white hover:text-blue-200">
-                <i class="fa-solid fa-gear text-xl"></i>
+            <button class="text-white hover:text-blue-200"><i class="fa-solid fa-gear text-xl"></i></button>
+        </div>
+    </header>
+
+    <!-- HEADER PRACTICE (Dark Mode Style) -->
+    <header class="practice-header hidden" id="practice-header-el">
+        <div>
+            <h1 class="practice-title">INBDE Pro Lab</h1>
+            <div class="practice-subtitle">Interactive Practice Mode</div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="header-countdown bg-yellow-900/30 text-yellow-400 border border-yellow-600/50 px-3 py-1 rounded-full text-xs font-bold">
+                <i class="fa-solid fa-fire mr-1"></i> Streak: 3 Days
+            </div>
+            <button onclick="window.location.reload()" class="text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-xl"></i>
             </button>
         </div>
     </header>
 
-    <!-- 2. MAIN CONTENT SPLIT -->
-    <main class="flex-1 flex overflow-hidden w-full max-w-7xl mx-auto bg-white shadow-xl">
+    <!-- MAIN CONTENT -->
+    <main id="main-container-wrapper" class="flex-1 flex overflow-hidden w-full max-w-7xl mx-auto bg-white shadow-xl">
         
-        <!-- LEFT PANEL: PATIENT HISTORY (Visible only in Simulation Mode) -->
+        <!-- LEFT PANEL (Sim only) -->
         <section id="left-panel" class="w-[40%] flex flex-col border-r border-gray-300 bg-white p-4 overflow-hidden transition-all duration-300">
-            
-            <!-- Tabs -->
             <div class="flex border-b border-black mb-0 z-10">
                 <button id="tab-photos" class="tab-btn inactive" onclick="switchTab('photos')">PHOTOS</button>
                 <button id="tab-clinical" class="tab-btn active" onclick="switchTab('clinical')">CLINICAL EXAM</button>
             </div>
-
-            <!-- Content Container -->
             <div class="border border-black border-t-0 flex-1 overflow-hidden relative bg-white">
-                
-                <!-- VIEW 1: Clinical Text -->
                 <div id="view-clinical" class="absolute inset-0 overflow-y-auto p-0 custom-scrollbar">
                     <table class="clinical-table">
                         <tr><th>Patient</th></tr>
@@ -193,36 +236,79 @@
                         <tr><td><div id="current-findings"></div></td></tr>
                     </table>
                 </div>
-
-                <!-- VIEW 2: Photos -->
                 <div id="view-photos" class="absolute inset-0 hidden bg-black flex items-center justify-center p-4">
                     <img id="case-image" src="" alt="Clinical Case Photo" class="max-w-full max-h-full object-contain">
-                    <div id="no-photo-msg" class="text-white hidden">No photos available for this case.</div>
+                    <div id="no-photo-msg" class="text-white hidden">No photos available.</div>
                 </div>
-
             </div>
         </section>
 
-        <!-- RIGHT PANEL: QUESTION & OPTIONS (Expands in Practice Mode) -->
+        <!-- RIGHT PANEL (Questions) -->
         <section id="right-panel" class="w-[60%] flex flex-col p-6 overflow-y-auto custom-scrollbar relative transition-all duration-300">
             
-            <div class="max-w-4xl mx-auto w-full"> <!-- Center content in practice mode -->
-                <!-- Question Text -->
-                <div class="mb-6">
-                    <p id="question-text" class="text-lg text-gray-900 leading-snug">
-                        Loading...
-                    </p>
+            <div class="max-w-4xl mx-auto w-full flex flex-col h-full"> 
+                
+                <!-- Question Area -->
+                <div class="mb-6 fade-in">
+                    <p id="question-text" class="text-lg text-gray-900 leading-snug">Loading...</p>
                 </div>
 
-                <!-- Options List -->
-                <div id="options-container" class="space-y-3 mb-8">
+                <!-- Options -->
+                <div id="options-container" class="space-y-3 mb-8 fade-in" style="animation-delay: 0.1s;">
                     <!-- Injected via JS -->
                 </div>
 
-                <!-- Hidden Explanation Box -->
-                <div id="explanation-box" class="hidden mt-6 p-4 bg-yellow-50 border border-yellow-200 text-sm">
-                    <h4 class="font-bold mb-2">Explanation:</h4>
-                    <p id="explanation-text"></p>
+                <!-- Explanation Area -->
+                <div id="explanation-box" class="hidden mt-6 fade-in">
+                    <div class="flex justify-between items-start mb-4">
+                        <h4 class="font-bold text-lg text-white">Explanation</h4>
+                        
+                        <!-- GEMINI BUTTON (Solo aparece si falla) -->
+                        <button id="btn-explain-gemini" class="hidden btn-practice btn-gemini px-4 py-2 text-xs rounded-full" onclick="triggerGeminiExplanation()">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Explain this
+                        </button>
+                    </div>
+
+                    <p id="explanation-text" class="leading-relaxed text-gray-300"></p>
+                    
+                    <!-- GEMINI CONTENT AREA -->
+                    <div id="gemini-content" class="hidden gemini-response-box">
+                        <div id="gemini-loading" class="flex items-center gap-3 text-purple-400">
+                            <i class="fa-solid fa-circle-notch fa-spin"></i> Analyzing with Gemini AI...
+                        </div>
+                        <div id="gemini-text" class="hidden text-sm text-gray-300 space-y-2">
+                            <!-- Inyectado via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONTROLES DARK MODE (Practice) -->
+                <div id="practice-controls-el" class="practice-controls hidden flex-col w-full">
+                    
+                    <!-- Navigation (Check button removed) -->
+                    <div id="nav-buttons-row" class="flex justify-end gap-4 w-full">
+                        <button class="btn-practice border-gray-600 text-gray-400 hover:text-white" onclick="prevQuestion()">
+                            <i class="fa-solid fa-arrow-left mr-2"></i> Prev
+                        </button>
+                        <!-- Button Check Removed - Auto check on select -->
+                        <button id="btn-next-practice" class="btn-practice hidden" onclick="nextQuestion()">
+                            Next <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+
+                    <!-- SRS BUTTONS (Learning, Retrieving, Mastered) - Inicialmente ocultos -->
+                    <div id="srs-buttons-container" class="hidden srs-container fade-in">
+                        <button class="btn-srs btn-learning" onclick="rateQuestion('learning')">
+                            Learning
+                        </button>
+                        <button class="btn-srs btn-retrieving" onclick="rateQuestion('retrieving')">
+                            Retrieving
+                        </button>
+                        <button class="btn-srs btn-mastered" onclick="rateQuestion('mastered')">
+                            Mastered
+                        </button>
+                    </div>
+
                 </div>
             </div>
 
@@ -230,27 +316,16 @@
 
     </main>
 
-    <!-- 3. FOOTER -->
+    <!-- FOOTER SIMULACIÓN (INBDE Style) -->
     <footer class="inbde-footer h-16 flex items-center justify-between px-6 shrink-0 z-30">
-        
         <div class="flex gap-4">
-            <button class="btn-glossy px-6 py-2 rounded-sm text-sm" onclick="prevQuestion()">
-                Previous
-            </button>
-            <button class="btn-glossy px-8 py-2 rounded-sm text-sm" onclick="nextQuestion()">
-                Next
-            </button>
+            <button class="btn-glossy px-6 py-2 rounded-sm text-sm" onclick="prevQuestion()">Previous</button>
+            <button class="btn-glossy px-8 py-2 rounded-sm text-sm" onclick="nextQuestion()">Next</button>
         </div>
-
         <div class="flex gap-4">
-            <button class="btn-glossy px-6 py-2 rounded-sm text-sm opacity-90" onclick="toggleMark()">
-                Mark
-            </button>
-            <button class="btn-glossy px-6 py-2 rounded-sm text-sm opacity-90" onclick="finishQuiz()">
-                Review
-            </button>
+            <button class="btn-glossy px-6 py-2 rounded-sm text-sm opacity-90" onclick="toggleMark()">Mark</button>
+            <button class="btn-glossy px-6 py-2 rounded-sm text-sm opacity-90" onclick="finishQuiz()">Review</button>
         </div>
-
     </footer>
 
     <!-- LOGIC -->
@@ -261,10 +336,10 @@
                 id: 12, 
                 text: "Which is the best treatment for tooth 8?",
                 patientInfo: "Male, 14 years old, accompanied by parent",
-                chiefComplaint: "Parent: \"My son was playing soccer and hit his front tooth four months ago.\"",
-                history: "Tooth 8 was avulsed and was placed in milk within five minutes of the injury.<br>Tooth 8 was reimplanted and splinted within 30 minutes.<br>Two-week follow-up appointment was canceled due to scheduling conflicts.",
-                findings: "No response to pulp vitality tests, tooth 8.<br>Hypersensitive to palpation and percussion, tooth 8.",
-                photoUrl: "https://via.placeholder.com/600x800/000000/FFFFFF?text=X-RAY+TOOTH+8",
+                chiefComplaint: "Parent: \"My son was playing soccer...\"",
+                history: "Tooth 8 was avulsed...",
+                findings: "No response to pulp vitality tests...",
+                photoUrl: "https://via.placeholder.com/600x800/000000/FFFFFF?text=X-RAY",
                 options: [
                     { id: 'A', text: "Extraction" },
                     { id: 'B', text: "Root canal treatment" },
@@ -279,7 +354,7 @@
                 text: "What is the most likely diagnosis?",
                 patientInfo: "Female, 30 years old",
                 chiefComplaint: "Pain when biting.",
-                history: "Recent crown placement on tooth 30.",
+                history: "Recent crown placement...",
                 findings: "Percussion positive.",
                 photoUrl: null,
                 options: [
@@ -289,26 +364,27 @@
                     { id: 'D', text: "Cracked tooth syndrome" }
                 ],
                 correctOption: 'B',
-                explanation: "Positive percussion suggests apical inflammation."
+                explanation: "Positive percussion suggests apical inflammation. Reversible pulpitis typically presents with cold sensitivity, not percussion pain."
             }
         ];
 
         // --- STATE & MODE CONFIG ---
         const urlParams = new URLSearchParams(window.location.search);
-        // Change defaultMode to 'practice' to test the other layout, or use ?mode=practice in URL
-        const defaultMode = 'simulation'; 
+        
+        // MODES: 'simulation' OR 'practice'
+        const defaultMode = 'practice'; 
         const currentMode = urlParams.get('mode') || defaultMode;
 
         let currentIndex = 0;
         let selectedOptionId = null; 
         let timerSeconds = 6154; 
+        let isAnswerChecked = false;
 
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
             configureLayoutMode();
             renderQuestion();
             
-            // Only start timer in Simulation mode
             if (currentMode === 'simulation') {
                 startTimer();
             }
@@ -318,81 +394,182 @@
         function configureLayoutMode() {
             const leftPanel = document.getElementById('left-panel');
             const rightPanel = document.getElementById('right-panel');
-            const timerContainer = document.getElementById('timer-container');
-            const subTitle = document.getElementById('mode-subtitle');
-
+            const practiceStyle = document.getElementById('practice-css');
+            const practiceHeader = document.getElementById('practice-header-el');
+            const practiceControls = document.getElementById('practice-controls-el');
+            
             console.log("Initializing Mode:", currentMode);
 
             if (currentMode === 'practice' || currentMode === 'stand_alone') {
-                // PRACTICE MODE: Hide Left Panel, Hide Timer, Full Width Right Panel
+                // PRACTICE MODE
+                practiceStyle.disabled = false;
                 leftPanel.style.display = 'none';
-                
-                rightPanel.classList.remove('w-[60%]');
-                rightPanel.classList.add('w-full');
-                
-                timerContainer.style.visibility = 'hidden'; // Keep spacing or use display:none to remove
-                subTitle.textContent = "INBDE | Practice Questions";
+                practiceHeader.classList.remove('hidden');
+                practiceControls.classList.remove('hidden');
+                practiceControls.style.display = 'flex'; // Ensure flex
             } else {
-                // SIMULATION MODE: Default Split Screen
+                // SIMULATION MODE
+                practiceStyle.disabled = true;
                 leftPanel.style.display = 'flex';
-                
-                rightPanel.classList.remove('w-full');
                 rightPanel.classList.add('w-[60%]');
-                
-                timerContainer.style.visibility = 'visible';
-                subTitle.textContent = "INBDE | Simulation Exam | Day 1 – Set 1";
+                practiceHeader.classList.add('hidden');
+                practiceControls.classList.add('hidden');
             }
         }
 
         // --- RENDER LOGIC ---
         function renderQuestion() {
             const q = mockQuestions[currentIndex];
+            isAnswerChecked = false;
+            selectedOptionId = null;
 
-            // 1. Reset Tabs (Only relevant for Sim mode, but harmless in Practice)
-            switchTab('clinical');
-
-            // 2. Update Header Info
+            // 1. Data Population
             document.getElementById('current-q-num').textContent = q.id;
-
-            // 3. Update Left Panel Data (Even if hidden, we populate it)
             document.getElementById('patient-info').innerHTML = q.patientInfo;
             document.getElementById('chief-complaint').innerHTML = q.chiefComplaint;
             document.getElementById('patient-history').innerHTML = q.history;
             document.getElementById('current-findings').innerHTML = q.findings;
 
-            // 4. Photo Logic
+            // Photo Logic
             const imgEl = document.getElementById('case-image');
             const noPhotoMsg = document.getElementById('no-photo-msg');
             if (q.photoUrl) {
-                imgEl.src = q.photoUrl;
-                imgEl.classList.remove('hidden');
-                noPhotoMsg.classList.add('hidden');
+                imgEl.src = q.photoUrl; imgEl.classList.remove('hidden'); noPhotoMsg.classList.add('hidden');
             } else {
-                imgEl.classList.add('hidden');
-                noPhotoMsg.classList.remove('hidden');
+                imgEl.classList.add('hidden'); noPhotoMsg.classList.remove('hidden');
             }
 
-            // 5. Update Right Panel Question
+            // 2. Question & Options
             document.getElementById('question-text').textContent = q.text;
-            
-            // 6. Options
             const optsContainer = document.getElementById('options-container');
             optsContainer.innerHTML = '';
 
             q.options.forEach(opt => {
                 const row = document.createElement('div');
-                row.className = `option-row ${selectedOptionId === opt.id ? 'selected' : ''}`;
+                row.className = 'option-row';
+                row.dataset.id = opt.id;
                 row.onclick = () => selectOption(opt.id);
                 
                 row.innerHTML = `
                     <div class="custom-radio"></div>
-                    <span class="text-gray-800 text-sm font-medium">${opt.id}. ${opt.text}</span>
+                    <span class="font-medium text-inherit">${opt.text}</span>
                 `;
                 optsContainer.appendChild(row);
             });
+
+            // 3. Reset UI Elements
+            document.getElementById('explanation-box').classList.add('hidden');
+            document.getElementById('btn-explain-gemini').classList.add('hidden');
+            document.getElementById('gemini-content').classList.add('hidden');
+            
+            // Practice Controls Reset
+            if (currentMode === 'practice') {
+                document.getElementById('nav-buttons-row').classList.remove('hidden');
+                document.getElementById('srs-buttons-container').classList.add('hidden');
+            }
         }
 
-        // --- UTILS ---
+        function selectOption(id) {
+            // Prevent changing selection once validated
+            if (isAnswerChecked) return;
+
+            selectedOptionId = id;
+            isAnswerChecked = true; // Lock the answer
+            
+            // Trigger validation logic immediately
+            validateAnswer();
+        }
+
+        function validateAnswer() {
+            const q = mockQuestions[currentIndex];
+            const isCorrect = selectedOptionId === q.correctOption;
+
+            // 1. Visual Validation (Green/Red)
+            document.querySelectorAll('.option-row').forEach(row => {
+                row.style.cursor = 'default'; // Disable clicks visually
+                const id = row.dataset.id;
+                
+                // Remove generic selected class first to apply specific colors
+                row.classList.remove('selected');
+
+                if (id === q.correctOption) {
+                    row.classList.add('correct-answer');
+                } else if (id === selectedOptionId && !isCorrect) {
+                    row.classList.add('wrong-answer');
+                } else if (id === selectedOptionId && isCorrect) {
+                    // Ensures green if clicked correctly
+                    row.classList.add('correct-answer'); 
+                }
+            });
+
+            // 2. Show Explanation
+            const expBox = document.getElementById('explanation-box');
+            document.getElementById('explanation-text').textContent = q.explanation;
+            expBox.classList.remove('hidden');
+
+            // 3. Show Gemini Button ONLY if Incorrect
+            if (!isCorrect) {
+                document.getElementById('btn-explain-gemini').classList.remove('hidden');
+            }
+
+            // 4. Swap Navigation for SRS Buttons
+            document.getElementById('nav-buttons-row').classList.add('hidden');
+            document.getElementById('srs-buttons-container').classList.remove('hidden');
+            document.getElementById('srs-buttons-container').style.display = 'flex';
+        }
+
+        function triggerGeminiExplanation() {
+            const container = document.getElementById('gemini-content');
+            const loading = document.getElementById('gemini-loading');
+            const text = document.getElementById('gemini-text');
+            
+            container.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            text.classList.add('hidden');
+
+            // Simulate AI Delay
+            setTimeout(() => {
+                loading.classList.add('hidden');
+                text.classList.remove('hidden');
+                
+                // Simulated AI Response in English
+                text.innerHTML = `
+                    <p><strong class="text-purple-400">🤖 Gemini Analysis:</strong></p>
+                    <p>The key to this question lies in identifying the <strong>necrotic pulp</strong> status combined with an <strong>open apex</strong>.</p>
+                    <ul class="list-disc pl-5 my-2 text-gray-400">
+                        <li><strong>Why D is correct:</strong> Apexification induces a calcified barrier at the apex, allowing for subsequent obturation in non-vital immature teeth.</li>
+                        <li><strong>Why you might have chosen others:</strong> Root canal treatment (B) is contraindicated because the open apex prevents proper seal. Apexogenesis (C) is for <em>vital</em> teeth only.</li>
+                    </ul>
+                    <p class="text-xs italic text-gray-500">Note: In modern practice, Regenerative Endodontics is also a strong consideration.</p>
+                `;
+            }, 1500);
+        }
+
+        function rateQuestion(rating) {
+            console.log(`User rated question ${mockQuestions[currentIndex].id} as: ${rating}`);
+            // Logic to save to database would go here
+            
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            if (currentIndex < mockQuestions.length - 1) {
+                currentIndex++;
+                renderQuestion();
+            } else {
+                alert("Set completed! Returning to dashboard...");
+                // window.location.href = 'dashboard.html';
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderQuestion();
+            }
+        }
+
+        // --- UTILS (Sim Mode) ---
         function switchTab(tabName) {
             const tabPhotos = document.getElementById('tab-photos');
             const tabClinical = document.getElementById('tab-clinical');
@@ -400,42 +577,13 @@
             const viewClinical = document.getElementById('view-clinical');
 
             if (tabName === 'clinical') {
-                tabClinical.classList.add('active');
-                tabClinical.classList.remove('inactive');
-                tabPhotos.classList.remove('active');
-                tabPhotos.classList.add('inactive');
-                viewClinical.classList.remove('hidden');
-                viewPhotos.classList.add('hidden');
+                tabClinical.classList.add('active'); tabClinical.classList.remove('inactive');
+                tabPhotos.classList.remove('active'); tabPhotos.classList.add('inactive');
+                viewClinical.classList.remove('hidden'); viewPhotos.classList.add('hidden');
             } else {
-                tabPhotos.classList.add('active');
-                tabPhotos.classList.remove('inactive');
-                tabClinical.classList.remove('active');
-                tabClinical.classList.add('inactive');
-                viewPhotos.classList.remove('hidden');
-                viewClinical.classList.add('hidden');
-            }
-        }
-
-        function selectOption(id) {
-            selectedOptionId = id;
-            renderQuestion(); 
-        }
-
-        function nextQuestion() {
-            if (currentIndex < mockQuestions.length - 1) {
-                currentIndex++;
-                selectedOptionId = null; 
-                renderQuestion();
-            } else {
-                alert("End of set.");
-            }
-        }
-
-        function prevQuestion() {
-            if (currentIndex > 0) {
-                currentIndex--;
-                selectedOptionId = null;
-                renderQuestion();
+                tabPhotos.classList.add('active'); tabPhotos.classList.remove('inactive');
+                tabClinical.classList.remove('active'); tabClinical.classList.add('inactive');
+                viewPhotos.classList.remove('hidden'); viewClinical.classList.add('hidden');
             }
         }
 
@@ -451,13 +599,8 @@
             }, 1000);
         }
 
-        function toggleMark() {
-            console.log("Mark toggled");
-        }
-
-        function finishQuiz() {
-            alert("Review Mode");
-        }
+        function toggleMark() { console.log("Mark toggled"); }
+        function finishQuiz() { alert("Review Mode"); }
 
     </script>
 </body>
