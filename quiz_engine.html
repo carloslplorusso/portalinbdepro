@@ -56,7 +56,7 @@
         .option-row:hover { border-color: #bbb; }
         .option-row.selected { background-color: #dceefb; border-color: #8fbce6; }
         
-        .custom-radio { width: 18px; height: 18px; border: 1px solid #ccc; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; background: white; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
+        .custom-radio { width: 18px; height: 18px; border: 1px solid #ccc; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; background: white; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
         .option-row.selected .custom-radio { border-color: #0060a9; }
         .option-row.selected .custom-radio::after { content: ''; width: 10px; height: 10px; background-color: #0060a9; border-radius: 50%; }
     </style>
@@ -459,7 +459,7 @@
             const practiceControls = document.getElementById('practice-controls-el'); // Practice/SRS Buttons
             
             // Definir grupos de modos (Modos Oscuros/Práctica/SRS)
-            const IS_PRACTICE_MODE = ['practice', 'daily', 'retry_mistakes', 'standalone'].includes(currentMode);
+            const IS_PRACTICE_MODE = ['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
 
             if (IS_PRACTICE_MODE) {
                 // MODELO STAND ALONE (Fondo Oscuro, Sin Sidebar, Botones SRS)
@@ -612,7 +612,7 @@
             }
 
             // Lógica de botones SRS vs. Navegación simple
-            const IS_PRACTICE_MODE = ['practice', 'daily', 'retry_mistakes', 'standalone'].includes(currentMode);
+            const IS_PRACTICE_MODE = ['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
 
             if (IS_PRACTICE_MODE) {
                 // Modo Práctica: Muestra botones SRS
@@ -653,11 +653,10 @@
 
         function nextQuestion() {
             // Asegura que en modo simulación se valide antes de avanzar
-            const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone'].includes(currentMode);
+            const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
 
             if(isSimulation && !isAnswerChecked) {
-                // En modo simulación, el botón de navegación del footer no debería avanzar si no se ha seleccionado
-                // Pero el botón 'Next' del panel de práctica (si existe) debe disparar la validación si no se ha hecho
+                // Si es Simulación, el botón 'Next' del footer debe disparar la validación si no se ha hecho
                 if(selectedOptionId) {
                     isAnswerChecked = true;
                     validateAnswer();
@@ -754,7 +753,7 @@
 
                 loading.classList.add('hidden');
                 textDiv.classList.remove('hidden');
-                textDiv.innerHTML = `<p><strong class="text-purple-400">🤖 AI Analysis:</strong><br>${formatted}</p>`;
+                textDiv.innerHTML = `<p><strong class=\"text-purple-400\">🤖 AI Analysis:</strong><br>${formatted}</p>`;
 
             } catch (e) {
                 loading.classList.add('hidden');
@@ -765,7 +764,7 @@
 
         function toggleMark() { console.log("Mark toggled"); }
         function finishQuiz() { 
-            if(confirm("Finish and exit?")) window.location.href = 'dashboard.html'; 
+            if(confirm("Finish and exit?\")) window.location.href = 'dashboard.html'; 
         }
 
     </script>
