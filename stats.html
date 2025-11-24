@@ -421,49 +421,61 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // 🔥 FUNCIÓN loadStats ACTUALIZADA para usar la Vista SQL 'resultados' 🔥
     async function loadStats() {
         const { data: { session } } = await _supabase.auth.getSession();
-        if (!session) return; 
+        if (!session) {
+             // Si no hay sesión, regresa al login
+             window.location.href = './index.html';
+             return;
+        }
 
-        const userEmail = session.user.email;
-        // Shorten email for mobile
+        const userEmail = session.user.email; // Usamos el email del usuario logueado
+        
+        // 1. Mostrar el email en la UI
         const displayUser = userEmail.length > 20 ? userEmail.substring(0, 18) + '...' : userEmail;
         document.getElementById('user-display').innerText = displayUser;
 
-        const { data, error } = await _supabase.from('resultados').select('*').eq('username', userEmail);
+        // 2. Cargar datos de la VISTA 'resultados' (Data ya agregada por Supabase)
+        const { data, error } = await _supabase
+            .from('resultados') 
+            .select('materia, correct, total') // Seleccionamos solo las columnas necesarias
+            .eq('username', userEmail); // Filtramos por el usuario actual
 
         if (error || !data || data.length === 0) {
-            // Handle empty state
+            // Handle empty state (y aseguramos que los contadores muestren 0)
             document.getElementById('topic-list-content').innerHTML = '<div style="text-align:center; padding:20px; color:#666;">No activity recorded yet.</div>';
+            document.getElementById('total-quizzes').innerText = 0;
+            document.getElementById('total-questions').innerText = 0;
+            document.getElementById('total-correct').innerText = 0;
+            document.getElementById('total-incorrect').innerText = 0;
+            document.getElementById('accuracy-pct').innerText = '0%';
             return;
         }
 
-        // 1. CALCULATE GLOBAL STATS
+        // 1. CALCULAR GLOBAL STATS
         let totalQ = 0, totalCorrect = 0;
-        const topicMap = {}; // Objeto para agrupar por materia
+        const topicMap = {}; // Objeto para agrupar por materia (Aunque ya está agrupado, lo usamos para el renderizado del listado)
 
         data.forEach(row => {
             const correct = Number(row.correct || 0);
-            const total = Number(row.total || 1); // Asumimos 1 si falta
+            const total = Number(row.total || 1); // La vista debería asegurar que total >= 1
             
-            // Global
+            // Global (Sumamos los totales por cada fila/categoría)
             totalQ += total;
             totalCorrect += correct;
 
-            // Por Materia (Si existe el campo materia)
+            // Por Materia (Para el listado)
             const materia = row.materia || 'Uncategorized';
-            if (!topicMap[materia]) {
-                topicMap[materia] = { correct: 0, total: 0 };
-            }
-            topicMap[materia].correct += correct;
-            topicMap[materia].total += total;
+            topicMap[materia] = { correct: correct, total: total }; // Usamos los valores ya agregados
         });
 
         let totalIncorrect = totalQ - totalCorrect;
         let accuracy = totalQ > 0 ? Math.round((totalCorrect / totalQ) * 100) : 0;
 
         // Render Global Stats
-        document.getElementById('total-quizzes').innerText = data.length; // Aprox (o unique quiz_ids)
+        // Nota: total-quizzes ya no tiene un significado claro, usamos el total de categorías diferentes
+        document.getElementById('total-quizzes').innerText = data.length; 
         document.getElementById('total-questions').innerText = totalQ;
         document.getElementById('total-correct').innerText = totalCorrect;
         document.getElementById('total-incorrect').innerText = totalIncorrect;
