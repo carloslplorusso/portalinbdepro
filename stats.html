@@ -333,7 +333,6 @@
 
 <div class="lab-container">
     
-    <!-- HEADER -->
     <div class="header-area">
         <h1 class="lab-title">INBDE Pro</h1>
         <div class="lab-subtitle">Performance Hub</div>
@@ -342,17 +341,14 @@
         </div>
     </div>
 
-    <!-- MAIN CONTENT CENTER -->
     <div class="col-center">
         
-        <!-- 1. GLOBAL ACCURACY CARD -->
         <div class="card-promo-style">
             <div class="card-label-top">Global Accuracy</div>
             <div id="accuracy-pct" class="accuracy-display">0%</div>
             <div class="card-label-bottom">Cumulative Performance</div>
         </div>
 
-        <!-- 2. STATS GRID -->
         <div class="grid-2x2">
             <div class="hero-card">
                 <div class="icon">📂</div>
@@ -379,73 +375,17 @@
             </div>
         </div>
 
-        <!-- 3. TOPIC BREAKDOWN (Expandable / Bottom Sheet) -->
         <div class="card-expandable" id="topics-card" onclick="toggleTopics(event)">
             <div class="expandable-header">
                 <h3>📊 Topic Breakdown</h3>
                 <span class="chevron">▼</span>
             </div>
             
-            <div class="topic-list-container">
-                <!-- 10 Mock Areas (INBDE Topics) -->
-                
-                <div class="topic-item">
-                    <div class="topic-row"><span>Patient Management</span><span class="topic-pct">85%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: 85%;"></div></div>
-                </div>
-
-                <div class="topic-item">
-                    <div class="topic-row"><span>Pharmacology</span><span class="topic-pct" style="color:#fbbf24">62%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: 62%; background:#fbbf24"></div></div>
-                </div>
-
-                <div class="topic-item">
-                    <div class="topic-row"><span>Oral Pathology</span><span class="topic-pct" style="color:#ef4444">45%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: 45%; background:#ef4444"></div></div>
-                </div>
-
-                <div class="topic-item">
-                    <div class="topic-row"><span>Prosthodontics</span><span class="topic-pct">78%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: 78%;"></div></div>
-                </div>
-
-                <div class="topic-item">
-                    <div class="topic-row"><span>Endodontics</span><span class="topic-pct">90%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: 90%;"></div></div>
-                </div>
-
-                <div class="topic-item">
-                    <div class="topic-row"><span>Operative Dentistry</span><span class="topic-pct">55%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: 55%; background:#fbbf24"></div></div>
-                </div>
-
-                <div class="topic-item">
-                    <div class="topic-row"><span>Periodontics</span><span class="topic-pct">70%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: 70%;"></div></div>
-                </div>
-
-                <div class="topic-item">
-                    <div class="topic-row"><span>Orthodontics</span><span class="topic-pct">40%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: 40%; background:#ef4444"></div></div>
-                </div>
-
-                <div class="topic-item">
-                    <div class="topic-row"><span>Oral Surgery</span><span class="topic-pct">82%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: 82%;"></div></div>
-                </div>
-
-                <div class="topic-item">
-                    <div class="topic-row"><span>Anatomy</span><span class="topic-pct">65%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: 65%; background:#fbbf24"></div></div>
-                </div>
-
-                <div class="topic-item" style="text-align:center; padding:15px; color:#666; font-size:0.8rem;">
-                    (Tap header to close)
-                </div>
+            <div class="topic-list-container" id="topic-list-content">
+                <div style="text-align:center; padding:20px; color:#666;">Loading topics...</div>
             </div>
         </div>
 
-        <!-- 4. BUTTONS -->
         <div class="action-container">
             <a href="dashboard.html" class="btn-start">Start New Quiz</a>
             <div class="nav-actions">
@@ -492,18 +432,38 @@
 
         const { data, error } = await _supabase.from('resultados').select('*').eq('username', userEmail);
 
-        if (error || !data || data.length === 0) return;
+        if (error || !data || data.length === 0) {
+            // Handle empty state
+            document.getElementById('topic-list-content').innerHTML = '<div style="text-align:center; padding:20px; color:#666;">No activity recorded yet.</div>';
+            return;
+        }
 
+        // 1. CALCULATE GLOBAL STATS
         let totalQ = 0, totalCorrect = 0;
+        const topicMap = {}; // Objeto para agrupar por materia
+
         data.forEach(row => {
-            totalQ += Number(row.total || 0);
-            totalCorrect += Number(row.correct || 0);
+            const correct = Number(row.correct || 0);
+            const total = Number(row.total || 1); // Asumimos 1 si falta
+            
+            // Global
+            totalQ += total;
+            totalCorrect += correct;
+
+            // Por Materia (Si existe el campo materia)
+            const materia = row.materia || 'Uncategorized';
+            if (!topicMap[materia]) {
+                topicMap[materia] = { correct: 0, total: 0 };
+            }
+            topicMap[materia].correct += correct;
+            topicMap[materia].total += total;
         });
 
         let totalIncorrect = totalQ - totalCorrect;
         let accuracy = totalQ > 0 ? Math.round((totalCorrect / totalQ) * 100) : 0;
 
-        document.getElementById('total-quizzes').innerText = data.length;
+        // Render Global Stats
+        document.getElementById('total-quizzes').innerText = data.length; // Aprox (o unique quiz_ids)
         document.getElementById('total-questions').innerText = totalQ;
         document.getElementById('total-correct').innerText = totalCorrect;
         document.getElementById('total-incorrect').innerText = totalIncorrect;
@@ -512,6 +472,43 @@
         accElement.innerText = accuracy + "%";
         if(accuracy >= 80) accElement.style.color = "var(--success)";
         else if(accuracy < 60) accElement.style.color = "var(--danger)";
+
+        // 2. RENDER TOPIC LIST
+        const listContainer = document.getElementById('topic-list-content');
+        listContainer.innerHTML = ''; // Limpiar loading
+
+        // Convertir mapa a array y ordenar por precisión
+        const topicsArray = Object.keys(topicMap).map(key => {
+            const t = topicMap[key];
+            return {
+                name: key,
+                pct: Math.round((t.correct / t.total) * 100)
+            };
+        }).sort((a, b) => b.pct - a.pct); // Ordenar mayor a menor
+
+        topicsArray.forEach(topic => {
+            // Color logic
+            let barColor = "var(--accent)";
+            let textColor = "var(--accent)";
+            if (topic.pct >= 80) { barColor = "var(--success)"; textColor = "var(--success)"; }
+            else if (topic.pct < 60) { barColor = "var(--danger)"; textColor = "var(--danger)"; }
+
+            const itemHTML = `
+                <div class="topic-item">
+                    <div class="topic-row">
+                        <span>${topic.name}</span>
+                        <span class="topic-pct" style="color:${textColor}">${topic.pct}%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" style="width: ${topic.pct}%; background:${barColor}"></div>
+                    </div>
+                </div>
+            `;
+            listContainer.insertAdjacentHTML('beforeend', itemHTML);
+        });
+
+        // Close hint
+        listContainer.insertAdjacentHTML('beforeend', '<div class="topic-item" style="text-align:center; padding:15px; color:#666; font-size:0.8rem;">(Tap header to close)</div>');
     }
 </script>
 
