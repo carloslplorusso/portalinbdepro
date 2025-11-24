@@ -88,7 +88,7 @@
         display: flex; align-items: center; gap: 15px;
     }
 
-    /* Nueva ubicación del Countdown (Badge en Header) */
+    /* Badge Countdown */
     .header-countdown {
         background: rgba(250, 204, 21, 0.1);
         border: 1px solid rgba(250, 204, 21, 0.3);
@@ -142,7 +142,7 @@
     .card-secondary .card-desc { font-size: 0.75rem; }
 
 
-    /* --- 6. SUPER CARDS (PROMO STYLE) - AHORA PARA DAILY & IA --- */
+    /* --- 6. SUPER CARDS (PROMO STYLE) --- */
     .card-promo-style {
         width: 100%;
         background: linear-gradient(145deg, rgba(250, 204, 21, 0.15), rgba(0,0,0,0) 70%);
@@ -154,7 +154,6 @@
         transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         position: relative;
         overflow: hidden;
-        /* Asegura altura consistente */
         min-height: 160px; 
         display: flex; flex-direction: column; justify-content: center;
     }
@@ -277,6 +276,10 @@
     .dot { width: 6px; height: 6px; background: #333; border-radius: 1px; }
     .dot.active { background: var(--accent); }
 
+    .countdown-box { width: 100%; text-align: right; margin-bottom: 20px; }
+    .countdown-timer { font-size: 2rem; font-weight: 800; color: #fff; }
+    .countdown-label { color: var(--accent); font-weight: 700; font-size: 0.75rem; }
+
 
     /* --- 9. MODALS & AI UI --- */
     .modal-overlay {
@@ -308,91 +311,151 @@
     .close-btn:hover { color: #fff; }
 
     .ai-input-area {
-        width: 100%;
-        background: #000;
-        border: 1px solid #333;
-        border-radius: 12px;
-        padding: 15px;
-        color: #fff;
-        font-family: inherit;
-        resize: vertical;
-        min-height: 100px;
-        font-size: 1rem;
+        width: 100%; background: #000; border: 1px solid #333; border-radius: 12px;
+        padding: 15px; color: #fff; font-family: inherit; resize: vertical; min-height: 100px; font-size: 1rem;
     }
     .ai-input-area:focus { outline: none; border-color: var(--accent); }
 
     .ai-action-btn {
-        background: var(--accent);
-        color: #000;
-        border: none;
-        padding: 12px;
-        border-radius: 8px;
-        font-weight: 700;
-        cursor: pointer;
-        display: flex; justify-content: center; align-items: center; gap: 8px;
-        transition: transform 0.2s;
+        background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 8px;
+        font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: transform 0.2s;
     }
     .ai-action-btn:hover { transform: scale(1.02); background: #fff; }
     .ai-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .ai-response {
-        background: rgba(255,255,255,0.03);
-        border-radius: 12px;
-        padding: 20px;
-        color: #ccc;
-        font-size: 0.95rem;
-        line-height: 1.6;
-        max-height: 300px;
-        overflow-y: auto;
-        border-left: 3px solid var(--accent);
-        display: none; /* Hidden initially */
+        background: rgba(255,255,255,0.03); border-radius: 12px; padding: 20px; color: #ccc; font-size: 0.95rem; line-height: 1.6;
+        max-height: 300px; overflow-y: auto; border-left: 3px solid var(--accent); display: none;
     }
     .ai-response h3 { color: #fff; margin-top: 0; font-size: 1.1rem; }
     .ai-response ul { padding-left: 20px; }
     .ai-response li { margin-bottom: 5px; }
 
     .loader {
-        border: 3px solid rgba(255,255,255,0.1);
-        border-top: 3px solid var(--accent);
-        border-radius: 50%;
-        width: 20px; height: 20px;
-        animation: spin 1s linear infinite;
-        display: none;
+        border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--accent); border-radius: 50%; width: 20px; height: 20px;
+        animation: spin 1s linear infinite; display: none;
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 
-    /* --- RESPONSIVIDAD (SIMETRÍA MÓVIL) --- */
+    /* --- RESPONSIVIDAD (MÓVIL EXTREMO) --- */
     @media (max-width: 1200px) {
         :root { --col-width: 180px; --sq-size: 180px; }
         .hero-card .title { font-size: 1rem; }
     }
+
     @media (max-width: 1024px) {
-        body { height: auto; overflow-y: auto; align-items: flex-start; padding-top: 20px; }
-        .lab-container { height: auto; display: flex; flex-direction: column; padding: 15px; gap: 20px; }
-        .header-area { order: 1; padding-bottom: 10px; }
-        .col-center  { order: 2; width: 100%; padding: 0; }
-        .col-left    { order: 3; width: 100%; padding: 0; }
-        .col-right   { order: 4; width: 100%; padding: 0; }
+        body { 
+            height: auto; 
+            overflow-y: auto; 
+            align-items: flex-start; 
+            padding-top: 10px; 
+        }
         
-        /* En móvil, alineamos las columnas para que se vean igual */
-        .col-side, .col-center { align-items: stretch; gap: 20px; }
-        
-        .center-row-hero { flex-direction: column; gap: 15px; }
-        .hero-card { max-width: none; aspect-ratio: auto; min-height: 100px; flex-direction: row; text-align: left; justify-content: flex-start; padding: 20px; gap: 20px; }
-        .hero-card .icon { margin-bottom: 0; font-size: 2.5rem; }
-        .hero-card > div { text-align: left; }
-        
-        /* Las tarjetas cuadradas ahora son rectangulares en móvil para aprovechar el ancho */
-        .square-card-bottom { width: 100%; height: 160px; margin-top: 0; flex-direction: row; align-items: center; justify-content: space-between; padding: 0 25px; }
-        
-        .card-metrics { flex-direction: row; justify-content: space-between; }
-        .metrics-header { width: auto; flex-direction: column; align-items: flex-start; gap: 10px; }
-        .pie-container { justify-content: flex-end; }
-        .usage-container { justify-content: space-between; }
+        .lab-container {
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 15px;
+        }
+
+        /* --- 1. REORDENAMIENTO VISUAL (Display: contents para "romper" columnas) --- */
+        /* Esto permite que los hijos directos de las columnas fluyan en el orden que queramos */
+        .col-side, .col-center {
+            display: contents; 
+        }
+
+        /* HEADER (Siempre arriba) */
+        .header-area { order: 0; padding-bottom: 5px; margin-bottom: 10px; }
+
+        /* --- 2. ORDEN Y ESTILO ESPECÍFICO MÓVIL --- */
+
+        /* ORDEN 1: DAILY LAB RUN (Left Col) */
+        .col-left .card-daily-promo {
+            order: 1;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        /* ORDEN 2: IA LAB (Right Col) - AHORA COMPACTO */
+        .col-right .card-promo-style {
+            order: 2;
+            width: 100%;
+            min-height: auto; /* Reset altura */
+            padding: 12px 20px;
+            margin-bottom: 20px; /* Separador antes del contenido principal */
+            flex-direction: row; /* Horizontal */
+            align-items: center;
+            justify-content: space-between;
+        }
+        /* Ajustes internos para IA Lab compacto */
+        .col-right .card-promo-style .promo-header { margin-bottom: 0; }
+        .col-right .card-promo-style .promo-desc { display: none; } /* Ocultar descripción en móvil para ahorrar espacio */
+        .col-right .card-promo-style .btn-start { padding: 6px 12px; font-size: 0.7rem; align-self: center; }
+
+        /* ORDEN 3: BANNER (Center Col) */
+        .card-learn-banner { 
+            order: 3; 
+            margin-bottom: 15px;
+            padding: 15px; 
+        }
+
+        /* ORDEN 4: HERO CARDS (Center Col) */
+        .center-row-hero {
+            order: 4;
+            flex-direction: column; /* Apiladas */
+            width: 100%;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        /* Hero Cards centradas y grandes */
+        .hero-card {
+            width: 100%;
+            max-width: none;
+            aspect-ratio: auto; /* Ya no forzamos cuadrado */
+            min-height: 100px;
+            flex-direction: column; /* Centradas verticalmente */
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        .hero-card .icon { margin-bottom: 10px; font-size: 2.2rem; }
+
+        /* ORDEN 5: METRICS (Center Col) */
+        .card-metrics {
+            order: 5;
+            width: 100%;
+            height: auto; /* Altura automática */
+            min-height: 180px;
+            margin-bottom: 10px;
+            margin-top: 0; /* Reset margen superior de desktop */
+        }
+        .metrics-header { margin-bottom: 10px; }
+
+        /* ORDEN 6: ACTIVITY LOG (Right Col) */
+        .col-right .usage-container {
+            order: 6;
+            width: 100%;
+            height: auto;
+            min-height: 140px;
+            margin-bottom: 10px;
+            margin-top: 0;
+            flex-direction: row; /* Horizontal */
+            justify-content: space-between;
+            padding: 0 20px;
+        }
         .usage-header { width: auto; }
         .activity-dots { width: auto; max-width: 120px; }
-        .card-learn-banner { flex-direction: column; gap: 10px; }
+
+        /* ORDEN 7: NOTES (Left Col) - AL FINAL */
+        .col-left .card-notes {
+            order: 7;
+            width: 100%;
+            height: 120px; /* Más compacto */
+            margin-top: 0;
+        }
     }
 </style>
 </head>
@@ -416,13 +479,13 @@
     <!-- 2. COLUMNA IZQUIERDA -->
     <div class="col-side col-left">
         
-        <!-- CARD DAILY (PROMO STYLE) -->
-        <div class="card-promo-style">
-            <div class="promo-header">
+        <!-- CARD DAILY -->
+        <div class="card-daily-promo">
+            <div class="daily-header">
                 <div class="fire-icon">🔥</div>
-                <div class="promo-title">Daily Lab Run</div>
+                <div class="daily-title">Daily Lab Run</div>
             </div>
-            <div class="promo-desc">10-question sprint. Keep the streak alive.</div>
+            <div class="daily-desc">10-question sprint. Keep the streak alive.</div>
             <div class="btn-start">Start Now</div>
         </div>
 
@@ -494,7 +557,7 @@
     <!-- 4. COLUMNA DERECHA -->
     <div class="col-side col-right">
         
-        <!-- IA LAB: AHORA ESTILO PROMO (SIMÉTRICO A DAILY RUN) -->
+        <!-- IA LAB: SIMÉTRICO A DAILY RUN EN DESKTOP -->
         <div class="card-promo-style" onclick="openAIModal('ia_search')">
             <div class="promo-header">
                 <div class="ai-icon">🤖</div>
