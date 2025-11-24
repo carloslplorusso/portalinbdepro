@@ -359,36 +359,48 @@
         async function loadQuestionsFromDB() {
             try {
                 let data, error;
+                let rpc_name;
 
-                // A. MODO SIMULACIÓN O DAILY -> RPC RANDOM
-                if (currentMode === 'simulation' || currentMode === 'daily') {
-                    const response = await _supabase.rpc('get_random_questions', { 
-                        quantity: paramCount 
-                    });
-                    data = response.data;
-                    error = response.error;
+                // Definimos todos los modos que deben usar preguntas Stand-Alone (Fondo Oscuro)
+                const STAND_ALONE_MODES = ['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'];
+
+                // 1. DETERMINACIÓN DEL MODO Y DE LA RPC A LLAMAR
+                if (currentMode.includes('simulation') || currentMode === 'itemsets') {
+                    // MODO 1: SIMULACIÓN / ITEM SET (SÓLO preguntas CON case_id)
+                    rpc_name = 'get_simulation_questions'; // Asumimos esta RPC fue creada con filtro IS NOT NULL
+                    document.getElementById('mode-subtitle').innerText = "Clinical Simulation";
                 } 
-                // B. MODO CATEGORÍA -> RPC POR CATEGORÍA (Simplificado)
-                else if (paramSubjects) {
-                    const firstSubject = decodeURIComponent(paramSubjects).split(',')[0];
-                    const response = await _supabase.rpc('get_questions_by_category', { 
-                        category_input: firstSubject, 
-                        quantity: paramCount
-                    });
-                    data = response.data;
-                    error = response.error;
+                else if (STAND_ALONE_MODES.includes(currentMode)) {
+                    // MODO 2: PRÁCTICA / STAND ALONE / DAILY (SÓLO preguntas SIN case_id)
+                    if (currentMode === 'retry_mistakes') {
+                        // Caso especial: Llama a la RPC que filtra por errores
+                        rpc_name = 'get_failed_questions'; 
+                    } else {
+                        rpc_name = 'get_stand_alone_questions'; // Asumimos esta RPC fue creada con filtro IS NULL
+                    }
+                    document.getElementById('mode-subtitle').innerText = "Interactive Practice";
                 }
-                // C. FALLBACK
                 else {
-                    const response = await _supabase.rpc('get_random_questions', { quantity: 10 });
-                    data = response.data;
-                    error = response.error;
+                    // FALLBACK: Si no hay modo, asumimos práctica
+                    rpc_name = 'get_stand_alone_questions'; 
                 }
+
+
+                // 2. LLAMADA A LA BASE DE DATOS
+                const response = await _supabase.rpc(rpc_name, { 
+                    quantity: paramCount 
+                });
+                
+                data = response.data;
+                error = response.error;
 
                 if (error) throw error;
-                if (!data || data.length === 0) return;
+                if (!data || data.length === 0) {
+                    document.getElementById('question-text').innerText = "No se encontraron preguntas para este modo. Intente con otro filtro.";
+                    return;
+                }
 
-                // --- GESTIÓN DE CASOS CLÍNICOS (FETCH ADICIONAL) ---
+                // --- GESTIÓN DE CASOS CLÍNICOS (El motor ahora sabe si necesita el sidebar) ---
                 const caseIds = [...new Set(data.map(q => q.case_id).filter(id => id !== null))];
                 let casesMap = {};
 
@@ -435,7 +447,7 @@
 
             } catch (err) {
                 console.error("Error loading questions:", err);
-                document.getElementById('question-text').innerText = "Error loading database.";
+                document.getElementById('question-text').innerText = `Error loading database: ${err.message}. Revise sus RPCs.`;
             }
         }
 
@@ -764,7 +776,7 @@
 
         function toggleMark() { console.log("Mark toggled"); }
         function finishQuiz() { 
-            if(confirm("Finish and exit?\")) window.location.href = 'dashboard.html'; 
+            if(confirm("Finish and exit?")) window.location.href = 'dashboard.html'; 
         }
 
     </script>
