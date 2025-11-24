@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INBDE Pro Lab Engine</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- INBDE SPECIFIC STYLES --- */
+        body { 
+            font-family: Arial, Helvetica, sans-serif; 
+            background-color: #f0f0f0;
+        }
+
+        /* Header Gradient/Color */
+        .inbde-header {
+            background-color: #0060a9; /* Main Blue matches image */
+            color: white;
+        }
+
+        /* Footer Gradient */
+        .inbde-footer {
+            background: linear-gradient(to bottom, #0060a9 0%, #004b8d 100%);
+            border-top: 4px solid #004b8d;
+        }
+
+        /* Custom 3D Buttons (glossy effect) */
+        .btn-glossy {
+            background: linear-gradient(to bottom, #4c96d7 0%, #1a6cb0 50%, #1a6cb0 100%);
+            border: 1px solid #0d4e85;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 2px rgba(0,0,0,0.2);
+            color: white;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            text-shadow: 0 -1px 0 rgba(0,0,0,0.3);
+            font-family: 'Arial Narrow', Arial, sans-serif;
+        }
+        .btn-glossy:hover {
+            background: linear-gradient(to bottom, #5ba4e5 0%, #257bc4 50%, #257bc4 100%);
+        }
+        .btn-glossy:active {
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+            transform: translateY(1px);
+        }
+
+        /* Left Panel Tables */
+        .clinical-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .clinical-table th {
+            background-color: #dceefb; /* Light blue header */
+            color: #000;
+            text-align: left;
+            padding: 8px;
+            border: 1px solid #888;
+            font-weight: bold;
+        }
+        .clinical-table td {
+            background-color: #fff;
+            padding: 8px;
+            border: 1px solid #888;
+            vertical-align: top;
+            color: #000;
+        }
+
+        /* Tabs */
+        .tab-btn {
+            border: 1px solid #000;
+            background-color: #fff;
+            padding: 8px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-right: 4px;
+            border-bottom: none;
+            position: relative;
+            top: 1px;
+            min-width: 100px;
+        }
+        .tab-btn.active {
+            font-weight: bold;
+            z-index: 10;
+            border-bottom: 1px solid #fff; /* Hide border to merge with content */
+        }
+        .tab-btn.inactive {
+            background-color: #e0e0e0;
+            color: #555;
+        }
+
+        /* Option Styling */
+        .option-row {
+            display: flex;
+            align-items: center;
+            border: 1px solid #e0e0e0;
+            background: white;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .option-row:hover {
+            border-color: #bbb;
+        }
+        .option-row.selected {
+            background-color: #dceefb; /* Match Image Selection Color */
+            border-color: #8fbce6;
+        }
+        
+        /* Radio Button Simulation */
+        .custom-radio {
+            width: 18px;
+            height: 18px;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .option-row.selected .custom-radio {
+            border-color: #0060a9;
+        }
+        .option-row.selected .custom-radio::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background-color: #0060a9;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden">
+
+    <!-- 1. HEADER -->
+    <header class="inbde-header h-14 flex items-center justify-between px-4 shrink-0 shadow-md z-20">
+        <!-- Left: Question Counter -->
+        <div class="text-lg font-normal w-1/4">
+            Question <span id="current-q-num">12</span> of <span id="total-q-num">100</span>
+        </div>
+        
+        <!-- Center: Branding -->
+        <div class="text-center flex flex-col justify-center w-2/4">
+            <div class="text-sm font-bold tracking-wide">INBDE Pro Lab</div>
+            <div id="mode-subtitle" class="text-xs text-blue-200">INBDE | Simulation Exam</div>
+        </div>
+
+        <!-- Right: Time & Settings -->
+        <div class="flex items-center justify-end gap-3 w-1/4">
+            <!-- TIMER CONTAINER: Hidden in Practice Mode -->
+            <div id="timer-container" class="text-lg">
+                Time remaining: <span id="timer-display" class="font-mono">01:42:34</span>
+            </div>
+            <button class="text-white hover:text-blue-200">
+                <i class="fa-solid fa-gear text-xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- 2. MAIN CONTENT SPLIT -->
+    <main class="flex-1 flex overflow-hidden w-full max-w-7xl mx-auto bg-white shadow-xl">
+        
+        <!-- LEFT PANEL: PATIENT HISTORY (Visible only in Simulation Mode) -->
+        <section id="left-panel" class="w-[40%] flex flex-col border-r border-gray-300 bg-white p-4 overflow-hidden transition-all duration-300">
+            
+            <!-- Tabs -->
+            <div class="flex border-b border-black mb-0 z-10">
+                <button id="tab-photos" class="tab-btn inactive" onclick="switchTab('photos')">PHOTOS</button>
+                <button id="tab-clinical" class="tab-btn active" onclick="switchTab('clinical')">CLINICAL EXAM</button>
+            </div>
+
+            <!-- Content Container -->
+            <div class="border border-black border-t-0 flex-1 overflow-hidden relative bg-white">
+                
+                <!-- VIEW 1: Clinical Text -->
+                <div id="view-clinical" class="absolute inset-0 overflow-y-auto p-0 custom-scrollbar">
+                    <table class="clinical-table">
+                        <tr><th>Patient</th></tr>
+                        <tr><td><div id="patient-info"></div></td></tr>
+                        <tr><th>Chief Complaint</th></tr>
+                        <tr><td><div id="chief-complaint"></div></td></tr>
+                        <tr><th>Background and/or Patient History</th></tr>
+                        <tr><td><div id="patient-history" class="space-y-1"></div></td></tr>
+                        <tr><th>Current Findings</th></tr>
+                        <tr><td><div id="current-findings"></div></td></tr>
+                    </table>
+                </div>
+
+                <!-- VIEW 2: Photos -->
+                <div id="view-photos" class="absolute inset-0 hidden bg-black flex items-center justify-center p-4">
+                    <img id="case-image" src="" alt="Clinical Case Photo" class="max-w-full max-h-full object-contain">
+                    <div id="no-photo-msg" class="text-white hidden">No photos available for this case.</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: QUESTION & OPTIONS (Expands in Practice Mode) -->
+        <section id="right-panel" class="w-[60%] flex flex-col p-6 overflow-y-auto custom-scrollbar relative transition-all duration-300">
+            
+            <div class="max-w-4xl mx-auto w-full"> <!-- Center content in practice mode -->
+                <!-- Question Text -->
+                <div class="mb-6">
+                    <p id="question-text" class="text-lg text-gray-900 leading-snug">
+                        Loading...
+                    </p>
+                </div>
+
+                <!-- Options List -->
+                <div id="options-container" class="space-y-3 mb-8">
+                    <!-- Injected via JS -->
+                </div>
+
+                <!-- Hidden Explanation Box -->
+                <div id="explanation-box" class="hidden mt-6 p-4 bg-yellow-50 border border-yellow-200 text-sm">
+                    <h4 class="font-bold mb-2">Explanation:</h4>
+                    <p id="explanation-text"></p>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- 3. FOOTER -->
+    <footer class="inbde-footer h-16 flex items-center justify-between px-6 shrink-0 z-30">
+        
+        <div class="flex gap-4">
+            <button class="btn-glossy px-6 py-2 rounded-sm text-sm" onclick="prevQuestion()">
+                Previous
+            </button>
+            <button class="btn-glossy px-8 py-2 rounded-sm text-sm" onclick="nextQuestion()">
+                Next
+            </button>
+        </div>
+
+        <div class="flex gap-4">
+            <button class="btn-glossy px-6 py-2 rounded-sm text-sm opacity-90" onclick="toggleMark()">
+                Mark
+            </button>
+            <button class="btn-glossy px-6 py-2 rounded-sm text-sm opacity-90" onclick="finishQuiz()">
+                Review
+            </button>
+        </div>
+
+    </footer>
+
+    <!-- LOGIC -->
+    <script>
+        // --- DATA ---
+        const mockQuestions = [
+            {
+                id: 12, 
+                text: "Which is the best treatment for tooth 8?",
+                patientInfo: "Male, 14 years old, accompanied by parent",
+                chiefComplaint: "Parent: \"My son was playing soccer and hit his front tooth four months ago.\"",
+                history: "Tooth 8 was avulsed and was placed in milk within five minutes of the injury.<br>Tooth 8 was reimplanted and splinted within 30 minutes.<br>Two-week follow-up appointment was canceled due to scheduling conflicts.",
+                findings: "No response to pulp vitality tests, tooth 8.<br>Hypersensitive to palpation and percussion, tooth 8.",
+                photoUrl: "https://via.placeholder.com/600x800/000000/FFFFFF?text=X-RAY+TOOTH+8",
+                options: [
+                    { id: 'A', text: "Extraction" },
+                    { id: 'B', text: "Root canal treatment" },
+                    { id: 'C', text: "Apexogenesis" },
+                    { id: 'D', text: "Apexification" }
+                ],
+                correctOption: 'D', 
+                explanation: "Given the necrotic pulp and open apex (implied by age and history), Apexification or Regenerative Endodontics is indicated."
+            },
+            {
+                id: 13,
+                text: "What is the most likely diagnosis?",
+                patientInfo: "Female, 30 years old",
+                chiefComplaint: "Pain when biting.",
+                history: "Recent crown placement on tooth 30.",
+                findings: "Percussion positive.",
+                photoUrl: null,
+                options: [
+                    { id: 'A', text: "Reversible pulpitis" },
+                    { id: 'B', text: "Symptomatic apical periodontitis" },
+                    { id: 'C', text: "Acute apical abscess" },
+                    { id: 'D', text: "Cracked tooth syndrome" }
+                ],
+                correctOption: 'B',
+                explanation: "Positive percussion suggests apical inflammation."
+            }
+        ];
+
+        // --- STATE & MODE CONFIG ---
+        const urlParams = new URLSearchParams(window.location.search);
+        // Change defaultMode to 'practice' to test the other layout, or use ?mode=practice in URL
+        const defaultMode = 'simulation'; 
+        const currentMode = urlParams.get('mode') || defaultMode;
+
+        let currentIndex = 0;
+        let selectedOptionId = null; 
+        let timerSeconds = 6154; 
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            configureLayoutMode();
+            renderQuestion();
+            
+            // Only start timer in Simulation mode
+            if (currentMode === 'simulation') {
+                startTimer();
+            }
+        });
+
+        // --- LAYOUT MANAGER ---
+        function configureLayoutMode() {
+            const leftPanel = document.getElementById('left-panel');
+            const rightPanel = document.getElementById('right-panel');
+            const timerContainer = document.getElementById('timer-container');
+            const subTitle = document.getElementById('mode-subtitle');
+
+            console.log("Initializing Mode:", currentMode);
+
+            if (currentMode === 'practice' || currentMode === 'stand_alone') {
+                // PRACTICE MODE: Hide Left Panel, Hide Timer, Full Width Right Panel
+                leftPanel.style.display = 'none';
+                
+                rightPanel.classList.remove('w-[60%]');
+                rightPanel.classList.add('w-full');
+                
+                timerContainer.style.visibility = 'hidden'; // Keep spacing or use display:none to remove
+                subTitle.textContent = "INBDE | Practice Questions";
+            } else {
+                // SIMULATION MODE: Default Split Screen
+                leftPanel.style.display = 'flex';
+                
+                rightPanel.classList.remove('w-full');
+                rightPanel.classList.add('w-[60%]');
+                
+                timerContainer.style.visibility = 'visible';
+                subTitle.textContent = "INBDE | Simulation Exam | Day 1 – Set 1";
+            }
+        }
+
+        // --- RENDER LOGIC ---
+        function renderQuestion() {
+            const q = mockQuestions[currentIndex];
+
+            // 1. Reset Tabs (Only relevant for Sim mode, but harmless in Practice)
+            switchTab('clinical');
+
+            // 2. Update Header Info
+            document.getElementById('current-q-num').textContent = q.id;
+
+            // 3. Update Left Panel Data (Even if hidden, we populate it)
+            document.getElementById('patient-info').innerHTML = q.patientInfo;
+            document.getElementById('chief-complaint').innerHTML = q.chiefComplaint;
+            document.getElementById('patient-history').innerHTML = q.history;
+            document.getElementById('current-findings').innerHTML = q.findings;
+
+            // 4. Photo Logic
+            const imgEl = document.getElementById('case-image');
+            const noPhotoMsg = document.getElementById('no-photo-msg');
+            if (q.photoUrl) {
+                imgEl.src = q.photoUrl;
+                imgEl.classList.remove('hidden');
+                noPhotoMsg.classList.add('hidden');
+            } else {
+                imgEl.classList.add('hidden');
+                noPhotoMsg.classList.remove('hidden');
+            }
+
+            // 5. Update Right Panel Question
+            document.getElementById('question-text').textContent = q.text;
+            
+            // 6. Options
+            const optsContainer = document.getElementById('options-container');
+            optsContainer.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const row = document.createElement('div');
+                row.className = `option-row ${selectedOptionId === opt.id ? 'selected' : ''}`;
+                row.onclick = () => selectOption(opt.id);
+                
+                row.innerHTML = `
+                    <div class="custom-radio"></div>
+                    <span class="text-gray-800 text-sm font-medium">${opt.id}. ${opt.text}</span>
+                `;
+                optsContainer.appendChild(row);
+            });
+        }
+
+        // --- UTILS ---
+        function switchTab(tabName) {
+            const tabPhotos = document.getElementById('tab-photos');
+            const tabClinical = document.getElementById('tab-clinical');
+            const viewPhotos = document.getElementById('view-photos');
+            const viewClinical = document.getElementById('view-clinical');
+
+            if (tabName === 'clinical') {
+                tabClinical.classList.add('active');
+                tabClinical.classList.remove('inactive');
+                tabPhotos.classList.remove('active');
+                tabPhotos.classList.add('inactive');
+                viewClinical.classList.remove('hidden');
+                viewPhotos.classList.add('hidden');
+            } else {
+                tabPhotos.classList.add('active');
+                tabPhotos.classList.remove('inactive');
+                tabClinical.classList.remove('active');
+                tabClinical.classList.add('inactive');
+                viewPhotos.classList.remove('hidden');
+                viewClinical.classList.add('hidden');
+            }
+        }
+
+        function selectOption(id) {
+            selectedOptionId = id;
+            renderQuestion(); 
+        }
+
+        function nextQuestion() {
+            if (currentIndex < mockQuestions.length - 1) {
+                currentIndex++;
+                selectedOptionId = null; 
+                renderQuestion();
+            } else {
+                alert("End of set.");
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                selectedOptionId = null;
+                renderQuestion();
+            }
+        }
+
+        function startTimer() {
+            setInterval(() => {
+                if (timerSeconds > 0) {
+                    timerSeconds--;
+                    const h = Math.floor(timerSeconds / 3600).toString().padStart(2, '0');
+                    const m = Math.floor((timerSeconds % 3600) / 60).toString().padStart(2, '0');
+                    const s = (timerSeconds % 60).toString().padStart(2, '0');
+                    document.getElementById('timer-display').textContent = `${h}:${m}:${s}`;
+                }
+            }, 1000);
+        }
+
+        function toggleMark() {
+            console.log("Mark toggled");
+        }
+
+        function finishQuiz() {
+            alert("Review Mode");
+        }
+
+    </script>
+</body>
+</html>
