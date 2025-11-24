@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>INBDE Pro - Access</title>
-<!-- Importamos la fuente Inter para coincidir con el diseño del Dashboard -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
     /* --- 1. VARIABLES & BASE (Extraídas de tu CSS) --- */
@@ -125,8 +124,8 @@
         border-radius: 12px; 
         cursor: pointer; 
         font-size: 0.95rem; 
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        text-transform: uppercase; 
+        letter-spacing: 1px; 
         margin-top: 10px; 
         transition: transform 0.2s, box-shadow 0.2s; 
         box-shadow: 0 4px 15px rgba(250, 204, 21, 0.2);
@@ -187,7 +186,6 @@
     <div class="brand-title">INBDE Pro</div>
     <div class="brand-subtitle">Student Access Portal</div>
     
-    <!-- LOGIN VIEW -->
     <div id="view-login" class="form-view active">
         
         <div class="input-group">
@@ -212,7 +210,6 @@
         </button>
     </div>
 
-    <!-- FORGOT PASSWORD VIEW -->
     <div id="view-forgot" class="form-view">
         <p style="color:var(--text-muted); margin-bottom:25px; line-height: 1.5; font-size: 0.9rem;">
             Enter your email address and we'll send you a link to reset your password.
@@ -230,7 +227,6 @@
     <div id="msg-box" class="msg-box"></div>
 </div>
 
-<!-- SUPABASE LOGIC -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
     // --- CONFIGURACIÓN DE SUPABASE ---
@@ -279,18 +275,22 @@
         }
     }
 
-    // --- 2. LOGIN CON GOOGLE ---
+    // --- 2. LOGIN CON GOOGLE (CORREGIDO: URL DINÁMICA) ---
     async function handleGoogleLogin() {
+        // Construye la URL dinámicamente basándose en el origen actual (localhost o producción)
+        // Esto asegura que siempre redirija al dashboard.html en la misma carpeta donde estás.
+        const redirectUrl = new URL('dashboard.html', window.location.href).href;
+
         const { data, error } = await _supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: 'https://carloslplorusso.github.io/portalinbdepro/' 
+                redirectTo: redirectUrl 
             }
         });
         if (error) showMsg(error.message, 'error');
     }
 
-    // --- 3. RECUPERAR CONTRASEÑA ---
+    // --- 3. RECUPERAR CONTRASEÑA (CORREGIDO: URL DINÁMICA) ---
     async function handleReset() {
         const email = document.getElementById('reset-email').value;
         const btn = document.getElementById('btn-reset');
@@ -300,8 +300,11 @@
         btn.innerText = 'Sending...'; 
         btn.disabled = true;
 
+        // Construye la URL dinámicamente para el link de reseteo
+        const redirectUrl = new URL('dashboard.html', window.location.href).href;
+
         const { data, error } = await _supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: 'https://carloslplorusso.github.io/portalinbdepro/', 
+            redirectTo: redirectUrl, 
         });
 
         if (error) {
