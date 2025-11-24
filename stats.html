@@ -2,223 +2,500 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>INBDE Pro - Statistics</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>INBDE Pro - Statistics Lab</title>
 <style>
+    /* --- 1. VARIABLES & BASE --- */
     :root {
-        --primary-color: #fcdc11;
-        --primary-dark: #121212;
-        --light-bg: #f3f4f6;
-        --white: #ffffff;
-        --border-color: #e5e7eb;
-        --text-muted: #6b7280;
-        --success: #10b981;
-        --danger: #ef4444;
+        --accent: #facc15; 
+        --accent-glow: rgba(250, 204, 21, 0.2);
+        --bg-dark: #050505;
+        --card-bg: #121214;
+        --card-bg-hero: #1c1c20;
+        --card-border: #27272a;
+        --text-main: #ffffff;
+        --text-muted: #a1a1aa;
+        --success: #10b981; 
+        --danger: #ef4444; 
     }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        background-color: var(--light-bg);
-        color: var(--primary-dark);
         margin: 0;
-        padding: 20px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background-color: #000;
+        color: var(--text-main);
+        height: 100vh; /* Fallback */
+        height: 100dvh; /* Dynamic height for mobile */
+        overflow: hidden; /* ZERO BODY SCROLL */
         display: flex;
         justify-content: center;
-        min-height: 100vh;
-        box-sizing: border-box;
-    }
-
-    .main-wrapper {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        max-width: 900px;
-        background-color: var(--white);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        border-radius: 16px;
-        overflow: hidden;
-        border: 1px solid var(--border-color);
-        min-height: 85vh;
-    }
-
-    .brand-header {
-        background-color: var(--primary-dark);
-        color: var(--primary-color);
-        padding: 15px 25px;
-        font-weight: 800;
-        font-size: 1.1em;
-        display: flex;
-        justify-content: space-between;
         align-items: center;
+        background: radial-gradient(circle at 50% 0%, #1a1830 0%, #000000 80%);
     }
 
-    .btn-home {
-        background: transparent;
-        border: 1px solid var(--primary-color);
-        color: var(--primary-color);
-        padding: 6px 12px;
-        font-size: 0.8em;
-        font-weight: 700;
-        cursor: pointer;
-        border-radius: 6px;
-        text-decoration: none;
-        transition: all 0.2s;
-    }
-    .btn-home:hover { background-color: rgba(252, 220, 17, 0.2); }
-
-    .content-container {
-        padding: 40px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        flex: 1;
-    }
-
-    .stats-card {
-        background: white;
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        padding: 40px;
+    /* --- 2. MAIN LAYOUT --- */
+    .lab-container {
         width: 100%;
-        max-width: 500px;
-        text-align: center;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-    }
-
-    .stats-title { font-size: 2em; font-weight: 800; margin-bottom: 10px; }
-    .user-badge { background: #f3f4f6; padding: 5px 15px; border-radius: 20px; font-size: 0.9em; color: #666; display: inline-block; margin-bottom: 30px; }
-
-    .stats-grid {
+        max-width: 1200px;
+        height: 96vh;
         display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 15px;
-        text-align: left;
-        margin-bottom: 30px;
-        border-top: 1px solid #eee;
-        border-bottom: 1px solid #eee;
-        padding: 20px 0;
+        grid-template-rows: auto 1fr;
+        gap: 20px; 
+        padding: 20px;
+        position: relative;
+        background: rgba(0,0,0,0.3);
+        border-radius: 20px;
+        overflow-y: auto; /* Scroll allowed on desktop if needed */
+        scrollbar-width: thin;
+        scrollbar-color: var(--accent) #111;
     }
 
-    .stat-label { font-weight: 500; color: #555; }
-    .stat-value { font-weight: 800; text-align: right; }
-    .val-green { color: var(--success); }
-    .val-red { color: var(--danger); }
+    /* --- 3. HEADER AREA --- */
+    .header-area {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding-bottom: 10px;
+        z-index: 10;
+        flex-shrink: 0;
+    }
 
-    .accuracy-box {
-        background: #fffce0;
-        border: 2px solid var(--primary-color);
+    .lab-title {
+        font-size: 2rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: -1px;
+        margin: 0;
+        color: #fff;
+        text-shadow: 0 0 20px rgba(255,255,255,0.1);
+    }
+
+    .lab-subtitle {
+        color: var(--accent);
+        font-weight: 600;
+        font-size: 0.85rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-top: 5px;
+        opacity: 0.9;
+    }
+
+    .user-badge {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-muted);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-top: 10px;
+        display: inline-flex; align-items: center; gap: 6px;
+    }
+
+    /* --- 4. CENTER CONTENT --- */
+    .col-center { 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        gap: 20px; 
+        width: 100%; 
+        max-width: 600px; 
+        margin: 0 auto;
+        height: 100%;
+    }
+
+    /* --- 5. CARDS --- */
+    .card-promo-style {
+        width: 100%; 
+        background: linear-gradient(180deg, rgba(30, 30, 35, 0.8) 0%, rgba(10, 10, 10, 0.9) 100%); 
+        border: 1px solid var(--accent); 
+        border-radius: 16px; 
         padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 30px;
+        box-shadow: 0 0 25px rgba(0,0,0,0.5); 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center; 
+        align-items: center;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    
+    .card-promo-style::before {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        opacity: 0.7;
+    }
+
+    .accuracy-display {
+        font-size: 3.5rem;
+        font-weight: 900;
+        color: var(--accent);
+        text-shadow: 0 0 30px var(--accent-glow);
+        margin: 5px 0;
+        line-height: 1;
+    }
+
+    .card-label-top { color: #fff; font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase; opacity: 0.8; }
+    .card-label-bottom { color: var(--text-muted); font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase; margin-top: 5px; }
+
+    /* Grid for 2x2 Stats */
+    .grid-2x2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 15px;
+        width: 100%;
+        flex-grow: 1;
+    }
+
+    .hero-card { 
+        background: var(--card-bg-hero); 
+        border: 1px solid var(--card-border); 
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); 
+        border-radius: 14px; 
+        padding: 15px; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center; 
+        text-align: center; 
+        transition: transform 0.2s;
+        height: 100%;
+    }
+    
+    .hero-card .icon { font-size: 1.8rem; margin-bottom: 8px; }
+    .hero-card .title { font-size: 1.8rem; font-weight: 800; color: #fff; margin: 0; line-height: 1; }
+    .hero-card .sub { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 5px; font-weight: 500; }
+
+    /* --- EXPANDABLE CARD: TOPIC BREAKDOWN --- */
+    .card-expandable {
+        width: 100%;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 20;
+    }
+    .card-expandable:hover { border-color: #444; }
+
+    .expandable-header {
+        padding: 15px 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        background: rgba(255,255,255,0.02);
+        border-radius: 16px;
     }
-    .acc-label { font-weight: 800; font-size: 1.1em; }
-    .acc-value { font-size: 1.5em; font-weight: 900; }
+    
+    .expandable-header h3 { margin: 0; font-size: 0.95rem; color: #fff; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+    .chevron { transition: transform 0.3s; color: var(--text-muted); }
 
-    .btn-action {
-        background-color: var(--primary-color);
-        color: var(--primary-dark);
-        padding: 15px 30px;
-        font-size: 1em;
-        font-weight: 800;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
+    /* Hidden List */
+    .topic-list-container {
+        max-height: 0;
+        overflow: hidden;
+        background: #0a0a0a;
+        transition: max-height 0.4s ease-out; /* Smooth slide */
+    }
+
+    .card-expandable.open .topic-list-container {
+        /* On Desktop, just expand nicely */
+        max-height: 400px;
+        overflow-y: auto;
+        border-top: 1px solid var(--card-border);
+    }
+    
+    /* Scrollbar for the list */
+    .topic-list-container::-webkit-scrollbar { width: 4px; }
+    .topic-list-container::-webkit-scrollbar-track { background: #000; }
+    .topic-list-container::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+    .topic-item {
+        padding: 12px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .topic-item:last-child { border-bottom: none; }
+    .topic-row { display: flex; justify-content: space-between; font-size: 0.85rem; color: #ddd; }
+    .topic-pct { font-weight: 700; color: var(--accent); }
+    .progress-track { width: 100%; height: 5px; background: #222; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+
+    /* --- BUTTONS --- */
+    .action-container {
         width: 100%;
-        text-transform: uppercase;
-        transition: transform 0.1s;
-        text-decoration: none;
-        display: inline-block;
-        box-sizing: border-box;
+        flex-shrink: 0;
+        margin-top: auto; 
     }
-    .btn-action:hover { transform: translateY(-2px); }
 
+    .btn-start { 
+        display: block; width: 100%; 
+        background: var(--accent); color: #000; font-weight: 900; font-size: 1rem; 
+        padding: 16px 0; border-radius: 12px; text-transform: uppercase; 
+        letter-spacing: 1.5px; box-shadow: 0 4px 20px rgba(250, 204, 21, 0.2); 
+        text-align: center; text-decoration: none; border: none; cursor: pointer;
+        margin-bottom: 5px;
+        transition: background 0.2s;
+    }
+    .btn-start:hover { background: #fde047; }
+    .nav-actions { display: flex; justify-content: center; padding-bottom: 5px; }
+    .btn-back-small {
+        background: transparent; border: none; color: var(--text-muted);
+        font-size: 0.75rem; font-weight: 600; cursor: pointer; 
+        text-transform: uppercase; letter-spacing: 1px; text-decoration: none; padding: 10px;
+    }
+
+    /* --- MOBILE APP VIEW --- */
+    @media (max-width: 600px) {
+        .lab-container {
+            height: 100dvh;
+            padding: 12px 16px 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-radius: 0;
+            background: transparent;
+            overflow: hidden; 
+        }
+
+        .header-area { padding-bottom: 5px; gap: 2px; }
+        .lab-title { font-size: 1.4rem; }
+        .lab-subtitle { display: none; }
+        .user-badge { padding: 2px 10px; font-size: 0.7rem; margin-top: 5px; }
+
+        .col-center {
+            flex: 1;
+            gap: 12px;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .card-promo-style { padding: 15px; border-radius: 14px; }
+        .accuracy-display { font-size: 2.8rem; margin: 0; }
+        .card-label-top { font-size: 0.8rem; }
+        .card-label-bottom { display: none; }
+
+        .grid-2x2 { gap: 8px; min-height: 0; }
+        .hero-card { padding: 10px; border-radius: 12px; justify-content: center; }
+        .hero-card .icon { font-size: 1.4rem; margin-bottom: 4px; }
+        .hero-card .title { font-size: 1.5rem; }
+        .hero-card .sub { font-size: 0.65rem; }
+
+        /* Bottom Sheet Behavior */
+        .card-expandable { max-height: 50px; } 
+        
+        .card-expandable.open {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            width: 100%;
+            max-height: 75vh;
+            height: auto;
+            border-radius: 20px 20px 0 0;
+            border-bottom: none;
+            box-shadow: 0 -10px 50px rgba(0,0,0,0.9);
+            border-color: var(--accent);
+            background: #18181b;
+            z-index: 100;
+        }
+
+        .card-expandable.open .topic-list-container {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-bottom: 20px;
+            border-top: none; /* No top border in sheet mode */
+        }
+
+        .card-expandable.open::before {
+            content: '';
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.7);
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .expandable-header h3 { font-size: 0.85rem; }
+        .btn-start { padding: 14px 0; font-size: 0.9rem; margin-top: 0; }
+        .nav-actions { display: none; }
+    }
 </style>
 </head>
 <body onload="loadStats()">
 
-<div class="main-wrapper">
-    <div class="brand-header">
-        <span>INBDE Pro</span>
-        <a href="dashboard.html" class="btn-home">🏠 HOME</a>
+<div class="lab-container">
+    
+    <!-- HEADER -->
+    <div class="header-area">
+        <h1 class="lab-title">INBDE Pro</h1>
+        <div class="lab-subtitle">Performance Hub</div>
+        <div class="user-badge">
+            <span id="user-display">Guest</span>
+        </div>
     </div>
 
-    <div class="content-container">
-        <div class="stats-card">
-            <div class="stats-title">Personal Dashboard 📊</div>
-            <div class="user-badge">User: <span id="user-display">Loading...</span></div>
-            
-            <p style="color:#999; margin-bottom:20px;">Your cumulative performance.</p>
-
-            <div class="stats-grid">
-                <span class="stat-label">Total Quizzes Taken:</span>
-                <span class="stat-value" id="total-quizzes">0</span>
-
-                <span class="stat-label">Questions Answered:</span>
-                <span class="stat-value" id="total-questions">0</span>
-
-                <span class="stat-label val-green">Total Correct:</span>
-                <span class="stat-value val-green" id="total-correct">0</span>
-
-                <span class="stat-label val-red">Total Incorrect:</span>
-                <span class="stat-value val-red" id="total-incorrect">0</span>
-            </div>
-
-            <div class="accuracy-box">
-                <span class="acc-label">Global Accuracy:</span>
-                <span class="acc-value" id="accuracy-pct">0%</span>
-            </div>
-
-            <a href="dashboard.html" class="btn-action">START NEW QUIZ</a>
+    <!-- MAIN CONTENT CENTER -->
+    <div class="col-center">
+        
+        <!-- 1. GLOBAL ACCURACY CARD -->
+        <div class="card-promo-style">
+            <div class="card-label-top">Global Accuracy</div>
+            <div id="accuracy-pct" class="accuracy-display">0%</div>
+            <div class="card-label-bottom">Cumulative Performance</div>
         </div>
+
+        <!-- 2. STATS GRID -->
+        <div class="grid-2x2">
+            <div class="hero-card">
+                <div class="icon">📂</div>
+                <div class="title" id="total-quizzes">0</div>
+                <div class="sub">Quizzes</div>
+            </div>
+
+            <div class="hero-card">
+                <div class="icon">❓</div>
+                <div class="title" id="total-questions">0</div>
+                <div class="sub">Questions</div>
+            </div>
+
+            <div class="hero-card" style="border-bottom: 2px solid var(--success);">
+                <div class="icon">✅</div>
+                <div class="title" id="total-correct" style="color: var(--success);">0</div>
+                <div class="sub">Correct</div>
+            </div>
+
+            <div class="hero-card" style="border-bottom: 2px solid var(--danger);">
+                <div class="icon">❌</div>
+                <div class="title" id="total-incorrect" style="color: var(--danger);">0</div>
+                <div class="sub">Incorrect</div>
+            </div>
+        </div>
+
+        <!-- 3. TOPIC BREAKDOWN (Expandable / Bottom Sheet) -->
+        <div class="card-expandable" id="topics-card" onclick="toggleTopics(event)">
+            <div class="expandable-header">
+                <h3>📊 Topic Breakdown</h3>
+                <span class="chevron">▼</span>
+            </div>
+            
+            <div class="topic-list-container">
+                <!-- 10 Mock Areas (INBDE Topics) -->
+                
+                <div class="topic-item">
+                    <div class="topic-row"><span>Patient Management</span><span class="topic-pct">85%</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: 85%;"></div></div>
+                </div>
+
+                <div class="topic-item">
+                    <div class="topic-row"><span>Pharmacology</span><span class="topic-pct" style="color:#fbbf24">62%</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: 62%; background:#fbbf24"></div></div>
+                </div>
+
+                <div class="topic-item">
+                    <div class="topic-row"><span>Oral Pathology</span><span class="topic-pct" style="color:#ef4444">45%</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: 45%; background:#ef4444"></div></div>
+                </div>
+
+                <div class="topic-item">
+                    <div class="topic-row"><span>Prosthodontics</span><span class="topic-pct">78%</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: 78%;"></div></div>
+                </div>
+
+                <div class="topic-item">
+                    <div class="topic-row"><span>Endodontics</span><span class="topic-pct">90%</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: 90%;"></div></div>
+                </div>
+
+                <div class="topic-item">
+                    <div class="topic-row"><span>Operative Dentistry</span><span class="topic-pct">55%</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: 55%; background:#fbbf24"></div></div>
+                </div>
+
+                <div class="topic-item">
+                    <div class="topic-row"><span>Periodontics</span><span class="topic-pct">70%</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: 70%;"></div></div>
+                </div>
+
+                <div class="topic-item">
+                    <div class="topic-row"><span>Orthodontics</span><span class="topic-pct">40%</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: 40%; background:#ef4444"></div></div>
+                </div>
+
+                <div class="topic-item">
+                    <div class="topic-row"><span>Oral Surgery</span><span class="topic-pct">82%</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: 82%;"></div></div>
+                </div>
+
+                <div class="topic-item">
+                    <div class="topic-row"><span>Anatomy</span><span class="topic-pct">65%</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: 65%; background:#fbbf24"></div></div>
+                </div>
+
+                <div class="topic-item" style="text-align:center; padding:15px; color:#666; font-size:0.8rem;">
+                    (Tap header to close)
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. BUTTONS -->
+        <div class="action-container">
+            <a href="dashboard.html" class="btn-start">Start New Quiz</a>
+            <div class="nav-actions">
+                <a href="dashboard.html" class="btn-back-small">Back to Dashboard</a>
+            </div>
+        </div>
+
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
+    function toggleTopics(e) {
+        // Allow clicking the list items without closing, but close if clicking header when open
+        const card = document.getElementById('topics-card');
+        const isHeaderClick = e.target.closest('.expandable-header');
+        
+        if (card.classList.contains('open')) {
+            // If open, only close if the header was clicked
+            if (!isHeaderClick) return;
+        }
+        // If closed, open it regardless of where clicked (easier for user)
+        
+        card.classList.toggle('open');
+        
+        // Rotate chevron
+        const chevron = card.querySelector('.chevron');
+        chevron.style.transform = card.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+
+    // Config Supabase
     const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function loadStats() {
-        // 1. Obtener sesión real
         const { data: { session } } = await _supabase.auth.getSession();
+        if (!session) return; 
 
-        if (!session) {
-            document.getElementById('user-display').innerText = "Guest (No data)";
-            return;
-        }
-
-        // Mostrar email
         const userEmail = session.user.email;
-        document.getElementById('user-display').innerText = userEmail;
+        // Shorten email for mobile
+        const displayUser = userEmail.length > 20 ? userEmail.substring(0, 18) + '...' : userEmail;
+        document.getElementById('user-display').innerText = displayUser;
 
-        // 2. Consultar datos en Supabase (Tabla 'resultados')
-        const { data, error } = await _supabase
-            .from('resultados')
-            .select('*')
-            .eq('username', userEmail);
+        const { data, error } = await _supabase.from('resultados').select('*').eq('username', userEmail);
 
-        if (error) {
-            console.error("Error loading stats:", error);
-            return;
-        }
+        if (error || !data || data.length === 0) return;
 
-        if (!data || data.length === 0) {
-            console.log("No stats found yet.");
-            return;
-        }
-
-        // 3. Calcular Totales
-        let quizzes = data.length;
-        let totalQ = 0;
-        let totalCorrect = 0;
-
+        let totalQ = 0, totalCorrect = 0;
         data.forEach(row => {
-            // Aseguramos que sean números
             totalQ += Number(row.total || 0);
             totalCorrect += Number(row.correct || 0);
         });
@@ -226,12 +503,15 @@
         let totalIncorrect = totalQ - totalCorrect;
         let accuracy = totalQ > 0 ? Math.round((totalCorrect / totalQ) * 100) : 0;
 
-        // 4. Pintar en HTML
-        document.getElementById('total-quizzes').innerText = quizzes;
+        document.getElementById('total-quizzes').innerText = data.length;
         document.getElementById('total-questions').innerText = totalQ;
         document.getElementById('total-correct').innerText = totalCorrect;
         document.getElementById('total-incorrect').innerText = totalIncorrect;
-        document.getElementById('accuracy-pct').innerText = accuracy + "%";
+        
+        const accElement = document.getElementById('accuracy-pct');
+        accElement.innerText = accuracy + "%";
+        if(accuracy >= 80) accElement.style.color = "var(--success)";
+        else if(accuracy < 60) accElement.style.color = "var(--danger)";
     }
 </script>
 
