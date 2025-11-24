@@ -251,27 +251,14 @@
 
     .card-notes { background-image: radial-gradient(#333 1px, transparent 1px); background-size: 12px 12px; }
     
-    /* UPDATE: METRICS CARD CON ESTILO PROMO */
+    /* ESTILO METRICS (Escritorio) - Manteniendo estilo previo */
     .card-metrics {
-        /* Reemplazando estilo oscuro por estilo Promo */
-        background: linear-gradient(145deg, rgba(250, 204, 21, 0.15), rgba(0,0,0,0) 70%);
-        border: 2px solid var(--accent);
-        box-shadow: 0 0 20px rgba(250, 204, 21, 0.15);
-        border-radius: 16px;
-        /* Mantener comportamiento de layout */
-        display: flex; flex-direction: column;
+        background: linear-gradient(180deg, var(--card-bg-hero) 0%, #080808 100%);
+        border-top: 1px solid #333; box-shadow: 0 -10px 40px -20px rgba(0,0,0,1);
     }
-    /* Hover Effect para Metrics */
-    .card-metrics:hover {
-        transform: scale(1.05) translateY(-5px);
-        box-shadow: 0 10px 30px rgba(250, 204, 21, 0.3);
-        background: linear-gradient(145deg, rgba(250, 204, 21, 0.25), rgba(0,0,0,0) 80%);
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
     .metrics-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-    .metrics-title { font-size: 0.7rem; color: #ddd; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
-    .metrics-icon { opacity: 0.9; color: var(--accent); display: flex; align-items: center; }
+    .metrics-title { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+    .metrics-icon { opacity: 0.7; color: #fff; display: flex; align-items: center; }
 
     .pie-container { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
     .pie-chart-main {
@@ -416,46 +403,51 @@
         .hero-card .title { font-size: 0.7rem; }
         .hero-card .sub { display: none; }
 
-        /* 4. DAILY LAB RUN (Columna Izquierda) */
+        /* 4. DAILY LAB RUN (Columna Izquierda - Row 3) */
+        /* Usamos selectores específicos para ubicar con grid */
         .col-left .card-promo-style {
             grid-column: 1 / 2; 
+            grid-row: 4; /* Fila 4 en el flujo */
             order: 3;
-            margin-bottom: 0;
             width: 100%; height: 100%;
-            min-height: 170px; /* Cuadrada */
-            padding: 15px;
+            min-height: 170px; 
+            margin: 0;
             justify-content: space-between;
         }
-        /* Ajuste interno Daily */
         .col-left .card-promo-style .promo-title { font-size: 0.9rem; line-height: 1.2; margin-bottom: 5px; }
         .col-left .card-promo-style .promo-desc { font-size: 0.7rem; margin-bottom: 10px; line-height: 1.2; }
         .col-left .card-promo-style .btn-start { font-size: 0.75rem; padding: 10px 0; margin-top: auto; }
 
-        /* 5. PERFORMANCE METRICS (Columna Derecha - AHORA CON ESTILO PROMO) */
+        /* 5. PERFORMANCE METRICS (Columna Derecha - Row 3) */
+        /* MODIFICADO: Ahora tiene apariencia "Promo" en móvil */
         .card-metrics {
             grid-column: 2 / 3; 
+            grid-row: 4;
             order: 3;
             width: 100%; height: 100%;
-            min-height: 170px; /* Igualar Daily */
+            min-height: 170px; 
             margin: 0;
             flex-direction: column; justify-content: center;
-            /* Asegurar que el borde y estilo se mantengan en móvil */
-            border: 2px solid var(--accent);
+            /* APARIENCIA PROMO SOLO MÓVIL */
             background: linear-gradient(145deg, rgba(250, 204, 21, 0.15), rgba(0,0,0,0) 70%);
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.15);
+            border-radius: 16px;
         }
         .metrics-header { margin-bottom: 5px; }
+        .metrics-title { color: #fff; font-weight: 800; } /* Texto más brillante en móvil */
         .pie-chart-main { width: 75px; height: 75px; }
 
-        /* 6. IA LAB (Full Width Centrado) */
+        /* 6. IA LAB (Full Width Centrado - Row 4) */
         .col-right .card-promo-style {
-            grid-column: 1 / -1; /* Ocupa todo el ancho */
+            grid-column: 1 / -1; 
+            grid-row: 5;
             order: 4;
             width: 100%;
             min-height: auto;
             padding: 15px;
             margin: 10px 0;
             flex-direction: row; align-items: center; justify-content: space-between;
-            /* Estilo destacado amarillo como en imagen */
             border: 2px solid var(--accent);
             box-shadow: 0 0 15px rgba(250, 204, 21, 0.15);
         }
@@ -463,17 +455,19 @@
         .col-right .card-promo-style .promo-desc { display: block; font-size: 0.75rem; margin: 0; max-width: 120px; line-height: 1.2; opacity: 0.8; }
         .col-right .card-promo-style .btn-start { width: auto; padding: 8px 15px; font-size: 0.75rem; margin: 0; }
 
-        /* 7. NOTES (Columna Izquierda) */
+        /* 7. NOTES (Columna Izquierda - Row 5) */
         .col-left .card-notes {
             grid-column: 1 / 2; 
+            grid-row: 6;
             order: 5;
             width: 100%; height: 140px;
             margin: 0;
         }
 
-        /* 8. ACTIVITY (Columna Derecha) */
+        /* 8. ACTIVITY (Columna Derecha - Row 5) */
         .col-right .usage-container {
             grid-column: 2 / 3; 
+            grid-row: 6;
             order: 5;
             width: 100%; height: 140px;
             margin: 0;
@@ -484,7 +478,6 @@
         .ring-chart::after { width: 40px; height: 40px; }
         .activity-dots { justify-content: center; }
         
-        /* Ocultar Countdown lateral en móvil (está en header) */
         .countdown-box { display: none; }
     }
 </style>
@@ -565,7 +558,7 @@
             </div>
         </div>
 
-        <!-- METRICS - AHORA CON ESTILO PROMO -->
+        <!-- METRICS (Con estilo Promo en Móvil) -->
         <div class="card card-metrics square-card-bottom">
             <div class="metrics-header">
                 <span class="metrics-title">Performance</span>
