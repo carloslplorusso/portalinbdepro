@@ -275,6 +275,8 @@
             // Fallback visual si estamos en preview y falla
             if (url === 'index.html') {
                 document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;color:white;"><h2>Session Expired. Please reload.</h2></div>';
+            } else {
+                console.log("Navegación simulada a: " + url);
             }
         }
     }
