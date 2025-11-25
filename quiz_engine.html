@@ -27,15 +27,15 @@
 
         /* --- MODO PRÁCTICA (DARK) --- */
         body.practice-mode { background-color: #000; color: #fff; background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%); }
-        body.practice-mode .inbde-header, body.practice-mode .inbde-footer { display: none; } /* Hide Sim Bars */
+        body.practice-mode .inbde-header, body.practice-mode .inbde-footer { display: none; }
         body.practice-mode #main-container { max-width: 800px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; padding: 20px; }
-        body.practice-mode #left-panel { display: none; } /* No split screen in practice default */
+        body.practice-mode #left-panel { display: none; }
         body.practice-mode #right-panel { width: 100%; background: transparent; }
         body.practice-mode .option-row { background: #121214; border: 1px solid #333; color: #ccc; padding: 20px; margin-bottom: 15px; border-radius: 12px; cursor: pointer; }
         body.practice-mode .option-row:hover { border-color: #555; }
         body.practice-mode .option-row.selected { border-color: #facc15; background: rgba(250,204,21,0.1); color: white; }
-        body.practice-mode .option-row.correct { border-color: #22c55e; background: rgba(34,197,94,0.1); }
-        body.practice-mode .option-row.wrong { border-color: #ef4444; background: rgba(239,68,68,0.1); }
+        body.practice-mode .option-row.correct-immediate { border-color: #22c55e !important; background: rgba(34,197,94,0.1) !important; color: white !important; }
+        body.practice-mode .option-row.wrong-immediate { border-color: #ef4444 !important; background: rgba(239,68,68,0.1) !important; opacity: 0.7; }
 
         /* COMMON UTILS */
         .review-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 50; display: none; justify-content: center; align-items: center; }
@@ -46,63 +46,52 @@
         .q-box.marked { border: 2px solid #facc15; font-weight: bold; }
         .q-box.current { border: 2px solid #0060a9; }
 
-        /* RESULT SCREEN */
-        .result-container { padding: 30px; text-align: center; background: #121214; color: white; border-radius: 20px; margin: 20px auto; max-width: 800px; }
-        .ai-btn { background: linear-gradient(45deg, #7c3aed, #db2777); color: white; border: none; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; margin-top: 10px; cursor: pointer; }
+        /* RESULT SCREEN & PIE CHART */
+        .result-container { padding: 30px; text-align: center; border-radius: 20px; margin: 20px auto; max-width: 800px; overflow-y: auto; max-height: 90vh; }
+        /* Estilo específico para resultados dark */
+        body.practice-mode .result-container { background: #121214; color: white; border: 1px solid #333; }
+        /* Estilo específico para resultados light */
+        body.sim-mode .result-container { background: white; color: #333; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+        .pie-chart {
+            width: 180px; height: 180px; border-radius: 50%; margin: 20px auto;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+        /* El centro del donut */
+        .pie-chart::after {
+            content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 120px; height: 120px; background: #121214; border-radius: 50%;
+        }
+        body.sim-mode .pie-chart::after { background: white; }
+
+        .stat-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin: 5px; }
+        .bg-red-custom { background: #ef4444; color: white; }
+        .bg-yellow-custom { background: #facc15; color: black; }
+        .bg-green-custom { background: #22c55e; color: black; }
+
+        /* SIMULATION LIST STYLES */
+        .sim-review-item { text-align: left; border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
+        .sim-review-item:last-child { border: none; }
+        .sim-review-q { font-weight: 600; margin-bottom: 5px; }
         
-        /* --- ESTILOS DE FEEDBACK INMEDIATO (NUEVOS) --- */
-        /* Estilos para el feedback inmediato y botones de semáforo */
-        .feedback-area {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #333;
-            display: none; /* Se oculta hasta que respondan */
-            animation: fadeIn 0.3s ease;
-        }
+        .ai-btn { background: linear-gradient(45deg, #7c3aed, #db2777); color: white; border: none; padding: 6px 16px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: transform 0.2s; font-weight: 600; }
+        .ai-btn:hover { transform: scale(1.05); }
 
-        .status-btn-container {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            justify-content: center;
-        }
-
-        .btn-status {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 800;
-            color: #000;
-            cursor: pointer;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            transition: transform 0.2s;
-            opacity: 0.9;
-        }
+        /* STATUS BUTTONS */
+        .feedback-area { margin-top: 20px; padding-top: 20px; border-top: 1px solid #333; display: none; animation: fadeIn 0.3s ease; }
+        .status-btn-container { display: flex; gap: 10px; margin-top: 15px; justify-content: center; }
+        .btn-status { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 800; color: #000; cursor: pointer; text-transform: uppercase; font-size: 0.8rem; transition: transform 0.2s; opacity: 0.9; }
         .btn-status:hover { transform: scale(1.05); opacity: 1; }
+        .btn-learning { background-color: #ef4444; color: white; }
+        .btn-reviewing { background-color: #facc15; color: black; }
+        .btn-mastered { background-color: #22c55e; color: black; }
+        .instruction-text { text-align: center; color: #aaa; font-size: 0.8rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
 
-        .btn-learning { background-color: #ef4444; color: white; } /* Rojo */
-        .btn-reviewing { background-color: #facc15; color: black; } /* Amarillo */
-        .btn-mastered { background-color: #22c55e; color: black; } /* Verde */
-
-        .instruction-text {
-            text-align: center;
-            color: #aaa;
-            font-size: 0.8rem;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Ajuste visual para opciones correctas/incorrectas inmediatas */
-        .option-row.correct-immediate { border-color: #22c55e !important; background: rgba(34,197,94,0.1) !important; color: white !important; }
-        .option-row.wrong-immediate { border-color: #ef4444 !important; background: rgba(239,68,68,0.1) !important; opacity: 0.7; }
-        /* FIN DE ESTILOS NUEVOS */
-
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="">
+<body>
 
     <header class="inbde-header">
         <div style="width: 200px;">Question <span id="q-current">1</span> of <span id="q-total">--</span></div>
@@ -122,33 +111,21 @@
                 <div id="options-container"></div>
 
                 <div id="feedback-area" class="feedback-area">
-                    
-                    <button id="btn-explain" class="ai-btn w-full mb-4" onclick="triggerAIExplanation()">
+                    <button id="btn-explain" class="ai-btn w-full mb-4 justify-center" onclick="triggerAIExplanation()">
                         ✨ Explain with AI
                     </button>
-                    <div id="ai-explanation-box" class="ai-response mt-2 text-gray-300 text-sm hidden p-3 bg-gray-800 rounded"></div>
+                    <div id="ai-explanation-box" class="ai-response mt-2 text-gray-300 text-sm hidden p-3 bg-gray-800 rounded mb-4"></div>
 
-                    <div class="mt-6">
-                        <p class="instruction-text">Select status to advance</p>
-                        <div class="status-btn-container">
-                            <button class="btn-status btn-learning" onclick="handleStatus('learning')">Learning</button>
-                            <button class="btn-status btn-reviewing" onclick="handleStatus('reviewing')">Reviewing</button>
-                            <button class="btn-status btn-mastered" onclick="handleStatus('mastered')">Mastered</button>
-                        </div>
+                    <p class="instruction-text">Self-Assessment: How confident are you?</p>
+                    <div class="status-btn-container">
+                        <button class="btn-status btn-learning" onclick="handleStatus('learning')">Learning</button>
+                        <button class="btn-status btn-reviewing" onclick="handleStatus('reviewing')">Reviewing</button>
+                        <button class="btn-status btn-mastered" onclick="handleStatus('mastered')">Mastered</button>
                     </div>
                 </div>
             </div>
-            <div id="result-screen" class="hidden result-container">
-                <h1 class="text-3xl font-bold mb-6 text-yellow-400">Session Complete</h1>
-                <div class="flex justify-center gap-10 mb-8">
-                    <div><div class="text-5xl font-bold text-green-500" id="res-correct">0</div><div>Correct</div></div>
-                    <div><div class="text-5xl font-bold text-red-500" id="res-incorrect">0</div><div>Incorrect</div></div>
-                    <div><div class="text-5xl font-bold text-blue-500" id="res-score">0%</div><div>Score</div></div>
-                </div>
-                <button onclick="goBackToHome()" class="bg-yellow-400 text-black font-bold py-3 px-8 rounded-lg hover:bg-yellow-300 w-full max-w-md">BACK TO HOME</button>
-                
-                <div id="detailed-review" class="mt-10 text-left space-y-4"></div>
-            </div>
+
+            <div id="result-screen" class="hidden result-container"></div>
         </div>
     </div>
 
@@ -171,28 +148,27 @@
     </div>
 
     <script>
-        // CONFIG
+        // --- CONFIG ---
         const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
-        const GEMINI_API_KEY = "AIzaSyCGdQ_3ZkPdqdtvM4TRa59t14ZxqDlxxlY"; // WARNING: Exposed Key
+        const GEMINI_API_KEY = "AIzaSyCGdQ_3ZkPdqdtvM4TRa59t14ZxqDlxxlY"; 
         const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // STATE
+        // --- STATE ---
         const urlParams = new URLSearchParams(window.location.search);
-        const mode = urlParams.get('mode') || 'practice';
+        const mode = urlParams.get('mode') || 'practice'; // 'practice' (dark) or 'simulation' (light)
         const count = parseInt(urlParams.get('count')) || 10;
         
         let quizData = [];
         let currentIndex = 0;
         let markedQuestions = new Set();
         let userAnswers = {}; // { qId: optionId }
+        let userStatusCounts = { learning: 0, reviewing: 0, mastered: 0 }; // Track status
         let timerInterval;
         let secondsLeft = 0;
-        // NUEVAS VARIABLES GLOBALES
-        let isAnswered = false; // Para bloquear clicks múltiples
-        // FIN NUEVAS VARIABLES GLOBALES
+        let isAnswered = false;
 
-        // INIT
+        // --- INIT ---
         document.addEventListener('DOMContentLoaded', async () => {
             setupUI();
             await loadQuestions();
@@ -203,173 +179,351 @@
             const body = document.body;
             if (mode === 'simulation') {
                 body.classList.add('sim-mode');
-                // Timer Logic: 1.2 min per question
-                secondsLeft = Math.round(count * 1.2 * 60);
+                secondsLeft = Math.round(count * 1.2 * 60); // 1.2 mins per question
             } else {
                 body.classList.add('practice-mode');
-                document.getElementById('main-container').style.height = '100vh';
             }
         }
 
         async function loadQuestions() {
-            // Simulación de carga desde DB (Aquí conectarías tu RPC real)
+            // Load questions logic (simulated for demo)
             const { data, error } = await _supabase.from('questions_bank').select('*').limit(count);
             
-            if(error || !data) {
-                alert("Error loading questions. Using backup data.");
-                // Backup Data for testing
+            if(error || !data || data.length === 0) {
+                console.log("Using fallback data.");
                 quizData = Array.from({length: count}, (_, i) => ({
                     id: i, 
-                    question_text: `Question ${i+1}: What is the primary cause of...?`,
-                    option_a: "Option A", option_b: "Option B", option_c: "Option C", option_d: "Option D",
-                    correct_answer: "Option A",
-                    explanation: "This is the correct answer because..."
+                    question_text: `Question ${i+1}: What is the likely diagnosis for a radiolucency in the posterior mandible?`,
+                    option_a: "Ameloblastoma", option_b: "Dentigerous Cyst", option_c: "OKC", option_d: "Radicular Cyst",
+                    correct_answer: "OKC",
+                    explanation: "OKCs are known for posterior mandible location and high recurrence rates."
                 }));
             } else {
                 quizData = data;
             }
-
             document.getElementById('q-total').innerText = quizData.length;
             renderQuestion();
         }
 
-        // --- RENDER & ANSWER LOGIC (MODIFICADO) ---
         function renderQuestion() {
-            isAnswered = false; // Resetear estado
+            isAnswered = false;
             const q = quizData[currentIndex];
             
-            // Ocultar área de feedback al iniciar pregunta
             document.getElementById('feedback-area').style.display = 'none';
             document.getElementById('ai-explanation-box').classList.add('hidden');
             document.getElementById('ai-explanation-box').innerHTML = '';
             
-            // Remover clases de feedback de las opciones anteriores
-            document.querySelectorAll('.option-row').forEach(row => {
-                row.classList.remove('correct-immediate', 'wrong-immediate');
-                row.style.cursor = 'pointer'; // Restaurar cursor
-            });
-
             document.getElementById('q-current').innerText = currentIndex + 1;
             document.getElementById('question-text').innerText = q.question_text;
-            document.getElementById('patient-info').innerText = "Patient: Adult Male\nHistory: No significant findings.\n(Case details would go here)";
+            document.getElementById('patient-info').innerText = "Patient: Adult\nHistory: Routine exam.\nFindings: Asymptomatic.";
             
-            // Renderizar opciones
             const opts = document.getElementById('options-container');
             opts.innerHTML = '';
 
             ['option_a', 'option_b', 'option_c', 'option_d'].forEach(optKey => {
                 const optVal = q[optKey];
-                if(!optVal) return; // Saltarse opciones vacías
+                if(!optVal) return; 
 
                 const div = document.createElement('div');
                 div.className = 'option-row';
-                // La clase 'selected' no se aplica aquí en practice mode ya que queremos feedback inmediato. 
-                // En simulation mode (sin feedback inmediato) se usaría selectOption y esta línea.
-                // if (userAnswers[q.id] === optVal) div.classList.add('selected');
-                
+                // En modo simulación, si ya respondió, mostrar seleccionada
+                if (mode === 'simulation' && userAnswers[q.id] === optVal) {
+                    div.classList.add('selected');
+                }
                 div.innerHTML = `<div class="custom-radio"></div> ${optVal}`;
-                
-                // Al hacer click, llamamos a checkAnswer
                 div.onclick = () => checkAnswer(q, optVal, div);
                 opts.appendChild(div);
             });
-            // FIN MODIFICACIÓN DE RENDER
 
-            // Update Mark Button
             const markBtn = document.getElementById('btn-mark');
-            if (markedQuestions.has(currentIndex)) markBtn.classList.add('active');
-            else markBtn.classList.remove('active');
+            if(markBtn) {
+                if (markedQuestions.has(currentIndex)) markBtn.classList.add('active');
+                else markBtn.classList.remove('active');
+            }
         }
 
-        // FUNCIÓN CHECKANSWER (NUEVA)
         function checkAnswer(questionObj, selectedVal, element) {
-            if (isAnswered) return; // Si ya respondió, no hacer nada
+            // En simulación, solo selecciona, no da feedback inmediato
+            if (mode === 'simulation') {
+                userAnswers[questionObj.id] = selectedVal;
+                document.querySelectorAll('.option-row').forEach(r => r.classList.remove('selected'));
+                element.classList.add('selected');
+                return; 
+            }
+
+            // En modo práctica:
+            if (isAnswered) return;
             isAnswered = true;
-
-            const correctVal = questionObj.correct_answer;
-            
-            // 1. Mostrar visualmente Correcto/Incorrecto
-            const allOptions = document.querySelectorAll('.option-row');
-            allOptions.forEach(div => {
-                // Bloquear cursor
-                div.style.cursor = 'default';
-                
-                // Marcar la correcta siempre en verde
-                // Usamos .includes() para manejar posibles espacios/formatos extra
-                if (div.innerText.trim().includes(correctVal)) { 
-                    div.classList.add('correct-immediate');
-                }
-                // Si la que seleccionó el usuario es incorrecta, marcarla roja
-                if (div === element && !div.innerText.trim().includes(correctVal)) {
-                    div.classList.add('wrong-immediate');
-                }
-            });
-
-            // 2. Guardar respuesta en memoria (para el final)
             userAnswers[questionObj.id] = selectedVal;
 
-            // 3. Mostrar el panel de Feedback (AI y Semáforo)
+            const correctVal = questionObj.correct_answer;
+            document.querySelectorAll('.option-row').forEach(div => {
+                div.style.cursor = 'default';
+                if (div.innerText.trim().includes(correctVal)) div.classList.add('correct-immediate');
+                if (div === element && !div.innerText.trim().includes(correctVal)) div.classList.add('wrong-immediate');
+            });
+
             document.getElementById('feedback-area').style.display = 'block';
-            
-            // Auto-scroll hacia abajo para ver los botones en móvil
             document.getElementById('feedback-area').scrollIntoView({ behavior: 'smooth' });
         }
-        // FIN FUNCIÓN CHECKANSWER (NUEVA)
 
-        // FUNCIÓN HANDLESTATUS (NUEVA)
-        // Función que maneja el click en los botones del semáforo
-        function handleStatus(status) {
-            // Aquí guardaríamos la métrica (Learning/Reviewing/Mastered)
-            // Ejemplo: userStats[quizData[currentIndex].id] = status;
-            console.log(`Question marked as: ${status}`);
+        // --- SUPABASE LOGGING ---
+        async function handleStatus(status) {
+            userStatusCounts[status]++;
+            
+            // Guardar en Supabase
+            const qId = quizData[currentIndex].id;
+            await saveStatusToSupabase(qId, status);
 
-            // Avanzar a la siguiente
-            nextQuestion();
+            if (currentIndex < quizData.length - 1) {
+                currentIndex++;
+                renderQuestion();
+            } else {
+                finishQuiz();
+            }
         }
-        // FIN FUNCIÓN HANDLESTATUS (NUEVA)
-        
-        // FUNCIÓN TRIGGERAIEXPLANATION (NUEVA)
+
+        async function saveStatusToSupabase(questionId, status) {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) return;
+
+            // Insertar o actualizar status
+            // Nota: Asume tabla 'user_progress' o similar. Ajustar según tu esquema real.
+            const { error } = await _supabase.from('user_progress').insert([
+                { 
+                    user_id: session.user.id, 
+                    question_id: questionId, // Asegúrate que esta columna exista
+                    status: status, // 'learning', 'reviewing', 'mastered'
+                    quiz_mode: mode,
+                    timestamp: new Date()
+                }
+            ]);
+            if(error) console.warn("Supabase save error:", error);
+        }
+
+        // --- NAVIGATION ---
+        function nextQuestion() {
+            if(currentIndex < quizData.length - 1) { currentIndex++; renderQuestion(); }
+            else if(mode === 'simulation') { finishQuiz(); }
+        }
+        function prevQuestion() {
+            if(currentIndex > 0) { currentIndex--; renderQuestion(); }
+        }
+        function toggleMark() {
+            if(markedQuestions.has(currentIndex)) markedQuestions.delete(currentIndex);
+            else markedQuestions.add(currentIndex);
+            renderQuestion(); 
+        }
+
+        // --- FINISH & RESULTS GENERATION ---
+        function finishQuiz() {
+            clearInterval(timerInterval);
+            
+            // Ocultar UI de quiz
+            document.querySelector('.inbde-header').classList.add('hidden');
+            document.querySelector('.inbde-footer').classList.add('hidden');
+            document.getElementById('left-panel').classList.add('hidden');
+            document.getElementById('quiz-content').classList.add('hidden');
+            document.getElementById('review-modal').style.display = 'none';
+            
+            // Layout Stack
+            const mainContainer = document.getElementById('main-container');
+            mainContainer.style.display = 'block';
+            mainContainer.style.height = 'auto';
+            mainContainer.style.overflowY = 'auto';
+            
+            const rightPanel = document.getElementById('right-panel');
+            rightPanel.style.width = '100%';
+            
+            // Calcular Scores
+            let correctCount = 0;
+            quizData.forEach(q => {
+                if(userAnswers[q.id] === q.correct_answer) correctCount++;
+            });
+            const scorePct = Math.round((correctCount / quizData.length) * 100);
+            const incorrectCount = quizData.length - correctCount;
+
+            const resultScreen = document.getElementById('result-screen');
+            resultScreen.classList.remove('hidden');
+
+            // --- GENERAR HTML SEGÚN MODO ---
+            if (mode === 'simulation') {
+                // MODO SIMULACIÓN (Light, Lista con Explain)
+                let questionsListHTML = quizData.map((q, idx) => {
+                    const isCorrect = userAnswers[q.id] === q.correct_answer;
+                    const colorClass = isCorrect ? 'text-green-600' : 'text-red-600';
+                    const icon = isCorrect ? '✓' : '✕';
+                    
+                    return `
+                        <div class="sim-review-item">
+                            <div style="flex:1;">
+                                <div class="sim-review-q">
+                                    <span class="${colorClass} font-bold mr-2">${icon} Q${idx+1}:</span> ${q.question_text}
+                                </div>
+                                <div class="text-sm text-gray-500">Correct Answer: ${q.correct_answer}</div>
+                            </div>
+                            <button class="ai-btn ml-4" onclick="askGeminiInList(this, '${q.question_text.replace(/'/g, "\\'")}', '${q.correct_answer.replace(/'/g, "\\'")}')">
+                                ✨ Explain This
+                            </button>
+                            <div class="ai-response hidden w-full mt-2 p-2 bg-gray-100 rounded text-sm"></div>
+                        </div>
+                        <div class="ai-output-container w-full hidden mb-4"></div>
+                    `;
+                }).join('');
+
+                resultScreen.innerHTML = `
+                    <h1 class="text-3xl font-bold mb-2 text-blue-800">Simulation Results</h1>
+                    <p class="text-gray-500 mb-6">Standard Exam Mode</p>
+                    
+                    <div class="flex justify-around mb-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-green-600">${correctCount}</div>
+                            <div class="text-xs uppercase text-gray-500">Correct</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-red-500">${incorrectCount}</div>
+                            <div class="text-xs uppercase text-gray-500">Incorrect</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-blue-600">${scorePct}%</div>
+                            <div class="text-xs uppercase text-gray-500">Score</div>
+                        </div>
+                    </div>
+
+                    <h3 class="text-left font-bold text-xl mb-4 border-b pb-2">Detailed Review</h3>
+                    <div class="space-y-2">
+                        ${questionsListHTML}
+                    </div>
+                    
+                    <button onclick="goBackToHome()" class="mt-8 w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700">RETURN TO DASHBOARD</button>
+                `;
+
+            } else {
+                // MODO PRÁCTICA (Dark, Pie Chart, Traffic Light)
+                // Calcular porcentajes para el Pie Chart
+                const totalStatus = userStatusCounts.learning + userStatusCounts.reviewing + userStatusCounts.mastered;
+                const safeTotal = totalStatus || 1;
+                const pctRed = (userStatusCounts.learning / safeTotal) * 100;
+                const pctYellow = (userStatusCounts.reviewing / safeTotal) * 100;
+                const pctGreen = (userStatusCounts.mastered / safeTotal) * 100;
+
+                // CSS Conic Gradient para Pie Chart
+                const chartStyle = `background: conic-gradient(
+                    #ef4444 0% ${pctRed}%, 
+                    #facc15 ${pctRed}% ${pctRed + pctYellow}%, 
+                    #22c55e ${pctRed + pctYellow}% 100%
+                );`;
+
+                resultScreen.innerHTML = `
+                    <h1 class="text-3xl font-bold mb-2 text-yellow-400">Practice Complete</h1>
+                    <p class="text-gray-400 mb-6">Session Summary</p>
+
+                    <div class="flex justify-center gap-6 mb-8">
+                        <div class="text-center bg-gray-800 p-3 rounded-lg w-24">
+                            <div class="text-3xl font-bold text-green-500">${correctCount}</div>
+                            <div class="text-[10px] uppercase text-gray-400">Correct</div>
+                        </div>
+                        <div class="text-center bg-gray-800 p-3 rounded-lg w-24">
+                            <div class="text-3xl font-bold text-red-500">${incorrectCount}</div>
+                            <div class="text-[10px] uppercase text-gray-400">Incorrect</div>
+                        </div>
+                        <div class="text-center bg-gray-800 p-3 rounded-lg w-24 border border-yellow-500">
+                            <div class="text-3xl font-bold text-yellow-400">${scorePct}%</div>
+                            <div class="text-[10px] uppercase text-gray-400">Score</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-900 p-6 rounded-xl border border-gray-700 mb-8">
+                        <h3 class="text-white font-bold mb-4 uppercase text-sm tracking-wider">Confidence Breakdown</h3>
+                        
+                        <div class="pie-chart" style="${chartStyle}"></div>
+                        
+                        <div class="flex justify-center gap-4 mt-4">
+                            <span class="stat-badge bg-red-custom">Learning: ${userStatusCounts.learning}</span>
+                            <span class="stat-badge bg-yellow-custom">Reviewing: ${userStatusCounts.reviewing}</span>
+                            <span class="stat-badge bg-green-custom">Mastered: ${userStatusCounts.mastered}</span>
+                        </div>
+                    </div>
+
+                    <button onclick="goBackToHome()" class="w-full bg-yellow-400 text-black font-bold py-3 rounded-lg hover:bg-yellow-300 transition-transform transform hover:scale-105">BACK TO DASHBOARD</button>
+                `;
+            }
+        }
+
+        // --- AI HELPERS ---
         async function triggerAIExplanation() {
             const q = quizData[currentIndex];
             const box = document.getElementById('ai-explanation-box');
             box.classList.remove('hidden');
+            box.innerHTML = "🤖 Thinking...";
             
-            // Si ya tenemos la explicación (estática), la mostramos. Si no, llamamos a Gemini.
             if(q.explanation) {
                 box.innerHTML = `<strong>Rationale:</strong><br>${q.explanation}`;
             } else {
-                // Usamos el botón de explicación como referencia (this) para la función askGemini
                 askGemini(document.getElementById('btn-explain'), q.question_text, q.correct_answer);
             }
         }
-        // FIN FUNCIÓN TRIGGERAIEXPLANATION (NUEVA)
-        
-        // Se eliminó la función selectOption.
-        
-        function nextQuestion() {
-            if(currentIndex < quizData.length - 1) {
-                currentIndex++;
-                renderQuestion();
+
+        // Función específica para la lista de resultados (Simulación)
+        async function askGeminiInList(btn, qText, correct) {
+            // Encontrar el contenedor de respuesta hermano (o el siguiente elemento)
+            // La estructura HTML generada pone el botón dentro de un flex container
+            // y queremos mostrar la respuesta en un div debajo.
+            
+            // El botón está dentro de .sim-review-item. 
+            // El contenedor de salida está justo después del .sim-review-item
+            const itemDiv = btn.closest('.sim-review-item');
+            const outputDiv = itemDiv.nextElementSibling; 
+            
+            outputDiv.classList.remove('hidden');
+            outputDiv.innerHTML = '<span class="text-blue-600">🤖 AI is analyzing...</span>';
+            
+            const prompt = `Explain briefly why "${correct}" is the correct answer for this dental question: "${qText}".`;
+            
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await response.json();
+                const text = data.candidates[0].content.parts[0].text;
+                outputDiv.innerHTML = `<div class="p-3 bg-blue-50 rounded border border-blue-100 text-sm text-gray-700"><strong>AI Explanation:</strong><br>${text.replace(/\*\*/g, '').replace(/\n/g, '<br>')}</div>`;
+            } catch(e) {
+                outputDiv.innerHTML = '<span class="text-red-500">Error connecting to AI.</span>';
             }
         }
 
-        function prevQuestion() {
-            if(currentIndex > 0) {
-                currentIndex--;
-                renderQuestion();
+        async function askGemini(btn, qText, correct) {
+            const box = document.getElementById('ai-explanation-box');
+            const prompt = `Explain concisely why "${correct}" is the correct answer for: "${qText}".`;
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await response.json();
+                const text = data.candidates[0].content.parts[0].text;
+                box.innerHTML = text.replace(/\*\*/g, '<strong>').replace(/\n/g, '<br>');
+            } catch(e) {
+                box.innerHTML = "Error contacting AI.";
             }
         }
 
-        function toggleMark() {
-            if(markedQuestions.has(currentIndex)) markedQuestions.delete(currentIndex);
-            else markedQuestions.add(currentIndex);
-            // Ya no es necesario re-renderizar, solo actualizar el botón de la marca.
-            const markBtn = document.getElementById('btn-mark');
-            if (markedQuestions.has(currentIndex)) markBtn.classList.add('active');
-            else markBtn.classList.remove('active');
+        // --- UTILS ---
+        function startSimulationTimer() {
+            timerInterval = setInterval(() => {
+                if(secondsLeft <= 0) { finishQuiz(); } 
+                else {
+                    secondsLeft--;
+                    const m = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
+                    const s = (secondsLeft % 60).toString().padStart(2, '0');
+                    document.getElementById('timer-display').innerText = `${m}:${s}`;
+                }
+            }, 1000);
         }
 
-        // --- REVIEW MODAL ---
         function openReviewModal() {
             const grid = document.getElementById('review-grid');
             grid.innerHTML = '';
@@ -386,82 +540,6 @@
             document.getElementById('review-modal').style.display = 'flex';
         }
         function closeReviewModal() { document.getElementById('review-modal').style.display = 'none'; }
-
-        // --- TIMER ---
-        function startSimulationTimer() {
-            timerInterval = setInterval(() => {
-                if(secondsLeft <= 0) {
-                    clearInterval(timerInterval);
-                    finishQuiz();
-                } else {
-                    secondsLeft--;
-                    const m = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
-                    const s = (secondsLeft % 60).toString().padStart(2, '0');
-                    document.getElementById('timer-display').innerText = `${m}:${s}`;
-                }
-            }, 1000);
-        }
-
-        // --- FINISH & RESULTS ---
-        function finishQuiz() {
-            clearInterval(timerInterval);
-            document.querySelector('.inbde-header').classList.add('hidden');
-            document.querySelector('.inbde-footer').classList.add('hidden');
-            document.getElementById('main-container').style.display = 'block'; // Stack layout
-            document.getElementById('left-panel').classList.add('hidden');
-            document.getElementById('quiz-content').classList.add('hidden');
-            document.getElementById('review-modal').style.display = 'none';
-            
-            // Calculate Results
-            let correct = 0;
-            let listHTML = '';
-
-            quizData.forEach((q, idx) => {
-                const userAns = userAnswers[q.id];
-                const isCorrect = userAns === q.correct_answer;
-                if(isCorrect) correct++;
-
-                listHTML += `
-                    <div class="bg-gray-800 p-4 rounded border border-gray-700">
-                        <div class="font-bold text-white mb-2">Q${idx+1}: ${q.question_text}</div>
-                        <div class="text-sm ${isCorrect ? 'text-green-400' : 'text-red-400'}">
-                            Your Answer: ${userAns || 'Skipped'}
-                        </div>
-                        <div class="text-sm text-gray-400">Correct: ${q.correct_answer}</div>
-                        <button class="ai-btn" onclick="askGemini(this, '${q.question_text.replace(/'/g, "\\'")}', '${q.correct_answer.replace(/'/g, "\\'")}')">✨ Explain with AI</button>
-                        <div class="ai-response mt-2 text-gray-300 text-sm hidden"></div>
-                    </div>
-                `;
-            });
-
-            document.getElementById('res-correct').innerText = correct;
-            document.getElementById('res-incorrect').innerText = quizData.length - correct;
-            document.getElementById('res-score').innerText = Math.round((correct/quizData.length)*100) + "%";
-            document.getElementById('detailed-review').innerHTML = listHTML;
-            
-            document.getElementById('result-screen').classList.remove('hidden');
-        }
-
-        async function askGemini(btn, qText, correct) {
-            const outputDiv = btn.nextElementSibling;
-            outputDiv.innerHTML = "Thinking...";
-            outputDiv.classList.remove('hidden');
-            
-            const prompt = `Explain why "${correct}" is the correct answer for: "${qText}". Keep it concise for a dental student.`;
-            
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await response.json();
-                const text = data.candidates[0].content.parts[0].text;
-                outputDiv.innerHTML = text.replace(/\*\*/g, '<strong>').replace(/\n/g, '<br>'); // Simple format
-            } catch(e) {
-                outputDiv.innerHTML = "Error contacting AI.";
-            }
-        }
 
         function goBackToHome() {
             if(window.innerWidth <= 768) window.location.href = 'mobile.html';
