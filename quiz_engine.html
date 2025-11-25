@@ -663,12 +663,28 @@ async function loadQuestionsFromDB() {
             const practiceControls = document.getElementById('practice-controls-el');
             const toggleCaseButton = document.getElementById('toggle-case-btn');
             
-            // Lista de modos de práctica (Dark Mode)
-            const IS_PRACTICE_MODE = ['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
+            // 1. MODOS DE FONDO OSCURO (Dark Mode / Practice UI)
+            const MODOS_FONDO_OSCURO = [
+                'daily',            
+                'standalone',       
+                'practice',         
+                'retry_mistakes',   
+                'practice_custom'
+            ];
 
-            if (IS_PRACTICE_MODE) {
+            // 2. MODOS DE FONDO CLARO (Light Mode / Simulation UI)
+            const MODOS_FONDO_CLARO = [
+                'simulation',           
+                'simulation_standard',  
+                'itemsets'              
+            ];
+
+            const activarModoOscuro = MODOS_FONDO_OSCURO.includes(currentMode);
+
+            if (activarModoOscuro) {
                 // --- MODO PRÁCTICA (DARK / MOBILE FRIENDLY) ---
-                document.body.classList.remove('force-desktop-view'); // Quitar forzado de escritorio
+                console.log(`Aplicando UI Fondo Oscuro para modo: ${currentMode}`);
+                document.body.classList.remove('force-desktop-view'); 
                 
                 practiceStyle.disabled = false;
                 
@@ -683,17 +699,17 @@ async function loadQuestionsFromDB() {
                 
                 rightPanel.style.width = '100%';
                 
-                // Títulos específicos
                 if(currentMode === 'daily') {
                     document.querySelector('.practice-subtitle').innerText = "Daily Lab Sprint";
                 } else if (currentMode === 'retry_mistakes') {
                     document.querySelector('.practice-subtitle').innerText = "Retry Mistakes Session";
+                } else {
+                     document.querySelector('.practice-subtitle').innerText = "Stand Alone Practice";
                 }
                 
             } else {
-                // --- MODO SIMULACIÓN (WHITE / FORCE DESKTOP LAYOUT) ---
-                
-                // AQUÍ ESTÁ LA MAGIA:
+                // --- MODO SIMULACIÓN / ITEM SETS (WHITE / FORCE DESKTOP LAYOUT) ---
+                console.log(`Aplicando UI Fondo Claro para modo: ${currentMode}`);
                 document.body.classList.add('force-desktop-view'); 
                 
                 practiceStyle.disabled = true;
@@ -705,10 +721,14 @@ async function loadQuestionsFromDB() {
                 practiceHeader.classList.add('hidden');
                 practiceControls.classList.add('hidden');
                 
-                // Forzamos estilos inline para asegurar el split 40/60 incluso si el CSS falla
                 rightPanel.style.width = '60%'; 
                 leftPanel.style.width = '40%';
-                toggleCaseButton.classList.add('hidden'); // Ocultar botón móvil explícitamente
+                toggleCaseButton.classList.add('hidden');
+
+                if (currentMode === 'itemsets') {
+                     const sub = document.getElementById('mode-subtitle');
+                     if(sub) sub.innerText = "INBDE | Item Sets Case";
+                }
             }
         }
         
