@@ -297,46 +297,166 @@
     .password-alert { background: rgba(250, 204, 21, 0.2); color: var(--accent); border: 1px solid var(--accent); padding: 15px; text-align: center; margin-bottom: 20px; border-radius: 10px; display: none; }
 
     /* =========================================
-       6. RESPONSIVE (MÓVIL - NATIVE APP STYLE)
+       3. MEDIA QUERIES (VISTA MÓVIL)
        ========================================= */
-   /* =========================================
-   3. MEDIA QUERIES (VISTA MÓVIL)
-   ========================================= */
-/* --- REGLAS AÑADIDAS: VISTAS INTERNAS (LEARNING/SIMULATION/POMODORO) --- */
-    .learning-cards-row {
-        flex-direction: row;
-        gap: 15px; /* Espacio reducido entre tarjetas */
-        width: 100%;
-        justify-content: center;
-        /* Asegurar que el contenedor use el 100% de espacio disponible */
-        max-width: 100%;
-    }
-
-    .learning-card {
-        width: 48%; /* Dos tarjetas por fila, con pequeño espacio */
-        height: auto; /* Dejar que el contenido defina la altura */
-        min-height: 180px;
-        padding: 15px; /* Reducir padding */
+    @media (max-width: 1024px) {
+        body { height: 100dvh; overflow: hidden; align-items: flex-start; padding: 0; }
         
-        /* Sobrescribir el estilo de hover que podría ser demasiado grande */
-        transform: none !important;
-        box-shadow: none !important;
+        .lab-container {
+            height: 100dvh;
+            display: grid;
+            /* ESTRUCTURA BENTO 2 COLUMNAS */
+            grid-template-columns: 1fr 1fr; 
+            /* Filas ajustadas: Header | Banner | Hero | Daily/Metrics | Notes/Activity | IA (Footer) */
+            grid-template-rows: min-content min-content 1fr min-content min-content min-content;
+            gap: 8px; 
+            padding: 10px 12px 12px 12px;
+            width: 100%;
+        }
+
+        .col-side, .col-center { display: contents; }
+
+        /* 1. HEADER */
+        .header-area { grid-column: 1 / -1; order: 0; margin: 0; padding-bottom: 5px; min-height: auto; }
+        .lab-title { font-size: 1.5rem; }
+        .header-countdown { padding: 2px 8px; font-size: 0.7rem; }
+
+        /* 2. BANNER LEARN */
+        .card-learn-banner { grid-column: 1 / -1; order: 1; margin: 0; padding: 8px; min-height: 40px; }
+        .card-learn-banner h2 { font-size: 0.85rem; }
+
+        /* 3. HERO CARDS (PRINCIPALES - GRANDES Y VERTICALES) */
+        .center-row-hero {
+            grid-column: 1 / -1; 
+            order: 2;
+            flex-direction: row !important;
+            gap: 6px;
+            margin: 0;
+            height: 100%; 
+            align-items: stretch;
+        }
+        .hero-card {
+            min-height: 0;
+            padding: 12px 5px;
+            flex-direction: column; 
+            justify-content: center;
+            flex: 1;
+        }
+        .hero-card .icon { margin-bottom: 8px; font-size: 2.5rem; }
+        .hero-card .title { font-size: 0.9rem; line-height: 1.1; }
+
+        /* 4. DAILY & METRICS (SECUNDARIAS - PEQUEÑAS) */
+        .col-left .card-promo-style { /* Daily */
+            grid-column: 1 / 2; order: 3;
+            min-height: 110px; 
+            margin: 0; padding: 10px;
+            border: 2px solid var(--accent) !important;
+            flex-direction: column; /* Restaurar verticalidad para bento */
+            align-items: center;
+            justify-content: center;
+        }
+        .card-metrics { /* Metrics */
+            display: flex !important; /* Restaurar visibilidad */
+            grid-column: 2 / 3; order: 3;
+            min-height: 110px; 
+            margin: 0; padding: 8px;
+            background: linear-gradient(145deg, rgba(250, 204, 21, 0.15), rgba(0,0,0,0) 70%);
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 15px rgba(250, 204, 21, 0.15);
+            border-radius: 16px;
+        }
+        .col-left .card-promo-style .promo-title, .metrics-title { font-size: 0.7rem; margin-bottom: 2px; }
+        .col-left .card-promo-style .btn-start { font-size: 0.6rem; padding: 4px 0; margin-top: auto; width: 100%; }
+        .col-left .card-promo-style .promo-header { margin-bottom: 5px; gap: 5px; }
+        .col-left .card-promo-style .promo-desc { display: block; font-size: 0.6rem; margin-bottom: 5px; text-align: center; }
+        .pie-chart-main { width: 45px; height: 45px; }
+        
+        /* 5. NOTES & ACTIVITY (SECUNDARIAS - BORDE AMARILLO) */
+        .col-left .card-notes {
+            display: flex !important; /* Restaurar visibilidad */
+            grid-column: 1 / 2; order: 4;
+            min-height: 90px; margin: 0; padding: 8px;
+            border: 1px solid var(--accent);
+        }
+        .col-right .usage-container {
+            display: flex !important; /* Restaurar visibilidad */
+            grid-column: 2 / 3; order: 4;
+            min-height: 90px; margin: 0; padding: 8px;
+            border: 1px solid var(--accent);
+            flex-direction: column; justify-content: center;
+        }
+        .card-notes .card-title, .usage-header .card-title { font-size: 0.7rem; }
+        .ring-chart { width: 30px; height: 30px; margin-bottom: 0; }
+        .ring-chart::after { width: 20px; height: 20px; }
+        .activity-dots { display: none; }
+        
+        /* 6. IA LAB (AL FINAL - BARRA COMPLETA) */
+        .col-right .card-promo-style {
+            display: flex !important; /* Restaurar visibilidad */
+            grid-column: 1 / -1; 
+            order: 5;
+            width: 100%;
+            min-height: 45px;
+            padding: 8px 15px;
+            margin: 0;
+            flex-direction: row; align-items: center; justify-content: space-between;
+            border: 2px solid var(--accent);
+        }
+        .col-right .card-promo-style .promo-header { margin-bottom: 0; gap: 8px; }
+        .col-right .card-promo-style .ai-icon { font-size: 1.1rem; }
+        .col-right .card-promo-style .promo-title { font-size: 0.8rem; }
+        .col-right .card-promo-style .promo-desc { display: none; } 
+        .col-right .card-promo-style .btn-start { width: auto; padding: 5px 12px; font-size: 0.65rem; margin: 0; }
+        
+        .countdown-box { display: none; }
+
+        /* --- VISTAS INTERNAS (LEARNING/SIMULATION/POMODORO) --- */
+        /* Ajustar vistas internas para ocupar toda la pantalla */
+        #learning-view, #simulation-view, #pomodoro-view, #selection-view, #simulation-customization-view, #pomodoro-customization-view, #pomodoro-timer-view {
+             grid-column: 1 / -1; 
+             grid-row: 2 / -1; 
+             position: absolute; 
+             z-index: 100;
+             height: 100%;
+             width: 100%;
+             top: 0;
+             left: 0;
+             padding: 10px;
+             background: #000; /* Ensure background covers dashboard */
+        }
+
+        /* REGLAS DE TARJETAS PEQUEÑAS (Mantenidas del requerimiento anterior) */
+        .learning-cards-row {
+            flex-direction: row;
+            gap: 15px;
+            width: 100%;
+            justify-content: center;
+            max-width: 100%;
+        }
+
+        .learning-card {
+            width: 48%; 
+            height: auto;
+            min-height: 180px;
+            padding: 15px;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        .learning-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .learning-card h3 { 
+            font-size: 1rem;
+        }
+        
+        .learning-card p {
+            font-size: 0.8rem;
+            line-height: 1.2;
+        }
     }
-    
-    .learning-icon {
-        font-size: 2.5rem; /* Icono más pequeño */
-        margin-bottom: 10px;
-    }
-    
-    .learning-card h3 { 
-        font-size: 1rem; /* Título más pequeño */
-    }
-    
-    .learning-card p {
-        font-size: 0.8rem; /* Descripción más pequeña */
-        line-height: 1.2;
-    }
-    /* --- FIN REGLAS AÑADIDAS --- */
 </style>
 </head>
 <body>
@@ -469,12 +589,12 @@
         <h2 id="pomodoro-custom-title">Customize Experience</h2>
         <div class="customization-container">
             <div class="custom-section card-categories open">
-                 <div class="cat-header"><h3>Select Study Topics</h3></div>
-                 <div class="cat-list">
-                    <div class="subject-item special-select-all" onclick="toggleSelectAll(this)"><div class="custom-checkbox"></div> Select All</div>
-                    <div class="subject-item" onclick="toggleCheck(this)"><div class="custom-checkbox"></div> Anatomy</div>
-                    <div class="subject-item" onclick="toggleCheck(this)"><div class="custom-checkbox"></div> Pharmacology</div>
-                 </div>
+                   <div class="cat-header"><h3>Select Study Topics</h3></div>
+                   <div class="cat-list">
+                        <div class="subject-item special-select-all" onclick="toggleSelectAll(this)"><div class="custom-checkbox"></div> Select All</div>
+                        <div class="subject-item" onclick="toggleCheck(this)"><div class="custom-checkbox"></div> Anatomy</div>
+                        <div class="subject-item" onclick="toggleCheck(this)"><div class="custom-checkbox"></div> Pharmacology</div>
+                   </div>
             </div>
             <div class="custom-section config-panel" style="display: flex; flex-direction: column; justify-content: center;">
                 <div class="card-start-quiz" onclick="openPomodoroSession()">
@@ -628,15 +748,16 @@
 
     async function saveNewPassword() {
         const newPass = document.getElementById('new-password-input').value;
+        // Reemplazamos alert() por window.confirm() para evitar problemas en iframes
         if (!newPass || newPass.length < 6) {
-            alert("Password must be at least 6 characters long.");
+            window.confirm("Password must be at least 6 characters long.");
             return;
         }
         const { data, error } = await _supabase.auth.updateUser({ password: newPass });
         if (error) {
-            alert("Error: " + error.message);
+            window.confirm("Error: " + error.message);
         } else {
-            alert("Password updated successfully! Please log in with your new credentials.");
+            window.confirm("Password updated successfully! Please log in with your new credentials.");
             logout();
         }
     }
@@ -755,7 +876,7 @@
 
     function saveExamDate() {
         const dateInput = document.getElementById('exam-date-input').value;
-        if (!dateInput) return alert("Please select a date.");
+        if (!dateInput) return window.confirm("Please select a date.");
         localStorage.setItem('examDate', dateInput);
         document.getElementById('date-setup-modal').classList.remove('active');
         updateDaysLeft(dateInput);
@@ -788,7 +909,7 @@
         // Verificar que haya algo seleccionado
         const selected = document.querySelectorAll('#dynamic-cat-list .subject-item.active:not(.special-select-all)');
         if(selected.length === 0) {
-            alert("Please select at least one subject.");
+            window.confirm("Please select at least one subject.");
             return;
         }
         document.getElementById('quiz-settings-modal').classList.add('active'); 
@@ -801,7 +922,7 @@
         const selectedSubjects = Array.from(document.querySelectorAll('#dynamic-cat-list .subject-item.active:not(.special-select-all)')).map(el => el.dataset.subject);
         
         if (selectedSubjects.length === 0) {
-            alert("Please select at least one subject.");
+            window.confirm("Please select at least one subject.");
             return;
         }
 
@@ -850,7 +971,7 @@
         clearInterval(timerInterval);
         isRunning = false;
         document.getElementById('play-icon').innerText = '▶';
-        alert(isBreak ? "Break Over! Back to work." : "Time's up! Take a break.");
+        window.confirm(isBreak ? "Break Over! Back to work." : "Time's up! Take a break.");
         if (!isBreak) {
             currentCycle++;
             updateDots();
@@ -915,7 +1036,7 @@
     function closeAIModal() { modal.classList.remove('active'); }
     async function callGemini() {
         // Lógica de IA Placeholder
-        alert("AI Integration would trigger here.");
+        window.confirm("AI Integration would trigger here.");
     }
 </script>
 
