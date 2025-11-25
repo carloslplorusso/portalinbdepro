@@ -382,10 +382,20 @@
     </div>
 
     <div id="notes-modal" class="modal-overlay">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeNotesModal()">×</span>
-            <h3>My Notes</h3>
-            <div id="notes-list-container" style="height:300px; overflow-y:auto; margin-top:10px;">Loading notes...</div>
+        <div class="modal-content" style="display:flex; flex-direction:column; height: 80vh; max-height: 600px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0;">My Quick Notes</h3>
+                <span class="close-btn" onclick="closeNotesModal()">×</span>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <input id="new-note-input" type="text" placeholder="Type a note..." style="flex:1; background:#000; border:1px solid #444; color:white; padding:12px; border-radius:10px; outline:none;">
+                <button onclick="saveNote()" style="background:var(--accent); color:black; border:none; border-radius:10px; padding:0 20px; font-weight:bold; cursor:pointer;">SAVE</button>
+            </div>
+
+            <div id="notes-list-container" style="flex:1; overflow-y:auto; padding-right:5px;">
+                Loading notes...
+            </div>
         </div>
     </div>
 
