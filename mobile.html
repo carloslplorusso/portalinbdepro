@@ -234,7 +234,7 @@
             <a href="stats.html" class="nav-item">
                 <span class="nav-icon">📊</span><span>Stats</span>
             </a>
-            <a href="#" class="nav-item" onclick="alert('Notes')">
+            <a href="#" class="nav-item" onclick="openNotesModal()">
                 <span class="nav-icon">📝</span><span>Notes</span>
             </a>
             <a href="#" class="nav-item" onclick="logout()">
@@ -242,7 +242,28 @@
             </a>
         </nav>
 
-    </div> <script src="app.js"></script>
+    </div> 
+
+    <div id="notes-modal" class="modal-overlay hidden" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:3000; justify-content:center; align-items:center;">
+        <div class="modal-content" style="background:#121214; border:1px solid #333; padding:20px; width:90%; max-width:500px; height:80vh; border-radius:20px; display:flex; flex-direction:column; box-shadow:0 0 20px rgba(0,0,0,0.8);">
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; color:white;">
+                <h3 style="margin:0; font-weight:800; font-size:1.2rem;">My Quick Notes</h3>
+                <span onclick="closeNotesModal()" style="cursor:pointer; font-size:1.8rem; color:#666;">&times;</span>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <input id="new-note-input" type="text" placeholder="Type a note..." style="flex:1; background:#000; border:1px solid #444; color:white; padding:12px; border-radius:10px; outline:none;">
+                <button onclick="saveNote()" style="background:var(--accent); color:black; border:none; border-radius:10px; padding:0 15px; font-weight:bold; cursor:pointer;">SAVE</button>
+            </div>
+
+            <div id="notes-list-container" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:5px;">
+                Loading notes...
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
     <script>
         // Lógica de navegación simple
         function showLearningLab() { toggleView('learning-view'); }
