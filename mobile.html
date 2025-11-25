@@ -5,32 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>INBDE Pro Mobile</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
 <style>
     :root {
-        --accent: #facc15; 
+        --accent: #fcdc11; /* Amarillo exacto de la imagen */
         --bg-dark: #050505;
-        --card-bg: #121214;
-        --text-main: #f4f4f5;
-        --text-muted: #71717a;
+        --card-bg: #0f0f0f; /* Un poco más claro que el fondo para contraste sutil */
+        --text-main: #ffffff;
+        --text-muted: #888888;
     }
+    
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
     body {
         margin: 0;
         font-family: 'Inter', sans-serif;
-        background-color: #000;
+        background-color: #000000; /* Fondo negro puro como la imagen */
         color: var(--text-main);
-        padding-bottom: 80px; /* Espacio para el Bottom Nav */
+        padding-bottom: 90px;
         overflow-x: hidden;
     }
 
-    /* Clases de Utilidad para JS */
+    /* Clases de Utilidad */
     .hidden { display: none !important; }
     .fade-in { animation: fadeIn 0.3s ease forwards; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* HEADER APP STYLE */
+    /* HEADER */
     .app-header {
-        padding: 20px 20px 10px 20px; /* Ajuste visual */
-        background: #000; /* Fondo sólido para limpieza */
+        padding: 25px 25px 10px 25px;
+        background: #000;
         position: sticky;
         top: 0;
         z-index: 10;
@@ -38,287 +43,307 @@
         justify-content: space-between;
         align-items: center;
     }
-    .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #222; border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center; }
+    
+    .header-text-group { display: flex; flex-direction: column; gap: 2px; }
+    .welcome-label { font-size: 0.75rem; color: #666; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    .doctor-name { font-size: 1.6rem; font-weight: 900; color: white; letter-spacing: -0.5px; }
+    .pro-badge { color: var(--accent); }
+
+    .user-avatar { 
+        width: 42px; height: 42px; 
+        border-radius: 50%; 
+        background: #222; 
+        border: 1px solid var(--accent); 
+        display: flex; align-items: center; justify-content: center;
+        color: var(--accent);
+        font-size: 1.2rem;
+    }
 
     /* CONTENEDOR PRINCIPAL */
     .app-container {
-        padding: 15px;
+        padding: 10px 20px;
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 20px; /* Espaciado amplio como en la imagen */
     }
 
-    /* ESTILOS DE TARJETAS BASE */
-    .mobile-card {
-        background: var(--card-bg);
-        border: 1px solid #27272a;
-        border-radius: 20px; /* Bordes más suaves */
-        padding: 20px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-
-    /* 2. STUDY & SIMULATE (CUADRADAS) */
+    /* 1. TOP GRID (STUDY & SIMULATE) */
     .grid-menu {
         display: grid; 
         grid-template-columns: 1fr 1fr; 
         gap: 15px;
+        margin-top: 10px;
     }
+    
     .square-card {
+        background: var(--card-bg);
+        border: 2px solid var(--accent); /* Borde amarillo sólido */
+        border-radius: 18px;
+        display: flex;
         flex-direction: column;
         justify-content: center;
-        text-align: center;
-        padding: 15px;
-        aspect-ratio: 1 / 1; /* ¡CLAVE! Hace que sean cuadrados perfectos */
-        border: 1px solid var(--accent); /* Borde acentuado para destacar */
-        background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(0,0,0,0));
-    }
-    .square-card .icon { font-size: 2.5rem; margin-bottom: 8px; }
-    .square-card .label { font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; }
-
-    /* 3. DAILY LAB RUN BANNER */
-    .hero-promo {
-        background: linear-gradient(145deg, rgba(250, 204, 21, 0.15), rgba(0,0,0,0) 70%);
-        border: 2px solid var(--accent); /* Borde más grueso para jerarquía */
-        flex-direction: column;
-        text-align: center;
         align-items: center;
-        padding: 25px 20px;
-    }
-    .btn-action {
-        background: var(--accent);
-        color: #000;
-        font-weight: 900;
-        border: none;
-        padding: 12px 0;
-        border-radius: 12px;
-        margin-top: 10px;
-        width: 100%;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        text-align: center;
+        aspect-ratio: 1.4 / 1; /* Ligeramente rectangular como la imagen */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         cursor: pointer;
+        transition: transform 0.1s;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .square-card:active { transform: scale(0.96); }
+    
+    /* Brillo superior sutil para efecto 3D plano */
+    .square-card::after {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: rgba(255,255,255,0.15);
     }
 
-    /* 4. LEARN BANNER (Importado del Dashboard) */
-    .card-learn-banner {
-        width: 100%; padding: 20px; 
-        text-align: left; 
-        display: flex; align-items: center; justify-content: flex-start; gap: 15px; 
-        border: 1px solid #333; 
-        background: rgba(255,255,255,0.03); 
-        border-radius: 16px; cursor: pointer;
-    }
-    .card-learn-banner h2 { margin: 0; font-size: 0.9rem; font-weight: 600; color: #ddd; line-height: 1.3; }
-    .banner-icon { color: var(--accent); display: flex; min-width: 24px; }
+    .square-icon { font-size: 1.8rem; margin-bottom: 10px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2)); }
+    .square-label { font-weight: 800; font-size: 0.95rem; color: #fff; letter-spacing: 0.3px; }
 
-    /* 5. PERFORMANCE BANNER */
-    .perf-card {
-        justify-content: space-between;
-        border-left: 4px solid var(--accent); /* Detalle visual */
-    }
-
-    /* BOTTOM NAVIGATION */
-    .bottom-nav {
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        height: 70px; /* Un poco más alto para comodidad */
-        background: rgba(10,10,10,0.95);
-        backdrop-filter: blur(10px);
-        border-top: 1px solid #333;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        z-index: 100;
-        padding-bottom: 10px; 
-    }
-    .nav-item {
-        color: #666;
-        font-size: 0.65rem;
-        font-weight: 600;
+    /* 2. VERTICAL STACK (BANNERS) */
+    .banner-stack {
         display: flex;
         flex-direction: column;
+        gap: 18px; /* Separación vertical marcada */
+        margin-top: 10px;
+    }
+
+    .unified-banner {
+        width: 100%;
+        height: 85px;
+        padding: 0 20px;
+        display: flex;
         align-items: center;
-        gap: 5px;
-        text-decoration: none;
-        transition: color 0.2s;
+        justify-content: flex-start;
+        gap: 20px;
+        background: #000; /* Fondo negro */
+        border: 2px solid var(--accent); /* Borde amarillo característico */
+        border-radius: 16px;
+        cursor: pointer;
+        transition: transform 0.1s;
+        position: relative;
+    }
+    .unified-banner:active { transform: scale(0.98); background: #111; }
+
+    /* Iconos grandes a la izquierda */
+    .banner-icon-container {
+        width: 45px; 
+        height: 45px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+    }
+    .banner-icon-svg { width: 100%; height: 100%; object-fit: contain; }
+
+    .banner-text-box { display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+    .banner-title { 
+        font-size: 1rem; 
+        font-weight: 900; 
+        color: #fff; 
+        text-transform: uppercase; 
+        letter-spacing: 0.5px; 
+        line-height: 1;
+    }
+    .banner-desc { 
+        font-size: 0.8rem; 
+        color: #888; 
+        font-weight: 500; 
+        letter-spacing: 0px;
+    }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+        position: fixed; bottom: 0; left: 0; right: 0; height: 70px;
+        background: #080808; border-top: 1px solid #222;
+        display: flex; justify-content: space-around; align-items: center;
+        z-index: 100; padding-bottom: 10px;
+    }
+    .nav-item { 
+        color: #555; font-size: 0.65rem; font-weight: 700; 
+        display: flex; flex-direction: column; align-items: center; 
+        gap: 6px; text-decoration: none; transition: color 0.2s; 
     }
     .nav-item.active { color: var(--accent); }
-    .nav-icon { font-size: 1.3rem; }
+    .nav-icon { font-size: 1.4rem; }
 
-    /* VISTAS INTERNAS (Requeridas por app.js) */
+    /* --- VISTAS INTERNAS (SIMPLIFICADAS) --- */
     .learning-cards-row { display: flex; flex-direction: column; gap: 15px; width: 100%; }
-    .learning-card { 
-        background: var(--card-bg); border: 1px solid var(--accent); 
-        border-radius: 16px; padding: 20px; text-align: center; 
-    }
-    .learning-icon { font-size: 2rem; margin-bottom: 10px; }
-    .btn-back-small { 
-        background: transparent; border: 1px solid #555; color: #aaa; 
-        padding: 10px 20px; border-radius: 20px; margin-top: 20px; width: 100%;
-        font-weight: 600;
-    }
+    .learning-card { background: #111; border: 1px solid var(--accent); border-radius: 16px; padding: 20px; text-align: center; }
+    .btn-back-small { background: transparent; border: 1px solid #444; color: #aaa; padding: 10px 20px; border-radius: 20px; margin-top: 20px; width: 100%; font-weight: 600; }
     
-    /* Pomodoro & Selection overrides */
-    .pomo-container { text-align: center; padding: 20px; border: 1px solid var(--accent); border-radius: 20px; margin: 20px 0; }
-    .pomo-timer-display { font-size: 4rem; font-weight: 900; color: white; }
-    .pomo-btn { width: 60px; height: 60px; border-radius: 50%; border: none; font-size: 1.5rem; margin: 0 10px; background: #333; color: white;}
-    .pomo-btn.main { background: var(--accent); color: black;}
+    /* Elementos ocultos pero necesarios para JS */
+    #quiz-settings-modal, #date-setup-modal, #notes-modal { z-index: 2000; }
+    .pomo-container { text-align: center; padding: 20px; border: 1px solid var(--accent); border-radius: 20px; }
+    .pomo-timer-display { font-size: 3rem; font-weight: 900; color: white; }
+    .pomo-btn { width: 50px; height: 50px; border-radius: 50%; border:none; font-size: 1.2rem; margin: 0 5px; background:#333; color:white; }
     
-    #selection-mode-title { color: white; margin-bottom: 15px; text-align: center; font-size: 1.5rem; }
-    #dynamic-cat-list { background: #111; border-radius: 10px; padding: 10px; margin-bottom: 20px; }
-    .subject-item { padding: 15px; border-bottom: 1px solid #222; display: flex; align-items: center; color: #ccc; }
-    .custom-checkbox { width: 20px; height: 20px; border: 2px solid #555; border-radius: 4px; margin-right: 15px; }
+    /* Overrides Selection View */
+    #selection-mode-title { color: white; text-align: center; margin-bottom: 15px; }
+    #dynamic-cat-list { background: #111; border-radius: 10px; padding: 10px; }
+    .subject-item { padding: 15px; border-bottom: 1px solid #222; color: #ccc; display: flex; align-items: center; }
+    .custom-checkbox { width: 20px; height: 20px; border: 2px solid #555; margin-right: 10px; }
     .subject-item.active { color: white; font-weight: bold; }
     .subject-item.active .custom-checkbox { background: var(--accent); border-color: var(--accent); }
+    .btn-action { background: var(--accent); color: black; font-weight: 800; border: none; padding: 12px; width: 100%; border-radius: 10px; margin-top: 10px; cursor: pointer; text-transform: uppercase; }
 
 </style>
 </head>
 <body>
 
     <header class="app-header" id="header-welcome-section">
-        <div>
-            <div style="font-size:0.8rem; color:gray; text-transform: uppercase; letter-spacing: 1px;">Welcome</div>
-            <div style="font-weight:900; font-size:1.4rem; color:white;">Doctor <span id="user-name-display" style="color:var(--accent);">Pro</span></div>
+        <div class="header-text-group">
+            <div class="welcome-label">WELCOME</div>
+            <div class="doctor-name">Doctor <span class="pro-badge" id="user-name-display">Pro</span></div>
         </div>
-        <div class="user-avatar">👨‍⚕️</div>
+        <div class="user-avatar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </div>
     </header>
 
     <div id="dashboard-content" class="app-container fade-in">
         
         <div class="grid-menu">
-            <div class="mobile-card square-card" onclick="showLearningLab()">
-                <div class="icon">🧪</div>
-                <div class="label">Study</div>
-                <div style="font-size:0.7rem; color:#777; margin-top:4px;">Deep dive</div>
+            <div class="square-card" onclick="showLearningLab()">
+                <div class="square-icon">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v3a6 6 0 0 1-6 6 6 6 0 0 0-6 6v3h18v-3a6 6 0 0 0-6-6 6 6 0 0 1-6-6V3z"></path></svg>
+                </div>
+                <div class="square-label">Study</div>
             </div>
-            <div class="mobile-card square-card" onclick="showSimulationLab()">
-                <div class="icon">⚡</div>
-                <div class="label">Simulate</div>
-                <div style="font-size:0.7rem; color:#777; margin-top:4px;">Exam Mode</div>
+            <div class="square-card" onclick="showSimulationLab()">
+                <div class="square-icon">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                </div>
+                <div class="square-label">Simulate</div>
             </div>
         </div>
 
-        <div class="mobile-card hero-promo">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                <span style="font-size:1.5rem;">🔥</span>
-                <h3 style="margin:0; font-size:1.1rem; text-transform: uppercase; letter-spacing: 1px;">Daily Lab Run</h3>
-            </div>
-            <p style="margin:0 0 15px 0; font-size:0.85rem; color:#bbb; line-height: 1.4;">10-question sprint. Keep the streak alive.</p>
-            <button class="btn-action" onclick="startDailyRun()">Start Now</button>
-        </div>
-
-        <div class="card-learn-banner">
-            <div class="banner-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></div>
-            <h2>Learn about the INBDE our way</h2>
-        </div>
-
-        <div class="mobile-card perf-card" onclick="window.location.href='stats.html'">
-            <div style="display:flex; align-items:center; gap:15px;">
-                <div style="font-size:1.5rem;">📊</div>
-                <div>
-                    <div style="font-weight:700; font-size:1rem;">Performance</div>
-                    <div style="font-size:0.75rem; color:gray;">Analytics Hub</div>
+        <div class="banner-stack">
+            
+            <div class="unified-banner" onclick="startDailyRun()">
+                <div class="banner-icon-container">
+                    <span style="font-size: 2.2rem;">🔥</span>
+                </div>
+                <div class="banner-text-box">
+                    <div class="banner-title">DAILY LAB RUN</div>
+                    <div class="banner-desc">10-question sprint</div>
                 </div>
             </div>
-            <div style="color:var(--accent);">→</div>
-        </div>
+
+            <div class="unified-banner" onclick="alert('Methodology coming soon')">
+                <div class="banner-icon-container">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fcdc11" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                </div>
+                <div class="banner-text-box">
+                    <div class="banner-title">INBDE METHOD</div>
+                    <div class="banner-desc">Learn our way</div>
+                </div>
+            </div>
+
+            <div class="unified-banner" onclick="window.location.href='stats.html'">
+                <div class="banner-icon-container">
+                    <span style="font-size: 2.2rem;">📊</span>
+                </div>
+                <div class="banner-text-box">
+                    <div class="banner-title">PERFORMANCE</div>
+                    <div class="banner-desc">Analytics Hub</div>
+                </div>
+            </div>
 
         </div>
+
+    </div>
 
     <div id="learning-view" class="app-container hidden">
-        <h2 style="color:white; margin-bottom:20px;">Study Mode</h2>
+        <h2 style="color:white;">Study Mode</h2>
         <div class="learning-cards-row">
             <div class="learning-card" onclick="openSelectionView('standalone')">
-                <div class="learning-icon">🧠</div><h3>Stand Alone</h3><p>Practice specific topics.</p>
+                <h3>Stand Alone Questions</h3>
             </div>
             <div class="learning-card" onclick="openSelectionView('itemsets')">
-                <div class="learning-icon">🔗</div><h3>Item Sets</h3><p>Complex scenarios.</p>
+                <h3>Item Sets</h3>
             </div>
         </div>
-        <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Home</button>
+        <button class="btn-back-small" onclick="goBackToDashboard()">Back</button>
     </div>
 
     <div id="simulation-view" class="app-container hidden">
-        <h2 style="color:white; margin-bottom:20px;">Simulation Lab</h2>
+        <h2 style="color:white;">Simulation</h2>
         <div class="learning-cards-row">
             <div class="learning-card" onclick="openSelectionView('simulation')">
-                <div class="learning-icon">🛠️</div><h3>Customize</h3><p>Adjust time and subjects.</p>
+                <h3>Customize</h3>
             </div>
             <div class="learning-card" onclick="startQuizEngine('simulation_standard')">
-                <div class="learning-icon">▶️</div><h3>Standard Exam</h3><p>Start full simulation.</p>
+                <h3>Standard Exam</h3>
             </div>
         </div>
-        <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Home</button>
+        <button class="btn-back-small" onclick="goBackToDashboard()">Back</button>
     </div>
 
     <div id="pomodoro-view" class="app-container hidden">
-        <h2 style="color:white; margin-bottom:20px;">Pomodoro</h2>
+        <h2 style="color:white;">Pomodoro</h2>
         <div class="learning-cards-row">
             <div class="learning-card" onclick="openPomodoroCustomization()">
-                <div class="learning-icon">⚙️</div><h3>Configure</h3>
+                <h3>Configure</h3>
             </div>
             <div class="learning-card" onclick="openPomodoroSession()">
-                <div class="learning-icon">🍅</div><h3>Quick Start</h3>
+                <h3>Quick Start</h3>
             </div>
         </div>
-        <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Home</button>
+        <button class="btn-back-small" onclick="goBackToDashboard()">Back</button>
     </div>
 
     <div id="selection-view" class="app-container hidden">
-        <h2 id="selection-mode-title">Select Topics</h2>
-        <div id="dynamic-cat-list">
-            </div>
-        <button class="btn-action" onclick="openQuizSettings()">Next Step</button>
+        <h2 id="selection-mode-title">Topics</h2>
+        <div id="dynamic-cat-list"></div>
+        <button class="btn-action" onclick="openQuizSettings()">Next</button>
         <button class="btn-back-small" onclick="goBackToLearning()">Cancel</button>
     </div>
 
     <div id="pomodoro-timer-view" class="app-container hidden">
-        <h2 style="color:white; text-align:center;">Focus Mode</h2>
+        <h2 style="color:white;">Focus</h2>
         <div class="pomo-container">
             <div id="timer-display" class="pomo-timer-display">25:00</div>
-            <div style="margin-top:20px;">
-                <button class="pomo-btn main" id="play-icon" onclick="toggleTimer()">▶</button>
-                <button class="pomo-btn" onclick="resetTimer()">↺</button>
-            </div>
+            <br>
+            <button class="pomo-btn main" id="play-icon" onclick="toggleTimer()">▶</button>
+            <button class="pomo-btn" onclick="resetTimer()">↺</button>
         </div>
-        <button class="btn-back-small" onclick="goBackToPomodoro()">Exit Session</button>
+        <button class="btn-back-small" onclick="goBackToPomodoro()">Exit</button>
     </div>
 
     <nav class="bottom-nav">
         <a href="#" class="nav-item active" onclick="goBackToDashboard()">
-            <span class="nav-icon">🏠</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
             <span>Home</span>
         </a>
         <a href="stats.html" class="nav-item">
-            <span class="nav-icon">📊</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
             <span>Stats</span>
         </a>
         <a href="#" class="nav-item" onclick="openNotesModal()">
-            <span class="nav-icon">📝</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
             <span>Notes</span>
         </a>
         <a href="#" class="nav-item" onclick="logout()">
-            <span class="nav-icon">⚙️</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             <span>Profile</span>
         </a>
     </nav>
 
     <div id="quiz-settings-modal" class="modal-overlay" style="display:none;">
-        <div class="modal-content" style="background:#222; padding:20px; margin:20px; border-radius:20px; border:1px solid #444;">
-            <h3 style="color:white; margin-top:0;">Settings</h3>
+        <div class="modal-content" style="background:#222; padding:20px; margin:20px; border-radius:15px; border:1px solid #444;">
+            <h3 style="color:white; margin-top:0;">Setup</h3>
             <select id="quiz-count" style="width:100%; padding:15px; margin:20px 0; background:#000; color:white; border:1px solid var(--accent); border-radius:8px;">
                 <option value="10">10 Questions</option>
                 <option value="20">20 Questions</option>
-                <option value="30">30 Questions</option>
             </select>
-            <button class="btn-action" onclick="startQuiz()">START QUIZ</button>
-            <button class="btn-back-small" onclick="closeQuizSettings()" style="margin-top:10px;">Close</button>
+            <button class="btn-action" onclick="startQuiz()">GO</button>
+            <button class="btn-back-small" onclick="closeQuizSettings()" style="margin-top:10px;">Cancel</button>
         </div>
     </div>
 
     <script src="app.js"></script>
-
 </body>
 </html>
