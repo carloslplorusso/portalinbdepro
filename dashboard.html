@@ -704,36 +704,37 @@
     }
 
     async function loadData() {
-        try {
-            // Descargar Quizzes y Progreso
-            const quizzesReq = _supabase.from('contenido_quizzes').select('*').order('materia', { ascending: true });
-            
-            // Solo pedir progreso si hay usuario real
-            let progressReq = Promise.resolve({ data: [] });
-            if (currentUser.id !== 'test-user') {
-                progressReq = _supabase.from('user_progress').select('quiz_id').eq('user_id', currentUser.id);
-            }
+    try {
+        // CORRECCIÓN: Usar 'questions_bank' y ordenar por 'category'
+        const quizzesReq = _supabase.from('questions_bank').select('*').order('category', { ascending: true });
+        
+        // Asumiendo que el progreso se guarda en 'user_analytics' (como se ve en la captura)
+        let progressReq = Promise.resolve({ data: [] });
+        if (currentUser.id !== 'test-user') {
+            // Usamos user_analytics (asumiendo que contiene question_id)
+            progressReq = _supabase.from('user_analytics').select('question_id').eq('user_email', currentUser.email);
+        }
 
-            const [quizzesRes, progressRes] = await Promise.all([quizzesReq, progressReq]);
+        const [quizzesRes, progressRes] = await Promise.all([quizzesReq, progressReq]);
 
-            if (quizzesRes.error) throw quizzesRes.error;
+        if (quizzesRes.error) throw quizzesRes.error;
 
-            allQuizzes = quizzesRes.data;
-            if (progressRes.data) {
-                userCompletedIds = new Set(progressRes.data.map(p => p.quiz_id));
-            }
-            console.log("Datos cargados correctamente:", allQuizzes.length, "quizzes.");
-        } catch (err) {
-            console.error("Error cargando datos:", err);
-            // Fallback data para que funcione la UI si la tabla está vacía o hay error
-            if (allQuizzes.length === 0) {
-                 allQuizzes = [
-                    { materia: 'Anatomy', tipo: 'single' }, { materia: 'Pharmacology', tipo: 'single' },
-                    { materia: 'Pathology', tipo: 'itemsets' }, { materia: 'Operative', tipo: 'simulation' }
-                 ];
-            }
+        allQuizzes = quizzesRes.data;
+        if (progressRes.data) {
+            userCompletedIds = new Set(progressRes.data.map(p => p.question_id));
+        }
+        console.log("Datos cargados correctamente:", allQuizzes.length, "quizzes.");
+    } catch (err) {
+        console.error("Error cargando datos:", err);
+        // Fallback data para que la UI no se rompa si la conexión falla
+        if (allQuizzes.length === 0) {
+            allQuizzes = [
+                 { id: 1, category: 'Anatomy', tipo: 'single' },
+                 { id: 2, category: 'Oral Pathology', tipo: 'itemsets' }
+            ];
         }
     }
+}
 
     async function logout() {
         await _supabase.auth.signOut();
