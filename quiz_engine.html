@@ -268,13 +268,14 @@
         }
 
         // --- SUPABASE LOGGING ---
-        async function handleStatus(status) {
+        function handleStatus(status) {
             userStatusCounts[status]++;
             
-            // Guardar en Supabase
+            // Guardar en Supabase en segundo plano (NO AWAIT para evitar bloqueo UI)
             const qId = quizData[currentIndex].id;
-            await saveStatusToSupabase(qId, status);
+            saveStatusToSupabase(qId, status);
 
+            // Lógica para avanzar o terminar
             if (currentIndex < quizData.length - 1) {
                 currentIndex++;
                 renderQuestion();
@@ -288,12 +289,11 @@
             if (!session) return;
 
             // Insertar o actualizar status
-            // Nota: Asume tabla 'user_progress' o similar. Ajustar según tu esquema real.
             const { error } = await _supabase.from('user_progress').insert([
                 { 
                     user_id: session.user.id, 
-                    question_id: questionId, // Asegúrate que esta columna exista
-                    status: status, // 'learning', 'reviewing', 'mastered'
+                    question_id: questionId, 
+                    status: status, 
                     quiz_mode: mode,
                     timestamp: new Date()
                 }
@@ -303,8 +303,13 @@
 
         // --- NAVIGATION ---
         function nextQuestion() {
-            if(currentIndex < quizData.length - 1) { currentIndex++; renderQuestion(); }
-            else if(mode === 'simulation') { finishQuiz(); }
+            if(currentIndex < quizData.length - 1) { 
+                currentIndex++; 
+                renderQuestion(); 
+            } else {
+                // Si es la última pregunta y se le da a Next en simulación, terminar.
+                finishQuiz(); 
+            }
         }
         function prevQuestion() {
             if(currentIndex > 0) { currentIndex--; renderQuestion(); }
@@ -312,12 +317,12 @@
         function toggleMark() {
             if(markedQuestions.has(currentIndex)) markedQuestions.delete(currentIndex);
             else markedQuestions.add(currentIndex);
-            renderQuestion(); 
+            renderQuestion(); // Re-render para actualizar clase
         }
 
         // --- FINISH & RESULTS GENERATION ---
         function finishQuiz() {
-            clearInterval(timerInterval);
+            if(timerInterval) clearInterval(timerInterval);
             
             // Ocultar UI de quiz
             document.querySelector('.inbde-header').classList.add('hidden');
@@ -407,7 +412,7 @@
                 const pctYellow = (userStatusCounts.reviewing / safeTotal) * 100;
                 const pctGreen = (userStatusCounts.mastered / safeTotal) * 100;
 
-                // CSS Conic Gradient para Pie Chart
+                // CSS Conic Gradient para Pie Chart (Calculado acumulativamente)
                 const chartStyle = `background: conic-gradient(
                     #ef4444 0% ${pctRed}%, 
                     #facc15 ${pctRed}% ${pctRed + pctYellow}%, 
@@ -466,14 +471,11 @@
 
         // Función específica para la lista de resultados (Simulación)
         async function askGeminiInList(btn, qText, correct) {
-            // Encontrar el contenedor de respuesta hermano (o el siguiente elemento)
-            // La estructura HTML generada pone el botón dentro de un flex container
-            // y queremos mostrar la respuesta en un div debajo.
-            
-            // El botón está dentro de .sim-review-item. 
-            // El contenedor de salida está justo después del .sim-review-item
             const itemDiv = btn.closest('.sim-review-item');
-            const outputDiv = itemDiv.nextElementSibling; 
+            // Encontrar el div siguiente (que es el contenedor ai-response)
+            // Nota: En la generación HTML, pusimos .ai-response DENTRO de sim-review-item, debajo del botón
+            // Busca dentro del itemDiv el elemento .ai-response
+            const outputDiv = itemDiv.querySelector('.ai-response'); 
             
             outputDiv.classList.remove('hidden');
             outputDiv.innerHTML = '<span class="text-blue-600">🤖 AI is analyzing...</span>';
