@@ -1,412 +1,234 @@
-// --- CONFIGURACIÓN SUPABASE ---
-const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
-const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// --- FUNCIONES Y VARIABLES AGREGADAS/MODIFICADAS ---
 
-let allQuizzes = [];
-let currentUser = null;
-
-// --- INIT ---
-document.addEventListener('DOMContentLoaded', async () => {
-    await initApp();
-    updateActivityCharts(); // Cargar gráficos al inicio
-});
-
-_supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === "PASSWORD_RECOVERY") showRecoveryAlert();
-});
-
-async function initApp() {
-    const { data: { session } } = await _supabase.auth.getSession();
-    if (!session) {
-        currentUser = { id: 'test-user', user_metadata: { full_name: 'Guest Doctor' }, email: 'guest@inbde.com' };
-    } else {
-        currentUser = session.user;
-    }
-    
-    const nameDisplay = document.getElementById('user-name-display');
-    if(nameDisplay) nameDisplay.innerText = currentUser.user_metadata.full_name || 'Doctor';
-
-    await loadData();
-}
-
-async function loadData() {
-    try {
-        // Cargar preguntas para el conteo de categorías
-        const { data, error } = await _supabase
-            .from('questions_bank')
-            .select('category, id'); // Solo necesitamos esto para filtrar
-
-        if (error) throw error;
-        allQuizzes = data || [];
-        console.log("Datos cargados:", allQuizzes.length);
-
-    } catch (err) {
-        console.error("Error cargando datos:", err);
-    }
-}
-
-// --- ESTADÍSTICAS Y GRÁFICOS (PIE CHART) ---
-async function updateActivityCharts() {
-    if (!currentUser || currentUser.id === 'test-user') return;
-
-    try {
-        // Obtener estadísticas del usuario
-        const { data, error } = await _supabase
-            .from('user_analytics')
-            .select('is_correct');
-
-        if (error) throw error;
-
-        const total = data.length;
-        if (total === 0) return; // Dejar gráfico por defecto
-
-        const correct = data.filter(x => x.is_correct).length;
-        const percentage = Math.round((correct / total) * 100);
-
-        // Actualizar Pie Charts en el DOM
-        const pieCharts = document.querySelectorAll('.pie-chart-main, .ring-chart');
-        pieCharts.forEach(chart => {
-            // Actualizar gradiente dinámicamente
-            chart.style.background = `conic-gradient(var(--accent) 0% ${percentage}%, #27272a ${percentage}% 100%)`;
-        });
-
-        // Actualizar texto si existe un elemento de porcentaje
-        const textPct = document.getElementById('accuracy-text');
-        if(textPct) textPct.innerText = `${percentage}%`;
-
-    } catch (err) {
-        console.error("Error actualizando gráficos:", err);
-    }
-}
-
-// --- NAVEGACIÓN ENTRE VISTAS ---
-function showLearningLab() { switchView('learning-view'); }
-function showSimulationLab() { switchView('simulation-view'); }
-function showPomodoro() { switchView('pomodoro-view'); }
-function goBackToDashboard() { switchView('dashboard-content', true); }
-function goBackToLearning() { switchView('learning-view'); }
-function goBackToPomodoro() { switchView('pomodoro-view'); }
-
-function switchView(targetId, showHeader = false) {
-    // Ocultar todas las vistas principales
-    const views = ['dashboard-content', 'learning-view', 'simulation-view', 'pomodoro-view', 'selection-view', 'pomodoro-timer-view', 'pomodoro-customization-view'];
-    
-    views.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.classList.add('hidden');
-    });
-
-    // Mostrar la deseada
-    const target = document.getElementById(targetId);
-    if(target) target.classList.remove('hidden');
-    
-    // Manejo del Header
-    const header = document.getElementById('header-welcome-section');
-    if(header) {
-        if(showHeader) header.classList.remove('hidden');
-        else header.classList.add('hidden');
-    }
-}
-
-// --- SELECCIÓN DE QUIZ & SIMULACIÓN ---
-let currentQuizMode = 'practice';
-
-function openSelectionView(mode) {
-    currentQuizMode = mode;
-    let title = "Select Topic";
-    let backFunc = goBackToLearning;
-
-    if (mode === 'standalone') {
-        title = "Stand Alone Questions";
-    } else if (mode === 'itemsets') {
-        title = "Item Sets";
-    } else if (mode === 'simulation') {
-        title = "Customize Simulation";
-        backFunc = () => switchView('simulation-view');
-    }
-
-    const titleEl = document.getElementById('selection-mode-title');
-    if(titleEl) titleEl.innerText = title;
-    
-    renderDynamicCategories();
-
-    // Configurar botón 'Next' para abrir el modal de configuración
-    const nextBtn = document.querySelector('#selection-view .square-card, #selection-view .btn-action'); 
-    if(nextBtn) {
-        nextBtn.onclick = openQuizSettings;
-        // Cambiar texto del botón si es simulación
-        if(mode === 'simulation') {
-            nextBtn.innerHTML = '<span style="font-weight:bold; color:white;">CONFIGURE EXAM →</span>';
-        }
-    }
-
-    const btnBack = document.querySelector('#selection-view .btn-back-small');
-    if(btnBack) btnBack.onclick = backFunc;
-
-    switchView('selection-view');
-}
-
-function renderDynamicCategories() {
-    const container = document.getElementById('dynamic-cat-list');
-    if(!container) return;
-    container.innerHTML = '';
-
-    // Obtener categorías únicas
-    const uniqueSubjects = [...new Set(allQuizzes.map(q => q.category))].filter(Boolean);
-
-    if (uniqueSubjects.length === 0) {
-        container.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">Loading categories... (Check DB)</div>';
-        return;
-    }
-
-    // Botón Select All
-    const selectAllDiv = document.createElement('div');
-    selectAllDiv.className = 'subject-item special-select-all';
-    selectAllDiv.innerHTML = `<div class="custom-checkbox"></div> Select All Categories`;
-    selectAllDiv.onclick = function() { toggleSelectAll(this); };
-    container.appendChild(selectAllDiv);
-
-    uniqueSubjects.forEach(subject => {
-        const item = document.createElement('div');
-        item.className = 'subject-item';
-        item.dataset.subject = subject;
-        item.innerHTML = `<div class="custom-checkbox"></div> ${subject}`;
-        item.onclick = function() { toggleCheck(this); };
-        container.appendChild(item);
-    });
-}
-
-function toggleCheck(item) { item.classList.toggle('active'); }
-function toggleSelectAll(source) {
-    const isChecked = source.classList.contains('active');
-    source.classList.toggle('active');
-    const allItems = document.querySelectorAll('#dynamic-cat-list .subject-item:not(.special-select-all)');
-    allItems.forEach(item => isChecked ? item.classList.remove('active') : item.classList.add('active'));
-}
-
-// --- MODAL DE CONFIGURACIÓN DE QUIZ (SIMULACIÓN Y PRÁCTICA) ---
-function openQuizSettings() {
-    const modal = document.getElementById('quiz-settings-modal');
-    const select = document.getElementById('quiz-count');
-    
-    // Limpiar opciones anteriores
-    select.innerHTML = '';
-
-    if (currentQuizMode === 'simulation') {
-        // Opciones específicas para simulación (Tiempo se calcula en quiz_engine)
-        const options = [25, 50, 75, 100];
-        options.forEach(val => {
-            const opt = document.createElement('option');
-            opt.value = val;
-            opt.text = `${val} Questions (${Math.round(val * 1.2)} mins)`;
-            select.appendChild(opt);
-        });
-    } else {
-        // Opciones para práctica
-        [10, 20, 30].forEach(val => {
-            const opt = document.createElement('option');
-            opt.value = val;
-            opt.text = `${val} Questions`;
-            select.appendChild(opt);
-        });
-    }
-
-    modal.classList.remove('hidden');
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('active'), 10);
-}
-
-function closeQuizSettings() {
-    const modal = document.getElementById('quiz-settings-modal');
-    modal.classList.remove('active');
-    setTimeout(() => { modal.style.display = 'none'; modal.classList.add('hidden'); }, 300);
-}
-
-function startQuiz() {
-    const count = document.getElementById('quiz-count').value;
-    // Obtener materias seleccionadas (si estamos en modo selección)
-    const selectedEls = document.querySelectorAll('#dynamic-cat-list .subject-item.active:not(.special-select-all)');
-    let subjects = Array.from(selectedEls).map(el => el.dataset.subject).join(',');
-
-    // Si no hay selección (ej. simulation standard), enviar vacío (todos)
-    if(currentQuizMode === 'simulation_standard') subjects = '';
-
-    const params = new URLSearchParams();
-    params.append('mode', currentQuizMode);
-    params.append('count', count);
-    if(subjects) params.append('subjects', subjects);
-
-    window.location.href = `quiz_engine.html?${params.toString()}`;
-}
-
-// Acceso directo para examen estándar (Botón "Standard Exam")
-function startQuizEngine(mode) {
-    currentQuizMode = mode;
-    if(mode === 'simulation_standard') {
-        // Configuración fija para estándar
-        window.location.href = `quiz_engine.html?mode=simulation&count=100`; 
-    } else if (mode === 'daily') {
-        window.location.href = `quiz_engine.html?mode=daily&count=10`;
-    }
-}
-
-// --- QUICK NOTES (CORREGIDO) ---
-function openNotesModal() {
-    const modal = document.getElementById('notes-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.style.display = 'flex';
-        setTimeout(() => modal.classList.add('active'), 10);
-        loadUserNotes();
-    }
-}
-
-function closeNotesModal() {
-    const modal = document.getElementById('notes-modal');
-    if (modal) {
-        modal.classList.remove('active');
-        setTimeout(() => { modal.style.display = 'none'; modal.classList.add('hidden'); }, 300);
-    }
-}
-
-async function loadUserNotes() {
-    const container = document.getElementById('notes-list-container');
-    if(!container) return;
-    
-    container.innerHTML = '<div style="color:gray; text-align:center; padding:20px;">Loading notes...</div>';
-    
-    if (currentUser.id === 'test-user') {
-        container.innerHTML = '<div style="color:#666; padding:10px;">Test Mode: Notes are not saved to cloud.</div>';
-        return;
-    }
-
-    const { data, error } = await _supabase
-        .from('user_notes')
-        .select('*')
-        .eq('user_email', currentUser.email)
-        .order('created_at', { ascending: false });
-
-    if (error || !data) {
-        container.innerHTML = '<div style="color:red; padding:10px;">Error loading notes.</div>';
-        return;
-    }
-
-    container.innerHTML = '';
-    if (data.length === 0) {
-        container.innerHTML = '<div style="color:#444; text-align:center; margin-top:20px;">No notes yet.</div>';
-        return;
-    }
-
-    data.forEach(note => {
-        const div = document.createElement('div');
-        div.style.cssText = 'background:#1a1a1a; padding:10px; margin-bottom:8px; border-radius:8px; border:1px solid #333; position:relative;';
-        div.innerHTML = `
-            <div style="color:#ddd; font-size:0.9rem; white-space: pre-wrap;">${note.content}</div>
-            <div style="color:#555; font-size:0.7rem; margin-top:5px;">${new Date(note.created_at).toLocaleDateString()}</div>
-            <button onclick="deleteNote('${note.id}')" style="position:absolute; top:5px; right:5px; background:none; border:none; cursor:pointer;">🗑️</button>
-        `;
-        container.appendChild(div);
-    });
-}
-
-async function saveNote() {
-    const input = document.getElementById('new-note-input');
-    const content = input.value.trim();
-    if(!content) return;
-
-    if(currentUser.id === 'test-user') { alert("Login to save notes."); return; }
-
-    await _supabase.from('user_notes').insert([{ user_email: currentUser.email, content: content }]);
-    input.value = '';
-    loadUserNotes();
-}
-
-async function deleteNote(id) {
-    if(confirm("Delete note?")) {
-        await _supabase.from('user_notes').delete().eq('id', id);
-        loadUserNotes();
-    }
-}
-
-// --- POMODORO LOGIC (CORREGIDA CICLOS) ---
-let pomoTimer = null;
-let pomoTimeLeft = 1500; // 25 min
-let pomoIsBreak = false;
-let pomoRunning = false;
-
-function openPomodoroSession() { switchView('pomodoro-timer-view'); resetPomo(); }
-function openPomodoroCustomization() { switchView('pomodoro-customization-view'); }
-
-function toggleTimer() {
-    const btn = document.getElementById('play-icon');
-    if (pomoRunning) {
-        clearInterval(pomoTimer);
-        btn.innerText = '▶';
-    } else {
-        pomoTimer = setInterval(pomoTick, 1000);
-        btn.innerText = '❚❚';
-    }
-    pomoRunning = !pomoRunning;
-}
-
-function pomoTick() {
-    if (pomoTimeLeft > 0) {
-        pomoTimeLeft--;
-        updatePomoDisplay();
-    } else {
-        clearInterval(pomoTimer);
-        pomoRunning = false;
-        document.getElementById('play-icon').innerText = '▶';
-        
-        // Logic Ciclo
-        if (!pomoIsBreak) {
-            alert("Focus Time Complete! Take a 5 min break.");
-            pomoIsBreak = true;
-            pomoTimeLeft = 300; // 5 min
-            document.querySelector('.pomo-container').style.borderColor = '#4ade80'; // Verde para break
-        } else {
-            alert("Break Over! Back to Focus.");
-            pomoIsBreak = false;
-            pomoTimeLeft = 1500; // 25 min
-            document.querySelector('.pomo-container').style.borderColor = '#facc15'; // Amarillo para focus
-        }
-        updatePomoDisplay();
-    }
-}
-
-function resetPomo() {
-    clearInterval(pomoTimer);
-    pomoRunning = false;
-    pomoIsBreak = false;
-    pomoTimeLeft = 1500;
-    updatePomoDisplay();
-    document.getElementById('play-icon').innerText = '▶';
-    document.querySelector('.pomo-container').style.borderColor = '#facc15';
-}
-
-function updatePomoDisplay() {
-    const m = Math.floor(pomoTimeLeft / 60).toString().padStart(2, '0');
-    const s = (pomoTimeLeft % 60).toString().padStart(2, '0');
-    document.getElementById('timer-display').innerText = `${m}:${s}`;
-}
-
-// --- AI & AUTH (Utilidades) ---
-function openAIModal(type) { 
-    document.getElementById('ai-modal').classList.remove('hidden');
-    document.getElementById('ai-modal').classList.add('active'); 
-}
-function closeAIModal() { 
-    document.getElementById('ai-modal').classList.remove('active');
-    setTimeout(() => document.getElementById('ai-modal').classList.add('hidden'), 300);
-}
-async function logout() { await _supabase.auth.signOut(); window.location.href = 'index.html'; }
-function initCountdown() {} // Placeholder fecha
-function showRecoveryAlert() { alert("Set new password."); }
-// --- AGREGA ESTO AL FINAL DE APP.JS ---
-
+// 1. NUEVA FUNCIÓN PARA EL DAILY RUN
 function startDailyRun() {
     console.log("Starting Daily Run...");
     // Redirige al quiz engine forzando modo 'daily' y 10 preguntas
     window.location.href = 'quiz_engine.html?mode=daily&count=10';
 }
+
+// 2. NUEVA VARIABLE DE ESTADO (debe estar cerca de 'let userAnswers')
+let userStatus = { learning: 0, reviewing: 0, mastered: 0 }; // NUEVO: Rastreador de semáforo
+
+// 3. FUNCIÓN HANDLESTATUS (para los botones del semáforo)
+function handleStatus(status) {
+    // Incrementar el contador del estado seleccionado
+    if (userStatus[status] !== undefined) {
+        userStatus[status]++;
+    }
+    console.log(`Question marked as: ${status}`);
+    // Asegúrate de que 'nextQuestion()' esté definida y avance la pregunta
+    if (typeof nextQuestion === 'function') {
+        nextQuestion();
+    } else {
+        console.error("nextQuestion() is not defined!");
+    }
+}
+
+// 4. FUNCIÓN FINISHQUIZ (MODIFICADA para incluir métricas de Semáforo)
+function finishQuiz() {
+    // Asegúrate de que estas variables y funciones existan en tu ámbito global:
+    // timerInterval, quizData, userAnswers, goBackToHome(), askGemini()
+
+    // Lógica para detener la simulación si está corriendo
+    if (typeof timerInterval !== 'undefined') {
+        clearInterval(timerInterval);
+    }
+    
+    // Ocultar elementos de la interfaz de simulación
+    const inbdeHeader = document.querySelector('.inbde-header');
+    const inbdeFooter = document.querySelector('.inbde-footer');
+    const mainContainer = document.getElementById('main-container');
+    const leftPanel = document.getElementById('left-panel');
+    const rightPanel = document.getElementById('right-panel');
+    const quizContent = document.getElementById('quiz-content');
+    const reviewModal = document.getElementById('review-modal');
+
+    if (inbdeHeader) inbdeHeader.classList.add('hidden');
+    if (inbdeFooter) inbdeFooter.classList.add('hidden');
+    
+    // Ocultar paneles de juego
+    if (mainContainer) mainContainer.style.display = 'block';
+    if (leftPanel) leftPanel.classList.add('hidden');
+    if (rightPanel) rightPanel.style.width = '100%'; // Usar ancho completo
+    if (quizContent) quizContent.classList.add('hidden');
+    if (reviewModal) reviewModal.style.display = 'none';
+    
+    // 1. Cálculos de Aciertos (Score Técnico)
+    let correct = 0;
+    const total = quizData.length;
+    
+    // Generar lista de revisión detallada
+    let listHTML = '';
+    quizData.forEach((q, idx) => {
+        // Nota: En modo estudio, userAnswers guarda lo que clickearon primero
+        const userAns = userAnswers[q.id];
+        // Limpiamos strings para comparación segura
+        const isCorrect = userAns && q.correct_answer && 
+                            userAns.trim().includes(q.correct_answer.trim());
+        
+        if(isCorrect) correct++;
+
+        listHTML += `
+            <div class="bg-gray-800 p-4 rounded border border-gray-700 mb-3">
+                <div class="font-bold text-white mb-1">Q${idx+1}: ${q.question_text}</div>
+                <div class="text-sm text-gray-400 mb-2">Correct Answer: <span class="text-green-400">${q.correct_answer}</span></div>
+                <button class="ai-btn text-xs" onclick="askGemini(this, '${q.question_text.replace(/'/g, "\\'")}', '${q.correct_answer.replace(/'/g, "\\'")}')">✨ Why?</button>
+                <div class="ai-response mt-2 text-gray-300 text-sm hidden bg-black p-2 rounded"></div>
+            </div>
+        `;
+    });
+
+    // 2. Cálculos de Semáforo (Self-Assessment)
+    const totalStatus = userStatus.learning + userStatus.reviewing + userStatus.mastered; 
+    // Evitar división por cero si el usuario no terminó o saltó pasos
+    const safeTotal = totalStatus > 0 ? totalStatus : 1; 
+    
+    const pctLearning = Math.round((userStatus.learning / safeTotal) * 100);
+    const pctReviewing = Math.round((userStatus.reviewing / safeTotal) * 100);
+    const pctMastered = Math.round((userStatus.mastered / safeTotal) * 100);
+
+    // 3. Inyectar HTML de Resultados
+    const resultsHTML = `
+        <h1 class="text-3xl font-bold mb-6 text-yellow-400">Session Complete</h1>
+        
+        <div class="flex justify-center gap-4 mb-8">
+            <div class="text-center bg-gray-800 p-4 rounded-lg border border-gray-700 w-32">
+                <div class="text-4xl font-bold text-green-500">${correct}</div>
+                <div class="text-xs text-gray-400 uppercase">Correct</div>
+            </div>
+            <div class="text-center bg-gray-800 p-4 rounded-lg border border-gray-700 w-32">
+                <div class="text-4xl font-bold text-red-500">${total - correct}</div>
+                <div class="text-xs text-gray-400 uppercase">Incorrect</div>
+            </div>
+            <div class="text-center bg-gray-800 p-4 rounded-lg border border-yellow-500 w-32">
+                <div class="text-4xl font-bold text-yellow-400">${Math.round((correct/total)*100)}%</div>
+                <div class="text-xs text-gray-400 uppercase">Score</div>
+            </div>
+        </div>
+
+        <div class="mb-8 bg-gray-900 p-5 rounded-xl border border-gray-700">
+            <h3 class="text-white font-bold mb-4 uppercase text-sm tracking-wider">Knowledge Confidence</h3>
+            <div class="flex justify-between gap-2 text-center">
+                <div class="flex-1">
+                    <div class="text-2xl font-bold text-red-500">${userStatus.learning}</div>
+                    <div class="text-xs text-red-400">Learning (${pctLearning}%)</div>
+                    <div class="w-full bg-gray-700 h-2 mt-2 rounded"><div class="bg-red-500 h-2 rounded" style="width:${pctLearning}%"></div></div>
+                </div>
+                <div class="flex-1">
+                    <div class="text-2xl font-bold text-yellow-400">${userStatus.reviewing}</div>
+                    <div class="text-xs text-yellow-300">Reviewing (${pctReviewing}%)</div>
+                    <div class="w-full bg-gray-700 h-2 mt-2 rounded"><div class="bg-yellow-400 h-2 rounded" style="width:${pctReviewing}%"></div></div>
+                </div>
+                <div class="flex-1">
+                    <div class="text-2xl font-bold text-green-500">${userStatus.mastered}</div>
+                    <div class="text-xs text-green-400">Mastered (${pctMastered}%)</div>
+                    <div class="w-full bg-gray-700 h-2 mt-2 rounded"><div class="bg-green-500 h-2 rounded" style="width:${pctMastered}%"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="goBackToHome()" class="bg-yellow-400 text-black font-bold py-3 px-8 rounded-lg hover:bg-yellow-300 w-full max-w-md mb-8 transition-transform transform hover:scale-105">BACK TO DASHBOARD</button>
+        
+        <h3 class="text-left text-white font-bold mb-4 border-b border-gray-700 pb-2">Detailed Review</h3>
+        <div id="detailed-review" class="text-left space-y-4">
+            ${listHTML}
+        </div>
+    `;
+
+    const resultContainer = document.getElementById('result-screen');
+    if (resultContainer) {
+        resultContainer.innerHTML = resultsHTML;
+        resultContainer.classList.remove('hidden');
+    }
+}
+
+
+// --- LÓGICA DE ACTIVIDAD (Funciones auxiliares para el dashboard) ---
+
+// Función auxiliar para obtener días del mes
+function getDaysInMonth(year, month) {
+    return new Date(year, month + 1, 0).getDate();
+}
+
+// Datos simulados de actividad (En producción, esto vendría de Supabase 'user_analytics')
+// Formato: 'YYYY-MM-DD': true
+const mockUserActivity = {
+    '2023-10-01': true, '2023-10-02': true, '2023-10-05': true,
+    '2023-10-10': true, '2023-10-11': true, '2023-10-12': true,
+    '2023-10-25': true
+};
+
+// Renderizar los puntos mini en el dashboard (debe llamarse 'activity-dots-container' en dashboard.html)
+function renderMiniActivity() {
+    // Nota: Se asume que el contenedor en dashboard.html se llama 'activity-dots-container'
+    const container = document.getElementById('activity-dots-container');
+    if(!container) return;
+    
+    container.innerHTML = '';
+    const today = new Date();
+    const daysToShow = 14; // Mostrar últimos 14 días
+    
+    for (let i = daysToShow - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(today.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+        // Simular si hubo actividad (random para demo, o usar mockUserActivity)
+        // En producción: if (mockUserActivity[dateStr]) ...
+        if (Math.random() > 0.5) dot.classList.add('active'); 
+        
+        container.appendChild(dot);
+    }
+}
+
+// Lógica del Modal de Calendario (Asegúrate de que 'activity-modal' y 'full-calendar-container' existan en dashboard.html)
+function openActivityModal() {
+    const modal = document.getElementById('activity-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+        renderFullCalendar();
+    }
+}
+
+function closeActivityModal() {
+    const modal = document.getElementById('activity-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+}
+
+function renderFullCalendar() {
+    const container = document.getElementById('full-calendar-container');
+    if(!container) return;
+    
+    const now = new Date();
+    const daysInMonth = getDaysInMonth(now.getFullYear(), now.getMonth());
+    
+    let html = `<div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:5px; text-align:center; margin-top:10px;">`;
+    
+    // Headers
+    ['S','M','T','W','T','F','S'].forEach(d => {
+        html += `<div style="color:#666; font-size:0.8rem; font-weight:bold;">${d}</div>`;
+    });
+
+    // Días
+    for (let i = 1; i <= daysInMonth; i++) {
+        // Generar fecha string para comprobar
+        // Lógica simplificada para demo
+        const isActive = Math.random() > 0.6; // Simulación
+        const color = isActive ? 'background:#10b981; color:black;' : 'background:#222; color:#555;';
+        
+        html += `<div style="${color} border-radius:4px; padding:8px 0; font-size:0.9rem;">${i}</div>`;
+    }
+    html += `</div>`;
+    
+    container.innerHTML = html;
+}
+
+// Nota: Asegúrate de llamar a renderMiniActivity() dentro de tu función de inicialización principal (e.g., initApp() o DOMContentLoaded) del dashboard.
+// Por ejemplo: document.addEventListener('DOMContentLoaded', renderMiniActivity);
