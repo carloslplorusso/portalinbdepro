@@ -1,15 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <script>
-        if (window.innerWidth <= 768) {
+        // Usamos matchMedia que es más preciso para detectar intención móvil vs tamaño de ventana
+        // También verificamos si NO estamos ya en mobile.html para evitar bucles (opcional si son archivos distintos)
+        if (window.matchMedia("(max-width: 768px)").matches || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            // Asegura que la ruta sea correcta. Si mobile.html está en la misma carpeta:
             window.location.href = "mobile.html"; 
         }
     </script>
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>INBDE PRO Lab</title>
+    ```
+
+### Resumen de Pasos a Ejecutar:
+
+1.  **Supabase:** Verifica que la columna en `questions_bank` se llame `type`.
+2.  **App.js:** Busca la línea `q.tipo === filterType` y cámbiala a `q.type === filterType`.
+3.  **Dashboard.html:** Sube la etiqueta `<meta name="viewport"...>` a la primera línea del `<head>` y actualiza el script de redirección con el que te proveí arriba.
+
+Realiza estos cambios, recarga la página (borrando caché si es necesario) y debería funcionar tanto la carga de categorías como la detección de tu Samsung.
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
