@@ -33,7 +33,6 @@ async function initApp() {
 
 async function loadData() {
     try {
-        // NOTA: Asegúrate de que la columna en Supabase se llame 'type'
         const { data, error } = await _supabase
             .from('questions_bank')
             .select('*')
@@ -75,10 +74,10 @@ function switchView(targetId, showHeader = false) {
     }
 }
 
-// --- LÓGICA DE SELECCIÓN DE CATEGORÍAS (CORREGIDA) ---
+// --- LÓGICA DE SELECCIÓN DE CATEGORÍAS ---
 function openSelectionView(mode) {
     let title = "Select Topic";
-    let filterType = "single"; // Por defecto
+    let filterType = "single";
     let backFunc = goBackToLearning;
 
     if (mode === 'standalone') {
@@ -94,24 +93,19 @@ function openSelectionView(mode) {
     }
 
     document.getElementById('selection-mode-title').innerText = title;
-    
-    // Llamamos a la función renderizadora corregida
     renderDynamicCategories(filterType);
 
-    // Asignar botón de atrás dinámicamente
     const btnBack = document.querySelector('#selection-view button');
     if(btnBack) btnBack.onclick = backFunc;
 
     switchView('selection-view');
 }
 
-// *** AQUÍ ESTABA EL ERROR PRINCIPAL ***
 function renderDynamicCategories(filterType) {
     const container = document.getElementById('dynamic-cat-list');
     if(!container) return;
     container.innerHTML = '';
 
-    // CORRECCIÓN: Usamos 'type' (inglés)
     const filteredQuizzes = allQuizzes.filter(q => q.type === filterType);
     const uniqueSubjects = [...new Set(filteredQuizzes.map(q => q.category))];
 
@@ -120,7 +114,6 @@ function renderDynamicCategories(filterType) {
         return;
     }
 
-    // Botón "Select All"
     const selectAllDiv = document.createElement('div');
     selectAllDiv.className = 'subject-item special-select-all';
     selectAllDiv.style.fontWeight = 'bold';
@@ -129,7 +122,6 @@ function renderDynamicCategories(filterType) {
     selectAllDiv.onclick = function() { toggleSelectAll(this); };
     container.appendChild(selectAllDiv);
 
-    // Lista de Materias
     uniqueSubjects.forEach(subject => {
         if(!subject) return; 
         const count = filteredQuizzes.filter(q => q.category === subject).length;
@@ -143,7 +135,6 @@ function renderDynamicCategories(filterType) {
         container.appendChild(item);
     });
 } 
-// --- FIN DE LA FUNCIÓN CORREGIDA ---
 
 // --- INTERACCIONES UI ---
 function toggleCheck(item) { item.classList.toggle('active'); }
@@ -182,18 +173,13 @@ function startQuiz() {
 }
 
 function startDailyRun() {
-    // CORRECCIÓN: Filtro por 'type'
     const available = allQuizzes.filter(q => q.type === 'single');
-    
     if(available.length < 10) {
         alert("Not enough questions for Daily Run.");
         return;
     }
-
-    // Aleatorizar simple
     const shuffled = available.sort(() => 0.5 - Math.random()).slice(0, 10);
     const ids = shuffled.map(q => q.id).join(',');
-
     window.location.href = `quiz_engine.html?mode=daily&count=10&ids=${ids}`;
 }
 
@@ -202,6 +188,72 @@ async function logout() {
     window.location.href = 'index.html';
 }
 
-// --- UTILIDADES DE FECHA (Omitido para brevedad, agrégalo si lo necesitas) ---
+// --- IA LAB & SEARCH LOGIC ---
+
+// 1. Abrir Modal
+function openAIModal(mode) {
+    const modal = document.getElementById('ai-modal');
+    const output = document.getElementById('ai-output');
+    // Limpiar estado anterior
+    if(modal) {
+        modal.classList.add('active');
+        const input = document.getElementById('ai-input'); // Asegúrate de tener este ID en tu HTML
+        if(input) input.value = '';
+        if(output) output.innerHTML = '';
+    }
+}
+
+// 2. Cerrar Modal
+function closeAIModal() {
+    const modal = document.getElementById('ai-modal');
+    if(modal) modal.classList.remove('active');
+}
+
+// 3. Buscar en Base de Datos y Redirigir
+async function performAISearch() {
+    const inputEl = document.querySelector('#ai-modal input, #ai-modal textarea'); // Busca input o textarea
+    const query = inputEl ? inputEl.value.trim() : '';
+    const output = document.getElementById('ai-output');
+    
+    if (!query) {
+        alert("Please enter a topic or keyword.");
+        return;
+    }
+
+    if(output) output.innerHTML = '<div style="color:#acc; text-align:center; padding:10px;">🔍 Searching knowledge base...</div>';
+
+    try {
+        // Búsqueda simple usando ILIKE en Supabase
+        const { data, error } = await _supabase
+            .from('questions_bank')
+            .select('id')
+            .ilike('question_text', `%${query}%`) // Busca coincidencias parciales
+            .limit(20); // Limitar resultados
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            if(output) output.innerHTML = '<div style="color:#ef4444; text-align:center; padding:10px;">No questions found. Try a simpler keyword.</div>';
+            return;
+        }
+
+        // Extraer IDs y redirigir al Quiz Engine en modo 'practice_custom' (Fondo Oscuro)
+        const ids = data.map(q => q.id).join(',');
+        console.log(`Found ${data.length} questions for "${query}"`);
+        
+        // Redirección
+        window.location.href = `quiz_engine.html?mode=practice_custom&ids=${ids}`;
+
+    } catch (err) {
+        console.error(err);
+        if(output) output.innerHTML = `<div style="color:red;">Error: ${err.message}</div>`;
+    }
+}
+
+// Vincular la función al nombre que usaste en el HTML
+window.callGemini = performAISearch; 
+
+// --- UTILIDADES DE FECHA ---
 function initCountdown() {}
 function openDateModal() {}
+function showRecoveryAlert() { alert("Recovery Mode"); }
