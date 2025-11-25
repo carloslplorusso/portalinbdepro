@@ -1,34 +1,38 @@
-// --- FUNCIONES Y VARIABLES AGREGADAS/MODIFICADAS ---
+// --- FUNCIONES Y VARIABLES GLOBALES (DEBE REEMPLAZAR EL CONTENIDO DE app.js) ---
 
-// 1. NUEVA FUNCIÓN PARA EL DAILY RUN
+// Las variables de estado (como userStatus, quizData, etc.) se asumen definidas
+// en quiz_engine.html o en la inicialización principal de la aplicación.
+// Esta es la lógica que debe estar disponible globalmente.
+
+// 1. FUNCIÓN PARA EL DAILY RUN (Llamada desde dashboard.html)
 function startDailyRun() {
     console.log("Starting Daily Run...");
     // Redirige al quiz engine forzando modo 'daily' y 10 preguntas
     window.location.href = 'quiz_engine.html?mode=daily&count=10';
 }
 
-// 2. NUEVA VARIABLE DE ESTADO (debe estar cerca de 'let userAnswers')
-let userStatus = { learning: 0, reviewing: 0, mastered: 0 }; // NUEVO: Rastreador de semáforo
+// Nota: La variable 'let userStatus = { learning: 0, reviewing: 0, mastered: 0 };'
+// y 'let userAnswers = {};' deben estar definidas en la parte superior del script de quiz_engine.html.
+// Aquí solo se incluyen las funciones que dependen de ese estado.
 
-// 3. FUNCIÓN HANDLESTATUS (para los botones del semáforo)
+// 2. FUNCIÓN HANDLESTATUS (para los botones del semáforo en quiz_engine.html)
 function handleStatus(status) {
-    // Incrementar el contador del estado seleccionado
-    if (userStatus[status] !== undefined) {
+    // Estas variables globales (userStatus, nextQuestion) deben existir en el ámbito de quiz_engine.html
+    if (typeof userStatus !== 'undefined' && userStatus[status] !== undefined) {
         userStatus[status]++;
     }
     console.log(`Question marked as: ${status}`);
-    // Asegúrate de que 'nextQuestion()' esté definida y avance la pregunta
+    
     if (typeof nextQuestion === 'function') {
         nextQuestion();
     } else {
-        console.error("nextQuestion() is not defined!");
+        console.warn("nextQuestion() not found. Ensure app.js is loaded in the correct context (quiz_engine.html).");
     }
 }
 
-// 4. FUNCIÓN FINISHQUIZ (MODIFICADA para incluir métricas de Semáforo)
+// 3. FUNCIÓN FINISHQUIZ (Lógica de resultados actualizada para quiz_engine.html)
 function finishQuiz() {
-    // Asegúrate de que estas variables y funciones existan en tu ámbito global:
-    // timerInterval, quizData, userAnswers, goBackToHome(), askGemini()
+    // Se asume que quizData, userAnswers, timerInterval, etc., son variables globales.
 
     // Lógica para detener la simulación si está corriendo
     if (typeof timerInterval !== 'undefined') {
@@ -56,32 +60,31 @@ function finishQuiz() {
     
     // 1. Cálculos de Aciertos (Score Técnico)
     let correct = 0;
-    const total = quizData.length;
+    const total = typeof quizData !== 'undefined' ? quizData.length : 0;
     
     // Generar lista de revisión detallada
     let listHTML = '';
-    quizData.forEach((q, idx) => {
-        // Nota: En modo estudio, userAnswers guarda lo que clickearon primero
-        const userAns = userAnswers[q.id];
-        // Limpiamos strings para comparación segura
-        const isCorrect = userAns && q.correct_answer && 
-                            userAns.trim().includes(q.correct_answer.trim());
-        
-        if(isCorrect) correct++;
+    if (typeof quizData !== 'undefined' && quizData.length > 0) {
+        quizData.forEach((q, idx) => {
+            const userAns = userAnswers[q.id];
+            const isCorrect = userAns && q.correct_answer && 
+                                userAns.trim().includes(q.correct_answer.trim());
+            
+            if(isCorrect) correct++;
 
-        listHTML += `
-            <div class="bg-gray-800 p-4 rounded border border-gray-700 mb-3">
-                <div class="font-bold text-white mb-1">Q${idx+1}: ${q.question_text}</div>
-                <div class="text-sm text-gray-400 mb-2">Correct Answer: <span class="text-green-400">${q.correct_answer}</span></div>
-                <button class="ai-btn text-xs" onclick="askGemini(this, '${q.question_text.replace(/'/g, "\\'")}', '${q.correct_answer.replace(/'/g, "\\'")}')">✨ Why?</button>
-                <div class="ai-response mt-2 text-gray-300 text-sm hidden bg-black p-2 rounded"></div>
-            </div>
-        `;
-    });
+            listHTML += `
+                <div class="bg-gray-800 p-4 rounded border border-gray-700 mb-3">
+                    <div class="font-bold text-white mb-1">Q${idx+1}: ${q.question_text}</div>
+                    <div class="text-sm text-gray-400 mb-2">Correct Answer: <span class="text-green-400">${q.correct_answer}</span></div>
+                    <button class="ai-btn text-xs" onclick="askGemini(this, '${q.question_text.replace(/'/g, "\\'")}', '${q.correct_answer.replace(/'/g, "\\'")}')">✨ Why?</button>
+                    <div class="ai-response mt-2 text-gray-300 text-sm hidden bg-black p-2 rounded"></div>
+                </div>
+            `;
+        });
+    }
 
     // 2. Cálculos de Semáforo (Self-Assessment)
-    const totalStatus = userStatus.learning + userStatus.reviewing + userStatus.mastered; 
-    // Evitar división por cero si el usuario no terminó o saltó pasos
+    const totalStatus = typeof userStatus !== 'undefined' ? userStatus.learning + userStatus.reviewing + userStatus.mastered : 0; 
     const safeTotal = totalStatus > 0 ? totalStatus : 1; 
     
     const pctLearning = Math.round((userStatus.learning / safeTotal) * 100);
@@ -156,35 +159,38 @@ function getDaysInMonth(year, month) {
 const mockUserActivity = {
     '2023-10-01': true, '2023-10-02': true, '2023-10-05': true,
     '2023-10-10': true, '2023-10-11': true, '2023-10-12': true,
-    '2023-10-25': true
+    '2023-10-25': true,
+    '2025-11-25': true // Añadir el día de hoy (ejemplo)
 };
 
-// Renderizar los puntos mini en el dashboard (debe llamarse 'activity-dots-container' en dashboard.html)
+// Renderizar los puntos mini en el dashboard
 function renderMiniActivity() {
-    // Nota: Se asume que el contenedor en dashboard.html se llama 'activity-dots-container'
-    const container = document.getElementById('activity-dots-container');
+    // CORRECCIÓN: Usar el ID 'activity-dots-container' que existe en dashboard.html
+    const container = document.getElementById('activity-dots-container'); 
     if(!container) return;
     
     container.innerHTML = '';
     const today = new Date();
-    const daysToShow = 14; // Mostrar últimos 14 días
+    const daysToShow = 9; // Mostrar 9 días (tamaño del grid original en el HTML)
     
     for (let i = daysToShow - 1; i >= 0; i--) {
         const d = new Date();
         d.setDate(today.getDate() - i);
-        const dateStr = d.toISOString().split('T')[0];
+        // Formato: YYYY-MM-DD
+        const monthStr = (d.getMonth() + 1).toString().padStart(2, '0');
+        const dayStr = d.getDate().toString().padStart(2, '0');
+        const dateStr = `${d.getFullYear()}-${monthStr}-${dayStr}`;
         
         const dot = document.createElement('div');
         dot.className = 'dot';
-        // Simular si hubo actividad (random para demo, o usar mockUserActivity)
-        // En producción: if (mockUserActivity[dateStr]) ...
-        if (Math.random() > 0.5) dot.classList.add('active'); 
+        
+        if (mockUserActivity[dateStr]) dot.classList.add('active'); 
         
         container.appendChild(dot);
     }
 }
 
-// Lógica del Modal de Calendario (Asegúrate de que 'activity-modal' y 'full-calendar-container' existan en dashboard.html)
+// Lógica del Modal de Calendario
 function openActivityModal() {
     const modal = document.getElementById('activity-modal');
     if (modal) {
@@ -207,28 +213,46 @@ function renderFullCalendar() {
     if(!container) return;
     
     const now = new Date();
-    const daysInMonth = getDaysInMonth(now.getFullYear(), now.getMonth());
+    // Usamos el mes actual para la demo
+    const year = now.getFullYear();
+    const month = now.getMonth(); 
+    const daysInMonth = getDaysInMonth(year, month);
     
-    let html = `<div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:5px; text-align:center; margin-top:10px;">`;
+    // Contenido del calendario
+    let html = `
+        <h4 style="text-align:center; color:var(--accent); margin-bottom:10px; font-weight:bold;">${new Date(year, month).toLocaleString('en-US', { month: 'long', year: 'numeric' })}</h4>
+        <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:5px; text-align:center;">`;
     
-    // Headers
+    // Headers (Días de la semana)
     ['S','M','T','W','T','F','S'].forEach(d => {
         html += `<div style="color:#666; font-size:0.8rem; font-weight:bold;">${d}</div>`;
     });
 
-    // Días
+    // Celdas vacías de relleno
+    const firstDay = new Date(year, month, 1).getDay();
+    for (let i = 0; i < firstDay; i++) {
+        html += `<div></div>`;
+    }
+
+    // Días del mes
     for (let i = 1; i <= daysInMonth; i++) {
-        // Generar fecha string para comprobar
-        // Lógica simplificada para demo
-        const isActive = Math.random() > 0.6; // Simulación
-        const color = isActive ? 'background:#10b981; color:black;' : 'background:#222; color:#555;';
+        const d = new Date(year, month, i);
+        const monthStr = (month + 1).toString().padStart(2, '0');
+        const dayStr = i.toString().padStart(2, '0');
+        const dateStr = `${year}-${monthStr}-${dayStr}`;
+
+        const isActive = mockUserActivity[dateStr] === true;
+        const isCurrentDay = d.toDateString() === now.toDateString();
         
-        html += `<div style="${color} border-radius:4px; padding:8px 0; font-size:0.9rem;">${i}</div>`;
+        let color = 'background:#222; color:#555;';
+        let border = 'border:1px solid #333;';
+        
+        if(isActive) { color = 'background:#10b981; color:black; font-weight:bold;'; border = 'border:1px solid #10b981;'; }
+        if(isCurrentDay) { border = 'border:2px solid var(--accent); box-shadow:0 0 5px var(--accent);'; }
+        
+        html += `<div style="${color} ${border} border-radius:4px; padding:8px 0; font-size:0.9rem;">${i}</div>`;
     }
     html += `</div>`;
     
     container.innerHTML = html;
 }
-
-// Nota: Asegúrate de llamar a renderMiniActivity() dentro de tu función de inicialización principal (e.g., initApp() o DOMContentLoaded) del dashboard.
-// Por ejemplo: document.addEventListener('DOMContentLoaded', renderMiniActivity);
