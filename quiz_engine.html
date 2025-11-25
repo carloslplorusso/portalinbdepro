@@ -49,6 +49,57 @@
         /* RESULT SCREEN */
         .result-container { padding: 30px; text-align: center; background: #121214; color: white; border-radius: 20px; margin: 20px auto; max-width: 800px; }
         .ai-btn { background: linear-gradient(45deg, #7c3aed, #db2777); color: white; border: none; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; margin-top: 10px; cursor: pointer; }
+        
+        /* --- ESTILOS DE FEEDBACK INMEDIATO (NUEVOS) --- */
+        /* Estilos para el feedback inmediato y botones de semáforo */
+        .feedback-area {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+            display: none; /* Se oculta hasta que respondan */
+            animation: fadeIn 0.3s ease;
+        }
+
+        .status-btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .btn-status {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 800;
+            color: #000;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            transition: transform 0.2s;
+            opacity: 0.9;
+        }
+        .btn-status:hover { transform: scale(1.05); opacity: 1; }
+
+        .btn-learning { background-color: #ef4444; color: white; } /* Rojo */
+        .btn-reviewing { background-color: #facc15; color: black; } /* Amarillo */
+        .btn-mastered { background-color: #22c55e; color: black; } /* Verde */
+
+        .instruction-text {
+            text-align: center;
+            color: #aaa;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Ajuste visual para opciones correctas/incorrectas inmediatas */
+        .option-row.correct-immediate { border-color: #22c55e !important; background: rgba(34,197,94,0.1) !important; color: white !important; }
+        .option-row.wrong-immediate { border-color: #ef4444 !important; background: rgba(239,68,68,0.1) !important; opacity: 0.7; }
+        /* FIN DE ESTILOS NUEVOS */
+
     </style>
 </head>
 <body class="">
@@ -69,8 +120,24 @@
             <div id="quiz-content">
                 <p id="question-text" class="text-lg font-semibold mb-6">Loading Question...</p>
                 <div id="options-container"></div>
+
+                <div id="feedback-area" class="feedback-area">
+                    
+                    <button id="btn-explain" class="ai-btn w-full mb-4" onclick="triggerAIExplanation()">
+                        ✨ Explain with AI
+                    </button>
+                    <div id="ai-explanation-box" class="ai-response mt-2 text-gray-300 text-sm hidden p-3 bg-gray-800 rounded"></div>
+
+                    <div class="mt-6">
+                        <p class="instruction-text">Select status to advance</p>
+                        <div class="status-btn-container">
+                            <button class="btn-status btn-learning" onclick="handleStatus('learning')">Learning</button>
+                            <button class="btn-status btn-reviewing" onclick="handleStatus('reviewing')">Reviewing</button>
+                            <button class="btn-status btn-mastered" onclick="handleStatus('mastered')">Mastered</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
             <div id="result-screen" class="hidden result-container">
                 <h1 class="text-3xl font-bold mb-6 text-yellow-400">Session Complete</h1>
                 <div class="flex justify-center gap-10 mb-8">
@@ -121,6 +188,9 @@
         let userAnswers = {}; // { qId: optionId }
         let timerInterval;
         let secondsLeft = 0;
+        // NUEVAS VARIABLES GLOBALES
+        let isAnswered = false; // Para bloquear clicks múltiples
+        // FIN NUEVAS VARIABLES GLOBALES
 
         // INIT
         document.addEventListener('DOMContentLoaded', async () => {
@@ -163,25 +233,47 @@
             renderQuestion();
         }
 
+        // --- RENDER & ANSWER LOGIC (MODIFICADO) ---
         function renderQuestion() {
+            isAnswered = false; // Resetear estado
             const q = quizData[currentIndex];
+            
+            // Ocultar área de feedback al iniciar pregunta
+            document.getElementById('feedback-area').style.display = 'none';
+            document.getElementById('ai-explanation-box').classList.add('hidden');
+            document.getElementById('ai-explanation-box').innerHTML = '';
+            
+            // Remover clases de feedback de las opciones anteriores
+            document.querySelectorAll('.option-row').forEach(row => {
+                row.classList.remove('correct-immediate', 'wrong-immediate');
+                row.style.cursor = 'pointer'; // Restaurar cursor
+            });
+
             document.getElementById('q-current').innerText = currentIndex + 1;
             document.getElementById('question-text').innerText = q.question_text;
             document.getElementById('patient-info').innerText = "Patient: Adult Male\nHistory: No significant findings.\n(Case details would go here)";
-
+            
+            // Renderizar opciones
             const opts = document.getElementById('options-container');
             opts.innerHTML = '';
 
             ['option_a', 'option_b', 'option_c', 'option_d'].forEach(optKey => {
                 const optVal = q[optKey];
+                if(!optVal) return; // Saltarse opciones vacías
+
                 const div = document.createElement('div');
                 div.className = 'option-row';
-                if (userAnswers[q.id] === optVal) div.classList.add('selected');
+                // La clase 'selected' no se aplica aquí en practice mode ya que queremos feedback inmediato. 
+                // En simulation mode (sin feedback inmediato) se usaría selectOption y esta línea.
+                // if (userAnswers[q.id] === optVal) div.classList.add('selected');
                 
                 div.innerHTML = `<div class="custom-radio"></div> ${optVal}`;
-                div.onclick = () => selectOption(q.id, optVal);
+                
+                // Al hacer click, llamamos a checkAnswer
+                div.onclick = () => checkAnswer(q, optVal, div);
                 opts.appendChild(div);
             });
+            // FIN MODIFICACIÓN DE RENDER
 
             // Update Mark Button
             const markBtn = document.getElementById('btn-mark');
@@ -189,11 +281,71 @@
             else markBtn.classList.remove('active');
         }
 
-        function selectOption(qId, val) {
-            userAnswers[qId] = val;
-            renderQuestion(); // Re-render to show selection
-        }
+        // FUNCIÓN CHECKANSWER (NUEVA)
+        function checkAnswer(questionObj, selectedVal, element) {
+            if (isAnswered) return; // Si ya respondió, no hacer nada
+            isAnswered = true;
 
+            const correctVal = questionObj.correct_answer;
+            
+            // 1. Mostrar visualmente Correcto/Incorrecto
+            const allOptions = document.querySelectorAll('.option-row');
+            allOptions.forEach(div => {
+                // Bloquear cursor
+                div.style.cursor = 'default';
+                
+                // Marcar la correcta siempre en verde
+                // Usamos .includes() para manejar posibles espacios/formatos extra
+                if (div.innerText.trim().includes(correctVal)) { 
+                    div.classList.add('correct-immediate');
+                }
+                // Si la que seleccionó el usuario es incorrecta, marcarla roja
+                if (div === element && !div.innerText.trim().includes(correctVal)) {
+                    div.classList.add('wrong-immediate');
+                }
+            });
+
+            // 2. Guardar respuesta en memoria (para el final)
+            userAnswers[questionObj.id] = selectedVal;
+
+            // 3. Mostrar el panel de Feedback (AI y Semáforo)
+            document.getElementById('feedback-area').style.display = 'block';
+            
+            // Auto-scroll hacia abajo para ver los botones en móvil
+            document.getElementById('feedback-area').scrollIntoView({ behavior: 'smooth' });
+        }
+        // FIN FUNCIÓN CHECKANSWER (NUEVA)
+
+        // FUNCIÓN HANDLESTATUS (NUEVA)
+        // Función que maneja el click en los botones del semáforo
+        function handleStatus(status) {
+            // Aquí guardaríamos la métrica (Learning/Reviewing/Mastered)
+            // Ejemplo: userStats[quizData[currentIndex].id] = status;
+            console.log(`Question marked as: ${status}`);
+
+            // Avanzar a la siguiente
+            nextQuestion();
+        }
+        // FIN FUNCIÓN HANDLESTATUS (NUEVA)
+        
+        // FUNCIÓN TRIGGERAIEXPLANATION (NUEVA)
+        async function triggerAIExplanation() {
+            const q = quizData[currentIndex];
+            const box = document.getElementById('ai-explanation-box');
+            box.classList.remove('hidden');
+            
+            // Si ya tenemos la explicación (estática), la mostramos. Si no, llamamos a Gemini.
+            if(q.explanation) {
+                box.innerHTML = `<strong>Rationale:</strong><br>${q.explanation}`;
+            } else {
+                // Usamos el botón de explicación como referencia (this) para la función askGemini
+                askGemini(document.getElementById('btn-explain'), q.question_text, q.correct_answer);
+            }
+        }
+        // FIN FUNCIÓN TRIGGERAIEXPLANATION (NUEVA)
+        
+        // Se eliminó la función selectOption.
+        
         function nextQuestion() {
             if(currentIndex < quizData.length - 1) {
                 currentIndex++;
@@ -211,7 +363,10 @@
         function toggleMark() {
             if(markedQuestions.has(currentIndex)) markedQuestions.delete(currentIndex);
             else markedQuestions.add(currentIndex);
-            renderQuestion();
+            // Ya no es necesario re-renderizar, solo actualizar el botón de la marca.
+            const markBtn = document.getElementById('btn-mark');
+            if (markedQuestions.has(currentIndex)) markBtn.classList.add('active');
+            else markBtn.classList.remove('active');
         }
 
         // --- REVIEW MODAL ---
@@ -273,7 +428,7 @@
                             Your Answer: ${userAns || 'Skipped'}
                         </div>
                         <div class="text-sm text-gray-400">Correct: ${q.correct_answer}</div>
-                        <button class="ai-btn" onclick="askGemini(this, '${q.question_text}', '${q.correct_answer}')">✨ Explain with AI</button>
+                        <button class="ai-btn" onclick="askGemini(this, '${q.question_text.replace(/'/g, "\\'")}', '${q.correct_answer.replace(/'/g, "\\'")}')">✨ Explain with AI</button>
                         <div class="ai-response mt-2 text-gray-300 text-sm hidden"></div>
                     </div>
                 `;
@@ -302,7 +457,7 @@
                 });
                 const data = await response.json();
                 const text = data.candidates[0].content.parts[0].text;
-                outputDiv.innerHTML = text.replace(/\*\*/g, '').replace(/\n/g, '<br>'); // Simple format
+                outputDiv.innerHTML = text.replace(/\*\*/g, '<strong>').replace(/\n/g, '<br>'); // Simple format
             } catch(e) {
                 outputDiv.innerHTML = "Error contacting AI.";
             }
