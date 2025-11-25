@@ -497,129 +497,118 @@
         // --- AUTH CHECK ---
         async function checkSession() {
             // Nota: Aquí estamos asumiendo que el usuario ya está logueado, sino redirigimos
-            // La lógica de signInWithCustomToken para Canvas no se puede implementar aquí directamente sin los globals.
-            // Para mantener la funcionalidad de Supabase, usaremos la lógica existente.
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) {
-                // window.location.href = './index.html';
-                // Usar un usuario de prueba para que la UI cargue.
                 currentUser = { id: 'test-user', email: 'test@inbde.com' };
                 return;
             }
             currentUser = session.user;
         }
 
-        // --- 2. LOAD DATA (CORRECCIÓN DE LÓGICA RPC) ---
-       // --- 2. LOAD DATA (FUNCIÓN DE CARGA CENTRAL) ---
-async function loadQuestionsFromDB() {
-    try {
-        // Variables para la respuesta de la base de datos
-        let data = null;
-        let error = null;
-        let rpc_name = null;
-        let params = {};
+        // --- 2. LOAD DATA (FUNCIÓN DE CARGA CENTRAL) ---
+        async function loadQuestionsFromDB() {
+            try {
+                // Variables para la respuesta de la base de datos
+                let data = null;
+                let error = null;
+                let rpc_name = null;
+                let params = {};
 
-        // Variables de la URL
-        const paramIds = urlParams.get('ids'); 
-        const STAND_ALONE_MODES = ['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'];
-        
-        // >>>>>>>>>>> LÓGICA DE DETERMINACIÓN DE CARGA <<<<<<<<<<<
+                // Variables de la URL
+                const paramIds = urlParams.get('ids'); 
+                const STAND_ALONE_MODES = ['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'];
+                
+                // >>>>>>>>>>> LÓGICA DE DETERMINACIÓN DE CARGA <<<<<<<<<<<
 
-        if (currentMode === 'daily' && paramIds) {
-            // MODO DAILY RUN: Carga de preguntas fijas por ID
-            const idsArray = paramIds.split(',');
-            
-            // 1. LLAMADA DIRECTA A LA TABLA (NO RPC)
-            const response = await _supabase
-                .from('questions_bank') // <--- ¡Tu tabla de preguntas!
-                .select('*')
-                .in('id', idsArray);
-            
-            data = response.data;
-            error = response.error;
-            
-        } else if (currentMode.includes('simulation') || currentMode === 'itemsets') {
-            // MODO 1: SIMULACIÓN / ITEM SET (Define RPC para conjuntos)
-            rpc_name = 'get_simulation_questions'; 
-            params = { quantity: paramCount };
-            
-        } else if (STAND_ALONE_MODES.includes(currentMode)) {
-            // MODO 2: PRÁCTICA / STAND ALONE / RETRY (Define RPC para stand-alone)
-            rpc_name = (currentMode === 'retry_mistakes') ? 'get_failed_questions' : 'get_stand_alone_questions'; 
-            params = { quantity: paramCount };
-        } 
-        
-        // >>>>>>>>>>> MANEJO DE LLAMADAS RPC <<<<<<<<<<<
-        // Si el modo no fue 'daily' con IDs, y se definió un RPC, lo ejecutamos aquí.
-        if (rpc_name) {
-            // Usamos 'quantity' en los parámetros si no se definió antes (lo cual se hace en los bloques anteriores)
-            if (!params.quantity) params = { quantity: paramCount }; 
-            
-            const response = await _supabase.rpc(rpc_name, params);
-            data = response.data;
-            error = response.error;
+                // MODIFICACIÓN 1: Incluir practice_custom en la carga por IDs
+                if ((currentMode === 'daily' || currentMode === 'practice_custom') && paramIds) {
+                    // MODO ID ESPECÍFICO (Daily Run o Búsqueda IA)
+                    const idsArray = paramIds.split(',');
+                    
+                    const response = await _supabase
+                        .from('questions_bank')
+                        .select('*')
+                        .in('id', idsArray);
+                    
+                    data = response.data;
+                    error = response.error;
+                    
+                } else if (currentMode.includes('simulation') || currentMode === 'itemsets') {
+                    // MODO 1: SIMULACIÓN / ITEM SET (Define RPC para conjuntos)
+                    rpc_name = 'get_simulation_questions'; 
+                    params = { quantity: paramCount };
+                    
+                } else if (STAND_ALONE_MODES.includes(currentMode)) {
+                    // MODO 2: PRÁCTICA / STAND ALONE / RETRY (Define RPC para stand-alone)
+                    rpc_name = (currentMode === 'retry_mistakes') ? 'get_failed_questions' : 'get_stand_alone_questions'; 
+                    params = { quantity: paramCount };
+                } 
+                
+                // >>>>>>>>>>> MANEJO DE LLAMADAS RPC <<<<<<<<<<<
+                if (rpc_name) {
+                    if (!params.quantity) params = { quantity: paramCount }; 
+                    
+                    const response = await _supabase.rpc(rpc_name, params);
+                    data = response.data;
+                    error = response.error;
+                }
+
+                // --- MANEJO DE ERRORES Y CASOS CLÍNICOS ---
+
+                if (error) throw error;
+                if (!data || data.length === 0) {
+                    document.getElementById('question-text').innerText = `No se encontraron preguntas para el modo '${currentMode}'. Asegúrese de que hay datos con el filtro correcto.`;
+                    return;
+                }
+
+                // --- GESTIÓN DE CASOS CLÍNICOS ---
+                const caseIds = [...new Set(data.map(q => q.case_id).filter(id => id !== null))];
+                let casesMap = {};
+
+                if (caseIds.length > 0) {
+                    const { data: casesData } = await _supabase
+                        .from('clinical_cases')
+                        .select('*')
+                        .in('id', caseIds);
+                        
+                    if(casesData) casesData.forEach(c => casesMap[c.id] = c);
+                }
+
+                // --- MAPEO DE DATOS ---
+                quizData = data.map(item => {
+                    const relatedCase = item.case_id ? casesMap[item.case_id] : null;
+                    const patient = relatedCase && relatedCase.patient_data ? relatedCase.patient_data : {};
+
+                    return {
+                        id: item.id,
+                        text: item.question_text,          
+                        materia: item.category,          
+                        patientInfo: relatedCase ? `Age: ${patient.age || 'N/A'}, Gender: ${patient.gender || 'N/A'}` : "Stand Alone Question",
+                        chiefComplaint: relatedCase ? (patient.cc || "N/A") : "N/A",
+                        history: relatedCase ? (patient.history || "See scenario") : "N/A",
+                        findings: relatedCase ? (patient.findings || "See scenario") : "N/A",
+                        photoUrl: item.image_url,          
+                        options: [
+                            { id: 'A', text: item.option_a }, 
+                            { id: 'B', text: item.option_b },
+                            { id: 'C', text: item.option_c },
+                            { id: 'D', text: item.option_d }
+                        ],
+                        correctOption: getOptionLetter(item.correct_answer, item), 
+                        explanation: item.explanation || "No explanation provided.",
+                        userAnswer: null, 
+                        isCorrect: null,  
+                        srsRating: null   
+                    };
+                });
+
+                document.getElementById('total-q-num').textContent = quizData.length;
+
+            } catch (err) {
+                console.error("Error loading questions:", err);
+                document.getElementById('question-text').innerText = `Error loading database: ${err.message}. Revise sus RPCs.`;
+            }
         }
-
-        // --- MANEJO DE ERRORES Y CASOS CLÍNICOS ---
-
-        if (error) throw error;
-        if (!data || data.length === 0) {
-            document.getElementById('question-text').innerText = `No se encontraron preguntas para el modo '${currentMode}'. Asegúrese de que hay datos con el filtro correcto.`;
-            return;
-        }
-
-        // --- GESTIÓN DE CASOS CLÍNICOS ---
-        const caseIds = [...new Set(data.map(q => q.case_id).filter(id => id !== null))];
-        let casesMap = {};
-
-        if (caseIds.length > 0) {
-            const { data: casesData } = await _supabase
-                .from('clinical_cases')
-                .select('*')
-                .in('id', caseIds);
-                
-            if(casesData) casesData.forEach(c => casesMap[c.id] = c);
-        }
-
-        // --- MAPEO DE DATOS ---
-        quizData = data.map(item => {
-            const relatedCase = item.case_id ? casesMap[item.case_id] : null;
-            const patient = relatedCase && relatedCase.patient_data ? relatedCase.patient_data : {};
-
-            return {
-                id: item.id,
-                text: item.question_text,          
-                materia: item.category,          
-                
-                // Datos del Caso
-                patientInfo: relatedCase ? `Age: ${patient.age || 'N/A'}, Gender: ${patient.gender || 'N/A'}` : "Stand Alone Question",
-                chiefComplaint: relatedCase ? (patient.cc || "N/A") : "N/A",
-                history: relatedCase ? (patient.history || "See scenario") : "N/A",
-                findings: relatedCase ? (patient.findings || "See scenario") : "N/A",
-                
-                photoUrl: item.image_url,          
-                
-                options: [
-                    { id: 'A', text: item.option_a }, 
-                    { id: 'B', text: item.option_b },
-                    { id: 'C', text: item.option_c },
-                    { id: 'D', text: item.option_d }
-                ],
-                correctOption: getOptionLetter(item.correct_answer, item), 
-                explanation: item.explanation || "No explanation provided.",
-                userAnswer: null, // Track user selection (ID)
-                isCorrect: null,  // Track final correctness
-                srsRating: null   // Track SRS rating
-            };
-        });
-
-        document.getElementById('total-q-num').textContent = quizData.length;
-
-    } catch (err) {
-        console.error("Error loading questions:", err);
-        document.getElementById('question-text').innerText = `Error loading database: ${err.message}. Revise sus RPCs.`;
-    }
-}
 
         // Helper para deducir la letra correcta
         function getOptionLetter(correctText, item) {
@@ -645,7 +634,6 @@ async function loadQuestionsFromDB() {
                 leftPanel.style.height = '200px';
                 toggleBtn.innerHTML = '<i class="fa-solid fa-notes-medical"></i> Case Info';
             } else {
-                // Expand to fill available height, but restrict max
                 leftPanel.classList.add('mobile-expanded');
                 leftPanel.style.height = '60vh'; 
                 toggleBtn.innerHTML = '<i class="fa-solid fa-compress"></i> Collapse Info';
@@ -742,7 +730,6 @@ async function loadQuestionsFromDB() {
 
             document.getElementById('current-q-num').textContent = currentIndex + 1;
             
-            // UI elements reset/update
             document.getElementById('patient-info').innerHTML = q.patientInfo;
             document.getElementById('chief-complaint').innerHTML = q.chiefComplaint;
             document.getElementById('patient-history').innerHTML = q.history.replace(/\n/g, '<br>') || "See scenario"; 
@@ -756,7 +743,6 @@ async function loadQuestionsFromDB() {
             const optsContainer = document.getElementById('options-container');
             optsContainer.innerHTML = '';
             
-            // Determine if we are re-rendering a validated question (for navigation)
             const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
             const isAnswered = q.userAnswer !== null;
 
@@ -765,10 +751,9 @@ async function loadQuestionsFromDB() {
                 row.className = 'option-row';
                 row.dataset.id = opt.id;
                 
-                // Si ya está respondida (navegando en modo Simulación), deshabilitar interacción
                 if (isAnswered) {
                     row.classList.add('disabled');
-                    if (opt.id === q.userAnswer) row.classList.add('selected'); // Mantener la selección del usuario
+                    if (opt.id === q.userAnswer) row.classList.add('selected'); 
                 } else {
                     row.onclick = () => selectOption(opt.id);
                     if (selectedOptionId === opt.id) row.classList.add('selected');
@@ -778,13 +763,11 @@ async function loadQuestionsFromDB() {
                 optsContainer.appendChild(row);
             });
 
-            // Adjust controls visibility
             document.getElementById('srs-buttons-container').classList.add('hidden');
             document.getElementById('btn-next-practice').classList.add('hidden');
             
             if (isAnswered && !isSimulation) {
-                // Si es modo práctica y ya está respondida (revisión rápida), mostrar SRS
-                validateAnswer(true); // Re-validar sin hacer doble clic/doble log
+                validateAnswer(true); 
             }
         }
 
@@ -798,26 +781,22 @@ async function loadQuestionsFromDB() {
             selectedOptionId = id;
             
             if (IS_PRACTICE_MODE) {
-                // MODO PRÁCTICA (STAND ALONE): Validación Inmediata
                 if (isAnswerChecked) return;
                 isAnswerChecked = true; 
-                validateAnswer(false); // Validar y mostrar SRS botones
+                validateAnswer(false); 
             }
-            // MODO SIMULACIÓN: Solo marca la opción. El botón Next del footer guarda la respuesta.
         }
 
-        // --- VALIDACIÓN Y FEEDBACK (Llamado solo en modo práctica) ---
+        // --- VALIDACIÓN Y FEEDBACK ---
         function validateAnswer(re_render) {
             const q = quizData[currentIndex];
             const isCorrect = selectedOptionId === q.correctOption;
             
-            // Evita que se dispare la validación en modo Simulación.
             if (!re_render && !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode)) return;
 
-            // 1. Mostrar color-coding y deshabilitar opciones
             document.querySelectorAll('.option-row').forEach(row => {
                 row.style.cursor = 'default'; 
-                row.classList.add('disabled'); // Deshabilitar
+                row.classList.add('disabled'); 
                 const id = row.dataset.id;
 
                 if (id === q.correctOption) {
@@ -827,14 +806,12 @@ async function loadQuestionsFromDB() {
                 }
             });
 
-            // 2. Mostrar Explicación y botón Gemini
             document.getElementById('explanation-text').textContent = q.explanation;
             document.getElementById('explanation-box').classList.remove('hidden');
             if (!isCorrect && GEMINI_API_KEY) {
                 document.getElementById('btn-explain-gemini').classList.remove('hidden');
             }
 
-            // 3. MODO PRÁCTICA: Mostrar botones SRS
             document.getElementById('nav-buttons-row').classList.add('hidden');
             document.getElementById('srs-buttons-container').classList.remove('hidden');
             document.getElementById('srs-buttons-container').style.display = 'flex';
@@ -842,73 +819,56 @@ async function loadQuestionsFromDB() {
 
         // --- MANEJO DE BOTONES (NEXT/SRS) ---
         async function rateQuestion(rating) { 
-            // 1. Logear respuesta al DB y registrar rating SRS
             const currentQ = quizData[currentIndex];
             currentQ.userAnswer = selectedOptionId;
             currentQ.isCorrect = selectedOptionId === currentQ.correctOption;
             currentQ.srsRating = rating;
-            srsCounters[rating]++; // Aumentar contador SRS de la sesión
+            srsCounters[rating]++; 
 
             if (currentUser && currentUser.id !== 'test-user') {
                 try {
-                    // Asumimos que la tabla user_analytics ya tiene la columna srs_rating
                     const { error } = await _supabase.from('user_analytics').insert([
                         {
                             user_email: currentUser.email,
                             question_id: currentQ.id,
                             is_correct: currentQ.isCorrect,
-                            srs_rating: rating // ENLACE CRÍTICO con la base de datos
+                            srs_rating: rating 
                         }
                     ]);
                     if(error) console.error("Supabase error:", error);
                 } catch (err) { console.error("Save error:", err); }
             }
             
-            // 2. Avanzar
             nextQuestion();
         }
 
         function nextQuestion() {
-    const currentQ = quizData[currentIndex];
-    const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
+            const currentQ = quizData[currentIndex];
+            const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
 
-    if (isSimulation) {
-        // ... Lógica de simulación (sin cambios)
-        if (!selectedOptionId) {
-            console.error("Por favor, selecciona una respuesta para continuar."); 
-            return;
-        }
-        currentQ.userAnswer = selectedOptionId;
-        currentQ.isCorrect = selectedOptionId === currentQ.correctOption;
+            if (isSimulation) {
+                if (!selectedOptionId) {
+                    console.error("Por favor, selecciona una respuesta para continuar."); 
+                    return;
+                }
+                currentQ.userAnswer = selectedOptionId;
+                currentQ.isCorrect = selectedOptionId === currentQ.correctOption;
 
-        // Loguear respuesta de simulación (si aplica)
-        // ...
-
-        if (currentIndex === quizData.length - 1) {
-            showFinalResults(); // <--- LLAMADA FINAL en SIMULACIÓN
-            return;
-        }
-        
-        currentIndex++;
-        renderQuestion();
-        return;
-    } 
-    
-    // MODO PRÁCTICA (SRS): Lógica de avance ya manejada por rateQuestion()
-    if (currentIndex < quizData.length - 1) {
-        currentIndex++;
-        renderQuestion();
-    } else {
-        showFinalResults(); // <--- LLAMADA FINAL en PRÁCTICA/DAILY RUN
-    }
-}
+                if (currentIndex === quizData.length - 1) {
+                    showFinalResults(); 
+                    return;
+                }
+                
+                currentIndex++;
+                renderQuestion();
+                return;
+            } 
             
-            // MODO PRÁCTICA (SRS): Lógica de avance ya manejada por rateQuestion()
             if (currentIndex < quizData.length - 1) {
                 currentIndex++;
                 renderQuestion();
             } else {
-                showFinalResults();
+                showFinalResults(); 
             }
         }
         
@@ -919,7 +879,7 @@ async function loadQuestionsFromDB() {
             }
         }
 
-        // --- TIMER LOGIC (Placeholder for Simulation Mode) ---
+        // --- TIMER LOGIC ---
         let timerInterval;
         function startTimer() {
             if (timerInterval) clearInterval(timerInterval);
@@ -947,60 +907,44 @@ async function loadQuestionsFromDB() {
         }
 
 
-        // --- PANTALLA FINAL DE RESULTADOS (MODO EXAMEN/PRÁCTICA) ---
+        // --- PANTALLA FINAL DE RESULTADOS ---
         function showFinalResults() {
             if (timerInterval) clearInterval(timerInterval);
             
-            // Ocultar UI de Quiz
             document.getElementById('main-container-wrapper').classList.add('hidden');
             document.querySelector('.inbde-footer').classList.add('hidden'); 
             
-            // Ocultar headers
             document.querySelector('.inbde-header')?.classList.add('hidden');
             document.getElementById('practice-header-el')?.classList.add('hidden');
 
-            // Mostrar UI de Resultados
             const resultsView = document.getElementById('results-view');
             resultsView.classList.remove('hidden');
             resultsView.style.display = 'flex';
 
-           // 1. Calcular Totales y Contadores SRS
-let totalCorrect = 0;
-let totalIncorrect = 0;
+            let totalCorrect = 0;
+            let totalIncorrect = 0;
 
-// Inicializar contadores SRS y Correctas
-srsCounters = { Learning: 0, Retrieving: 0, Mastered: 0 }; 
+            srsCounters = { Learning: 0, Retrieving: 0, Mastered: 0 }; 
 
-quizData.forEach(q => {
-    if (q.isCorrect) {
-        totalCorrect++;
-    } else if (q.userAnswer !== null) {
-        totalIncorrect++;
-    }
+            quizData.forEach(q => {
+                if (q.isCorrect) {
+                    totalCorrect++;
+                } else if (q.userAnswer !== null) {
+                    totalIncorrect++;
+                }
 
-    // Contabilizar la calificación SRS (solo aplica si es modo práctica/daily)
-    if (q.srsRating && srsCounters.hasOwnProperty(q.srsRating)) {
-        srsCounters[q.srsRating]++;
-    }
-});
+                if (q.srsRating && srsCounters.hasOwnProperty(q.srsRating)) {
+                    srsCounters[q.srsRating]++;
+                }
+            });
 
-// 2. Renderizar Resumen
-document.getElementById('final-correct').innerText = totalCorrect;
-document.getElementById('final-total').innerText = quizData.length;
+            document.getElementById('final-correct').innerText = totalCorrect;
+            document.getElementById('final-total').innerText = quizData.length;
 
-// Asumiendo que el total de incorrectas se mostrará en algún lugar, aunque no hay un span específico
-// en tu HTML, se usa la variable totalIncorrect.
+            document.getElementById('srs-learning-count').innerText = srsCounters.Learning;
+            document.getElementById('srs-retrieving-count').innerText = srsCounters.Retrieving;
+            document.getElementById('srs-mastered-count').innerText = srsCounters.Mastered;
 
-document.getElementById('srs-learning-count').innerText = srsCounters.Learning;
-document.getElementById('srs-retrieving-count').innerText = srsCounters.Retrieving;
-document.getElementById('srs-mastered-count').innerText = srsCounters.Mastered;
-
-// 3. Render Review List (with Explanations)
-const reviewList = document.getElementById('review-list');
-reviewList.innerHTML = '';
-// ... el resto de la iteración de la lista de revisión (quizData.forEach) continúa aquí ...
-            
-            // 3. Render Review List (with Explanations)
             const reviewList = document.getElementById('review-list');
             reviewList.innerHTML = '';
             
@@ -1010,7 +954,6 @@ reviewList.innerHTML = '';
                 const correctAnswerText = q.options.find(opt => opt.id === q.correctOption)?.text || "N/A";
                 const srsTag = q.srsRating ? `<span class="font-bold text-xs p-1 rounded" style="background:${q.srsRating === 'Learning' ? '#ef4444' : q.srsRating === 'Retrieving' ? '#eab308' : '#22c55e'}">${q.srsRating}</span>` : '';
                 
-                // Estructura de revisión
                 const itemHTML = `
                     <div class="review-item ${isCorrect ? 'correct-bg' : 'incorrect-bg'} p-4">
                         <h4 class="font-bold text-md mb-2 text-gray-900 dark:text-white">Q${index + 1}: ${isCorrect ? 'Correcta ✅' : 'Incorrecta ❌'} ${srsTag}</h4>
@@ -1033,6 +976,34 @@ reviewList.innerHTML = '';
                 `;
                 reviewList.insertAdjacentHTML('beforeend', itemHTML);
             });
+
+            // MODIFICACIÓN 2: LÓGICA DE BOTONES FINALES SEGÚN MODO
+            const actionContainer = document.createElement('div');
+            actionContainer.className = "mt-8 flex flex-col gap-3";
+
+            if (currentMode === 'practice_custom') {
+                // MODO IA LAB: Botones especiales
+                actionContainer.innerHTML = `
+                    <button onclick="window.location.href='dashboard.html?view=learning'" class="btn-start btn-glossy w-full p-3 text-lg bg-yellow-500 hover:bg-yellow-400 border-yellow-600 text-black">
+                        🚀 Start New Quiz (Stand Alone)
+                    </button>
+                    <button onclick="window.location.href='dashboard.html'" class="w-full p-3 text-gray-400 hover:text-white font-bold border border-gray-600 rounded-lg transition">
+                        Exit to Dashboard
+                    </button>
+                `;
+            } else {
+                // MODO STANDARD
+                actionContainer.innerHTML = `
+                    <button onclick="window.location.href='dashboard.html'" class="btn-start btn-glossy w-full p-3 text-lg">
+                        Back to Dashboard
+                    </button>
+                `;
+            }
+
+            document.querySelector('.final-results-container').parentElement.appendChild(actionContainer);
+            
+            const oldBtn = document.querySelector('#results-view button.btn-start');
+            if(oldBtn) oldBtn.style.display = 'none';
         }
         
         // --- UTILIDADES PANTALLA FINAL ---
@@ -1056,10 +1027,8 @@ reviewList.innerHTML = '';
             
             const prompt = `Explain why the answer "${q.correctOption}" is correct for the dental question: "${q.text}". Keep it concise and educational.`;
 
-            // Utiliza la clave insertada al inicio del script
             const apiKey = GEMINI_API_KEY; 
 
-            // Si la clave es el placeholder, alertamos al usuario.
             if(apiKey === "YOUR_SECURE_GEMINI_API_KEY_HERE" || !apiKey) { 
                 reviewContainer.innerHTML = `<p class="text-red-500"><strong>🤖 Error de IA:</strong> La clave de IA no está configurada o es el valor placeholder. La clave es visible en el Front-end, úsala bajo tu propio riesgo.</p>`;
                 return; 
@@ -1106,12 +1075,10 @@ reviewList.innerHTML = '';
 
         function toggleMark() { console.log("Mark toggled"); }
         function finishQuiz() { 
-            // En modo Simulación, el botón 'Review' del footer debe llevar a la pantalla final.
             const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
             if (isSimulation) {
                 showFinalResults();
             } else {
-                // Reemplazamos alert() por confirm para evitar errores en ciertos entornos.
                 if(window.confirm("Finish and exit?")) window.location.href = 'dashboard.html'; 
             }
         }
