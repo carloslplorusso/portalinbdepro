@@ -198,7 +198,10 @@ function openAIModal(mode) {
     const output = document.getElementById('ai-output');
     // Limpiar estado anterior
     if(modal) {
-        modal.classList.add('active');
+        modal.classList.remove('hidden'); // Quitar hidden por si acaso
+        modal.classList.add('active');    // Activar CSS opacity
+        modal.style.display = 'flex';     // Asegurar display flex
+        
         const input = document.getElementById('ai-input'); 
         if(input) input.value = '';
         if(output) output.innerHTML = '';
@@ -208,7 +211,13 @@ function openAIModal(mode) {
 // 2. Cerrar Modal
 function closeAIModal() {
     const modal = document.getElementById('ai-modal');
-    if(modal) modal.classList.remove('active');
+    if(modal) {
+        modal.classList.remove('active');
+        setTimeout(() => { 
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }, 300);
+    }
 }
 
 // 3. Buscar en Base de Datos y Redirigir
@@ -255,20 +264,35 @@ async function performAISearch() {
 // Vincular la función al nombre que usaste en el HTML
 window.callGemini = performAISearch; 
 
-// --- LOGICA DE NOTAS (NUEVA SECCIÓN AÑADIDA) ---
+// --- LOGICA DE NOTAS (CORREGIDA) ---
 
 function openNotesModal() {
     const modal = document.getElementById('notes-modal');
     if (modal) {
-        modal.style.display = 'flex'; // Usamos flex para centrarlo según tu CSS
-        loadUserNotes(); // Cargar notas al abrir
+        modal.classList.remove('hidden'); // 1. Quitar hidden (mobile lo usa con !important)
+        modal.style.display = 'flex';     // 2. Asegurar display flex (sobreescribir inline none)
+        
+        // Pequeño delay para permitir que el navegador procese el display:flex antes de la transición
+        setTimeout(() => {
+            modal.classList.add('active'); // 3. Activar opacidad (dashboard lo usa)
+        }, 10);
+
+        loadUserNotes(); 
+    } else {
+        console.error("Error: Modal 'notes-modal' not found in DOM.");
     }
 }
 
 function closeNotesModal() {
     const modal = document.getElementById('notes-modal');
     if (modal) {
-        modal.style.display = 'none';
+        modal.classList.remove('active'); // Iniciar transición de salida
+        
+        // Esperar a que termine la animación CSS (0.3s) antes de ocultar
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }, 300);
     }
 }
 
