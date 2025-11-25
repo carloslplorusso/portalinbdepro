@@ -169,13 +169,22 @@ function renderDynamicCategories(filterType) {
     if(!container) return;
     container.innerHTML = '';
 
-    const filteredQuizzes = allQuizzes.filter(q => q.tipo === filterType);
+    // DEBUG: Descomenta esto para ver en consola qué propiedades tiene realmente tu objeto
+    // if (allQuizzes.length > 0) console.log("Ejemplo de pregunta:", allQuizzes[0]);
+
+    // CAMBIO: Usamos 'type' (o el nombre exacto de tu columna en Supabase) en lugar de 'tipo'
+    // Asegúrate también de que filterType coincida con lo que hay en la BD ('single', 'simulation', etc.)
+    const filteredQuizzes = allQuizzes.filter(q => q.type === filterType); 
+
     const uniqueSubjects = [...new Set(filteredQuizzes.map(q => q.category))];
 
     if (uniqueSubjects.length === 0) {
-        container.innerHTML = '<div style="padding:15px; text-align:center; color:#666;">No content available for this mode yet.</div>';
+        container.innerHTML = '<div style="padding:15px; text-align:center; color:#666;">No hay contenido disponible para este modo.</div>';
         return;
     }
+
+    // ... (resto del código igual)
+}
 
     const selectAllDiv = document.createElement('div');
     selectAllDiv.className = 'subject-item special-select-all';
