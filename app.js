@@ -256,3 +256,283 @@ function renderFullCalendar() {
     
     container.innerHTML = html;
 }
+/* =========================================
+   CORE NAVIGATION & UI LOGIC (FIXES)
+   ========================================= */
+
+// --- 1. GESTIÓN DE VISTAS (Navegación) ---
+
+// Función genérica para cambiar entre pantallas (Dashboard, Learning, Simulation, etc.)
+function switchView(targetId) {
+    // 1. Ocultar el Dashboard principal
+    const dashboard = document.getElementById('dashboard-content');
+    if (dashboard) dashboard.classList.add('hidden');
+
+    // 2. Ocultar todas las sub-vistas conocidas
+    const views = [
+        'learning-view', 
+        'simulation-view', 
+        'pomodoro-view', 
+        'selection-view', 
+        'pomodoro-timer-view',
+        'quiz-settings-modal' // Por si acaso quedó abierto
+    ];
+    
+    views.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+
+    // 3. Mostrar la vista objetivo
+    const target = document.getElementById(targetId);
+    if (target) {
+        target.classList.remove('hidden');
+        target.classList.add('fade-in'); // Efecto de entrada
+    } else {
+        console.error(`View with ID '${targetId}' not found.`);
+    }
+}
+
+// Funciones específicas llamadas por los botones onclick
+function showLearningLab() { switchView('learning-view'); }
+function showSimulationLab() { switchView('simulation-view'); }
+function showPomodoro() { switchView('pomodoro-view'); }
+
+function goBackToDashboard() {
+    // Ocultar sub-vistas
+    const views = ['learning-view', 'simulation-view', 'pomodoro-view', 'selection-view', 'pomodoro-timer-view'];
+    views.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+
+    // Mostrar Dashboard
+    const dbContent = document.getElementById('dashboard-content');
+    if (dbContent) {
+        dbContent.classList.remove('hidden');
+        dbContent.classList.add('fade-in');
+    }
+}
+
+function goBackToLearning() { switchView('learning-view'); }
+function goBackToPomodoro() { switchView('pomodoro-view'); }
+
+
+// --- 2. SELECTION VIEW LOGIC (Categorías dinámicas) ---
+function openSelectionView(mode) {
+    // Cambiar título según el modo
+    const titleEl = document.getElementById('selection-mode-title');
+    if (titleEl) {
+        if (mode === 'standalone') titleEl.innerText = 'Stand Alone Practice';
+        else if (mode === 'itemsets') titleEl.innerText = 'Item Sets';
+        else if (mode === 'simulation') titleEl.innerText = 'Customize Simulation';
+    }
+
+    // Aquí simularíamos carga de categorías (o llamarías a Supabase)
+    const list = document.getElementById('dynamic-cat-list');
+    if (list) {
+        list.innerHTML = `
+            <div class="subject-item active" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Oral Pathology</div>
+            <div class="subject-item" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Pharmacology</div>
+            <div class="subject-item" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Anatomy</div>
+            <div class="subject-item" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Operative Dentistry</div>
+        `;
+    }
+    
+    switchView('selection-view');
+}
+
+// Abrir configuración del Quiz (cantidad de preguntas)
+function openQuizSettings() {
+    const modal = document.getElementById('quiz-settings-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+        
+        // Rellenar select si está vacío
+        const select = document.getElementById('quiz-count');
+        if(select && select.options.length === 0) {
+            select.innerHTML = `
+                <option value="10">10 Questions</option>
+                <option value="20">20 Questions</option>
+                <option value="50">50 Questions</option>
+            `;
+        }
+    }
+}
+
+function closeQuizSettings() {
+    const modal = document.getElementById('quiz-settings-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+}
+
+function startQuiz() {
+    const count = document.getElementById('quiz-count').value;
+    // Redirigir al engine con los parámetros
+    window.location.href = `quiz_engine.html?mode=practice&count=${count}`;
+}
+
+// Función genérica para botones de "Start" directo
+function startQuizEngine(mode) {
+    window.location.href = `quiz_engine.html?mode=${mode}&count=50`; // Default count
+}
+
+
+// --- 3. QUICK NOTES LOGIC ---
+function openNotesModal() {
+    const modal = document.getElementById('notes-modal');
+    if(modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('active'); // Clase para opacidad CSS
+        loadNotes(); // Cargar notas guardadas
+    }
+}
+
+function closeNotesModal() {
+    const modal = document.getElementById('notes-modal');
+    if(modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+}
+
+function saveNote() {
+    const input = document.getElementById('new-note-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    // Guardar en LocalStorage (Persistencia básica)
+    let notes = JSON.parse(localStorage.getItem('inbde_user_notes') || '[]');
+    notes.push({ text: text, date: new Date().toISOString() });
+    localStorage.setItem('inbde_user_notes', JSON.stringify(notes));
+
+    input.value = ''; // Limpiar
+    loadNotes(); // Recargar lista
+}
+
+function loadNotes() {
+    const container = document.getElementById('notes-list-container');
+    if(!container) return;
+
+    const notes = JSON.parse(localStorage.getItem('inbde_user_notes') || '[]');
+    
+    if (notes.length === 0) {
+        container.innerHTML = '<div style="color:#666; text-align:center; padding:20px;">No notes yet. Start typing above!</div>';
+        return;
+    }
+
+    // Renderizar notas (más recientes primero)
+    container.innerHTML = notes.reverse().map(n => `
+        <div style="background:rgba(255,255,255,0.05); padding:12px; border-radius:8px; margin-bottom:8px; border-left:3px solid var(--accent);">
+            <div style="color:#eee;">${n.text}</div>
+            <div style="color:#666; font-size:0.7rem; margin-top:5px;">${new Date(n.date).toLocaleDateString()} ${new Date(n.date).toLocaleTimeString()}</div>
+        </div>
+    `).join('');
+}
+
+
+// --- 4. IA LAB LOGIC ---
+function openAIModal(mode) {
+    const modal = document.getElementById('ai-modal');
+    if(modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+        document.getElementById('ai-input').focus();
+    }
+}
+
+function closeAIModal() {
+    const modal = document.getElementById('ai-modal');
+    if(modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+}
+
+async function callGemini() {
+    const inputEl = document.getElementById('ai-input');
+    const outputEl = document.getElementById('ai-output');
+    
+    if(!inputEl || !inputEl.value.trim()) return;
+    
+    // UI de carga
+    outputEl.style.display = 'block';
+    outputEl.innerHTML = '<div style="color:var(--accent);">🤖 Thinking...</div>';
+
+    // Simulación (Aquí conectarías tu API Key real si la tienes segura en backend)
+    setTimeout(() => {
+        outputEl.innerHTML = `
+            <strong>AI Result:</strong><br>
+            I found 3 relevant questions related to "<em>${inputEl.value}</em>".<br><br>
+            <button class="btn-start" onclick="startQuizEngine('ai_generated')" style="padding:5px 10px; font-size:0.8rem;">Start Generated Quiz</button>
+        `;
+    }, 1500);
+}
+
+
+// --- 5. POMODORO TIMER LOGIC ---
+let pomoInterval;
+let pomoTime = 25 * 60; // 25 minutos
+let isPomoRunning = false;
+
+function openPomodoroSession() {
+    switchView('pomodoro-timer-view');
+    resetPomo();
+}
+
+function updatePomoDisplay() {
+    const m = Math.floor(pomoTime / 60).toString().padStart(2, '0');
+    const s = (pomoTime % 60).toString().padStart(2, '0');
+    const display = document.getElementById('timer-display');
+    if(display) display.innerText = `${m}:${s}`;
+}
+
+function toggleTimer() {
+    const btn = document.getElementById('play-icon');
+    
+    if(isPomoRunning) {
+        // Pausar
+        clearInterval(pomoInterval);
+        isPomoRunning = false;
+        if(btn) btn.innerText = "▶";
+    } else {
+        // Iniciar
+        isPomoRunning = true;
+        if(btn) btn.innerText = "❚❚";
+        pomoInterval = setInterval(() => {
+            if(pomoTime > 0) {
+                pomoTime--;
+                updatePomoDisplay();
+            } else {
+                clearInterval(pomoInterval);
+                alert("Time is up!");
+                isPomoRunning = false;
+                if(btn) btn.innerText = "▶";
+            }
+        }, 1000);
+    }
+}
+
+function resetPomo() {
+    clearInterval(pomoInterval);
+    isPomoRunning = false;
+    pomoTime = 25 * 60;
+    updatePomoDisplay();
+    const btn = document.getElementById('play-icon');
+    if(btn) btn.innerText = "▶";
+}
+
+
+// --- 6. AUTHENTICATION (Logout) ---
+async function logout() {
+    if(typeof _supabase !== 'undefined') {
+        await _supabase.auth.signOut();
+        window.location.href = 'index.html';
+    } else {
+        // Fallback si supabase no está definido globalmente
+        window.location.href = 'index.html';
+    }
+}
