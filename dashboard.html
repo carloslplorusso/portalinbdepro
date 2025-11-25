@@ -299,49 +299,63 @@
     /* =========================================
        3. MEDIA QUERIES (VISTA MÓVIL)
        ========================================= */
-   /* =========================================
-       3. MEDIA QUERIES (VISTA MÓVIL)
-       ========================================= */
+    /* Este bloque toma el control para dispositivos pequeños (<1024px) */
     @media (max-width: 1024px) {
-        /* CAMBIO 1: height: auto, min-height: 100dvh y overflow-y: auto habilitan el scroll */
-        body { height: auto; min-height: 100dvh; overflow-y: auto; align-items: flex-start; padding: 0; }
+        body { height: 100dvh; overflow: hidden; align-items: flex-start; padding: 0; }
         
         .lab-container {
-            /* CAMBIO 2: height: auto permite que el contenedor crezca más allá de la pantalla */
-            height: auto;
+            height: 100dvh;
             display: grid;
-            /* ESTRUCTURA BENTO 2 COLUMNAS */
-            grid-template-columns: 1fr 1fr; 
-            /* Filas ajustadas: Header | Banner | Hero | Daily/Metrics | Notes/Activity | IA (Footer) */
-            grid-template-rows: min-content min-content 400px min-content min-content min-content; /* Se ajustó la fila del Hero a 400px fijos para dar espacio */
+            /* ESTRUCTURA MÓVIL (1 COLUMNA FLUIDA) */
+            grid-template-columns: 1fr; 
+            /* Filas: Header | Hero | Banner | Daily | Metrics (Hidden) | Espacio extra */
+            grid-template-rows: min-content 1fr min-content min-content 1fr;
             gap: 8px; 
-            padding: 10px 12px 40px 12px; /* Añadido padding inferior para scroll extra */
+            padding: 10px 12px 12px 12px;
             width: 100%;
-            overflow: visible;
         }
 
-        /* ... el resto del código dentro del media query sigue igual ... */
-
+        /* Redefinir columnas y áreas para el layout móvil */
         .col-side, .col-center { display: contents; }
 
-        /* 1. HEADER */
-        .header-area { grid-column: 1 / -1; order: 0; margin: 0; padding-bottom: 5px; min-height: auto; }
+        /* --- ORDENAMIENTO Y VISIBILIDAD --- */
+
+        /* 1º: HEADER (Order 0) - Centrado */
+        .header-area { 
+            grid-column: 1 / -1; 
+            order: 0; 
+            padding-bottom: 5px; 
+            min-height: auto; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center;
+            margin-bottom: 15px; /* ESPACIO AÑADIDO */
+        }
         .lab-title { font-size: 1.5rem; }
         .header-countdown { padding: 2px 8px; font-size: 0.7rem; }
+        .user-welcome span:first-child { display: none; }
+        .user-welcome { font-size: 0.9rem; }
+        #header-welcome-section { 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            width: 100%; 
+            max-width: 300px; 
+            margin-top: 5px; 
+        }
 
-        /* 2. BANNER LEARN */
-        .card-learn-banner { grid-column: 1 / -1; order: 1; margin: 0; padding: 8px; min-height: 40px; }
-        .card-learn-banner h2 { font-size: 0.85rem; }
-
-        /* 3. HERO CARDS (PRINCIPALES - GRANDES Y VERTICALES) */
+        /* 2º: HERO CARDS (Order 1) - Iconos Mobile */
         .center-row-hero {
             grid-column: 1 / -1; 
-            order: 2;
+            order: 1;
             flex-direction: row !important;
             gap: 6px;
-            margin: 0;
+            /* AUMENTO DE MARGEN INFERIOR PARA ESPACIADO: 25px */
+            margin: 0 0 25px 0; 
             height: 100%; 
             align-items: stretch;
+            justify-content: space-around;
+            flex-wrap: nowrap;
         }
         .hero-card {
             min-height: 0;
@@ -349,74 +363,63 @@
             flex-direction: column; 
             justify-content: center;
             flex: 1;
+            aspect-ratio: 1 / 1;
+            max-width: 100px;
         }
-        .hero-card .icon { margin-bottom: 8px; font-size: 2.5rem; }
-        .hero-card .title { font-size: 0.9rem; line-height: 1.1; }
+        .hero-card .icon { margin-bottom: 5px; font-size: 2rem; }
+        .hero-card .title { font-size: 0.8rem; line-height: 1.1; font-weight: 700; }
+        .hero-card .sub { display: none; }
 
-        /* 4. DAILY & METRICS (SECUNDARIAS - PEQUEÑAS) */
-        .col-left .card-promo-style { /* Daily */
-            grid-column: 1 / 2; order: 3;
-            min-height: 110px; 
-            margin: 0; padding: 10px;
-            border: 2px solid var(--accent) !important;
-            flex-direction: column; /* Restaurar verticalidad para bento */
-            align-items: center;
-            justify-content: center;
-        }
-        .card-metrics { /* Metrics */
-            display: flex !important; /* Restaurar visibilidad */
-            grid-column: 2 / 3; order: 3;
-            min-height: 110px; 
-            margin: 0; padding: 8px;
-            background: linear-gradient(145deg, rgba(250, 204, 21, 0.15), rgba(0,0,0,0) 70%);
-            border: 2px solid var(--accent);
-            box-shadow: 0 0 15px rgba(250, 204, 21, 0.15);
-            border-radius: 16px;
-        }
-        .col-left .card-promo-style .promo-title, .metrics-title { font-size: 0.7rem; margin-bottom: 2px; }
-        .col-left .card-promo-style .btn-start { font-size: 0.6rem; padding: 4px 0; margin-top: auto; width: 100%; }
-        .col-left .card-promo-style .promo-header { margin-bottom: 5px; gap: 5px; }
-        .col-left .card-promo-style .promo-desc { display: block; font-size: 0.6rem; margin-bottom: 5px; text-align: center; }
-        .pie-chart-main { width: 45px; height: 45px; }
-        
-        /* 5. NOTES & ACTIVITY (SECUNDARIAS - BORDE AMARILLO) */
-        .col-left .card-notes {
-            display: flex !important; /* Restaurar visibilidad */
-            grid-column: 1 / 2; order: 4;
-            min-height: 90px; margin: 0; padding: 8px;
-            border: 1px solid var(--accent);
-        }
-        .col-right .usage-container {
-            display: flex !important; /* Restaurar visibilidad */
-            grid-column: 2 / 3; order: 4;
-            min-height: 90px; margin: 0; padding: 8px;
-            border: 1px solid var(--accent);
-            flex-direction: column; justify-content: center;
-        }
-        .card-notes .card-title, .usage-header .card-title { font-size: 0.7rem; }
-        .ring-chart { width: 30px; height: 30px; margin-bottom: 0; }
-        .ring-chart::after { width: 20px; height: 20px; }
-        .activity-dots { display: none; }
-        
-        /* 6. IA LAB (AL FINAL - BARRA COMPLETA) */
-        .col-right .card-promo-style {
-            display: flex !important; /* Restaurar visibilidad */
+        /* 3º: BANNER LEARN (Order 2) - Barra Horizontal Pequeña */
+        .card-learn-banner { 
             grid-column: 1 / -1; 
-            order: 5;
+            order: 2;
+            margin: 0; 
+            padding: 8px 15px; 
+            min-height: 45px; 
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+        }
+        .card-learn-banner h2 { font-size: 0.85rem; }
+
+        /* 4º: DAILY LAB (Order 3) - Barra Horizontal Pequeña */
+        .col-left .card-promo-style:first-child {
+            display: flex !important; /* Hacemos visible */
+            grid-column: 1 / -1;
+            order: 3;
             width: 100%;
-            min-height: 45px;
+            /* ALTURA FIJA UNIFICADA: 70px */
+            min-height: 70px;
             padding: 8px 15px;
             margin: 0;
-            flex-direction: row; align-items: center; justify-content: space-between;
+            flex-direction: row; /* Layout horizontal */
+            align-items: center;
+            justify-content: space-between;
             border: 2px solid var(--accent);
         }
-        .col-right .card-promo-style .promo-header { margin-bottom: 0; gap: 8px; }
-        .col-right .card-promo-style .ai-icon { font-size: 1.1rem; }
-        .col-right .card-promo-style .promo-title { font-size: 0.8rem; }
-        .col-right .card-promo-style .promo-desc { display: none; } 
-        .col-right .card-promo-style .btn-start { width: auto; padding: 5px 12px; font-size: 0.65rem; margin: 0; }
-        
-        .countdown-box { display: none; }
+        /* Ajustes internos para Daily Lab en barra */
+        .col-left .card-promo-style:first-child .promo-header { margin-bottom: 0; gap: 10px; }
+        .col-left .card-promo-style:first-child .promo-desc { display: none; } /* Ocultar descripción */
+        .col-left .card-promo-style:first-child .btn-start { 
+            width: auto; 
+            margin: 0; 
+            padding: 6px 15px; 
+            font-size: 0.7rem; 
+        }
+
+        /* 5º: METRICS (Order 4) - OCULTAR COMPLETAMENTE */
+        .col-center .card-metrics {
+            display: none !important; 
+        }
+
+        /* ELEMENTOS YA OCULTOS */
+        .col-side .card-notes, /* Notes */
+        .col-right .usage-container, /* Activity Log */
+        .col-right .card-promo-style:first-child /* IA Lab */
+        {
+            display: none !important;
+        }
 
         /* --- VISTAS INTERNAS (LEARNING/SIMULATION/POMODORO) --- */
         /* Ajustar vistas internas para ocupar toda la pantalla */
@@ -819,10 +822,10 @@
 
         // Filtrar quizzes por tipo (simulado si tipo no coincide exactamente con DB actual)
         // Nota: Ajusta 'tipo' según tus columnas reales de DB
-        const filteredQuizzes = allQuizzes; //.filter(q => q.tipo === filterType);
+        const filteredQuizzes = allQuizzes.filter(q => q.tipo === filterType);
         
         // Extraer materias únicas
-        const uniqueSubjects = [...new Set(filteredQuizzes.map(q => q.materia))];
+        const uniqueSubjects = [...new Set(filteredQuizzes.map(q => q.category))]; // Changed materia to category
 
         if (uniqueSubjects.length === 0) {
             container.innerHTML = '<div style="padding:15px; text-align:center; color:#666;">No content available for this mode yet.</div>';
@@ -839,7 +842,7 @@
         // Generar items de materia
         uniqueSubjects.forEach(subject => {
             if(!subject) return; 
-            const count = filteredQuizzes.filter(q => q.materia === subject).length;
+            const count = filteredQuizzes.filter(q => q.category === subject).length; // Changed materia to category
             const item = document.createElement('div');
             item.className = 'subject-item';
             item.onclick = function() { toggleCheck(this); };
