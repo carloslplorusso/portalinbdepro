@@ -167,6 +167,57 @@
             }
         }
 
+        /* --- FORCE DESKTOP VIEW FOR SIMULATION (MOBILE OVERRIDE) --- */
+        body.force-desktop-view {
+            overflow: auto !important; /* Permitir scroll si es necesario */
+        }
+
+        body.force-desktop-view #main-container-wrapper {
+            flex-direction: row !important; /* Forzar lado a lado */
+            min-width: 1024px; /* Forzar ancho de escritorio */
+            overflow-y: hidden;
+            height: calc(100vh - 112px); /* Ajustar altura restando header/footer */
+        }
+
+        /* Panel Izquierdo */
+        body.force-desktop-view #left-panel {
+            width: 40% !important;
+            height: 100% !important;
+            display: flex !important;
+            order: 1 !important; /* Restaurar orden original */
+            border-right: 1px solid #ccc;
+            border-bottom: none !important;
+        }
+
+        /* Panel Derecho */
+        body.force-desktop-view #right-panel {
+            width: 60% !important;
+            height: 100% !important;
+            order: 2 !important;
+            overflow-y: auto !important;
+        }
+
+        /* Header y Footer anchos */
+        body.force-desktop-view .inbde-header,
+        body.force-desktop-view .inbde-footer {
+            min-width: 1024px; /* Asegurar que las barras cubran todo el ancho */
+            flex-wrap: nowrap !important;
+        }
+
+        /* Ocultar botón de toggle móvil */
+        body.force-desktop-view #toggle-case-btn {
+            display: none !important;
+        }
+
+        /* Restaurar estructura del Header */
+        body.force-desktop-view .inbde-header > div {
+            width: auto !important;
+            margin-bottom: 0 !important;
+        }
+        body.force-desktop-view .inbde-header .text-lg { order: 1 !important; width: 25% !important; text-align: left; }
+        body.force-desktop-view .inbde-header .text-center { order: 2 !important; width: 50% !important; }
+        body.force-desktop-view .inbde-header .justify-end { order: 3 !important; width: 25% !important; justify-content: flex-end !important; margin-bottom: 0 !important; }
+
     </style>
 
     <style id="practice-css" disabled>
@@ -252,7 +303,6 @@
             <div id="mode-subtitle" class="text-xs text-blue-200">INBDE | Simulation Exam</div>
         </div>
         <div class="flex items-center justify-end gap-3 w-1/4">
-            <!-- Botón para mostrar/ocultar panel lateral en móvil -->
             <button id="toggle-case-btn" class="hidden text-white bg-blue-700/50 px-3 py-1 rounded text-xs font-bold transition hover:bg-blue-600" onclick="toggleCasePanel()">
                 <i class="fa-solid fa-notes-medical"></i> Case Info
             </button>
@@ -280,7 +330,6 @@
 
     <main id="main-container-wrapper" class="flex-1 flex overflow-hidden w-full max-w-7xl mx-auto bg-white shadow-xl">
         
-        <!-- Panel Izquierdo (Info Clínica/Fotos) - Colapsable en Móvil -->
         <section id="left-panel" class="w-[40%] flex flex-col border-r border-gray-300 bg-white p-4 overflow-hidden transition-all duration-300">
             <div class="flex border-b border-black mb-0 z-10">
                 <button id="tab-photos" class="tab-btn inactive" onclick="switchTab('photos')">PHOTOS</button>
@@ -306,7 +355,6 @@
             </div>
         </section>
 
-        <!-- Panel Derecho (Pregunta/Opciones) - Siempre visible -->
         <section id="right-panel" class="w-[60%] flex flex-col p-6 overflow-y-auto custom-scrollbar relative transition-all duration-300">
             
             <div class="max-w-4xl mx-auto w-full flex flex-col h-full"> 
@@ -525,8 +573,8 @@
 
                     return {
                         id: item.id,
-                        text: item.question_text,          
-                        materia: item.category,          
+                        text: item.question_text,           
+                        materia: item.category,           
                         
                         // Datos del Caso
                         patientInfo: relatedCase ? `Age: ${patient.age || 'N/A'}, Gender: ${patient.gender || 'N/A'}` : "Stand Alone Question",
@@ -534,7 +582,7 @@
                         history: relatedCase ? (patient.history || "See scenario") : "N/A",
                         findings: relatedCase ? (patient.findings || "See scenario") : "N/A",
                         
-                        photoUrl: item.image_url,          
+                        photoUrl: item.image_url,           
                         
                         options: [
                             { id: 'A', text: item.option_a },  
@@ -591,35 +639,36 @@
 
         // --- LAYOUT MANAGER ---
         function configureLayoutMode() {
-            const leftPanel = document.getElementById('left-panel'); // Sidebar/Patient Info
+            const leftPanel = document.getElementById('left-panel');
             const rightPanel = document.getElementById('right-panel');
-            const practiceStyle = document.getElementById('practice-css'); // Dark Mode CSS
-            const simHeader = document.querySelector('.inbde-header'); // Timer/Blue Header
-            const simFooter = document.querySelector('.inbde-footer'); // Blue Footer
-            const practiceHeader = document.getElementById('practice-header-el'); // Dark Header (Streak)
-            const practiceControls = document.getElementById('practice-controls-el'); // Practice/SRS Buttons
+            const practiceStyle = document.getElementById('practice-css');
+            const simHeader = document.querySelector('.inbde-header');
+            const simFooter = document.querySelector('.inbde-footer');
+            const practiceHeader = document.getElementById('practice-header-el');
+            const practiceControls = document.getElementById('practice-controls-el');
             const toggleCaseButton = document.getElementById('toggle-case-btn');
             
+            // Lista de modos de práctica (Dark Mode)
             const IS_PRACTICE_MODE = ['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
 
             if (IS_PRACTICE_MODE) {
-                // MODELO STAND ALONE (Fondo Oscuro, Sin Sidebar, Botones SRS)
+                // --- MODO PRÁCTICA (DARK / MOBILE FRIENDLY) ---
+                document.body.classList.remove('force-desktop-view'); // Quitar forzado de escritorio
                 
                 practiceStyle.disabled = false;
                 
-                // Ocultar elementos de simulación
                 leftPanel.style.display = 'none';
                 simHeader.classList.add('hidden');
                 simFooter.classList.add('hidden');
                 toggleCaseButton.classList.add('hidden');
 
-                // Mostrar elementos de práctica
                 practiceHeader.classList.remove('hidden');
                 practiceControls.classList.remove('hidden');
                 practiceControls.style.display = 'flex';
                 
                 rightPanel.style.width = '100%';
                 
+                // Títulos específicos
                 if(currentMode === 'daily') {
                     document.querySelector('.practice-subtitle').innerText = "Daily Lab Sprint";
                 } else if (currentMode === 'retry_mistakes') {
@@ -627,28 +676,24 @@
                 }
                 
             } else {
-                // MODELO SIMULACIÓN / ITEM SET (Fondo Claro, Con Sidebar, Con Timer)
+                // --- MODO SIMULACIÓN (WHITE / FORCE DESKTOP LAYOUT) ---
+                
+                // AQUÍ ESTÁ LA MAGIA:
+                document.body.classList.add('force-desktop-view'); 
                 
                 practiceStyle.disabled = true;
 
-                // Mostrar elementos de simulación
                 leftPanel.style.display = 'flex';
                 simHeader.classList.remove('hidden');
                 simFooter.classList.remove('hidden');
 
-                // Ocultar elementos de práctica
                 practiceHeader.classList.add('hidden');
                 practiceControls.classList.add('hidden');
-
-                // Responsive check: Mostrar/ocultar botón de toggle en el header
-                if (isMobile()) {
-                    toggleCaseButton.classList.remove('hidden');
-                    leftPanel.style.width = '100%'; // Mobile size defined in CSS @media block
-                } else {
-                    toggleCaseButton.classList.add('hidden');
-                    rightPanel.style.width = '60%'; // Desktop size
-                    leftPanel.style.width = '40%';
-                }
+                
+                // Forzamos estilos inline para asegurar el split 40/60 incluso si el CSS falla
+                rightPanel.style.width = '60%'; 
+                leftPanel.style.width = '40%';
+                toggleCaseButton.classList.add('hidden'); // Ocultar botón móvil explícitamente
             }
         }
         
