@@ -169,6 +169,7 @@
 
     .center-row-hero { width: 100%; display: flex; justify-content: center; gap: 25px; flex: 1; align-items: flex-start; }
     .hero-card { flex: 1; max-width: 260px; aspect-ratio: 1 / 1; background: var(--card-bg-hero); border: 1px solid var(--accent); box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow); border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 15px; cursor: pointer; }
+    .hero-card:hover { transform: translateY(-8px) scale(1.02); background: #23232a; }
     .hero-card .icon { font-size: 3rem; margin-bottom: 15px; }
     .hero-card .title { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 5px; }
     .hero-card .sub { font-size: 0.8rem; color: var(--text-muted); }
@@ -214,8 +215,8 @@
             display: grid;
             /* ESTRUCTURA MÓVIL (1 COLUMNA FLUIDA) */
             grid-template-columns: 1fr; 
-            /* Filas: Header | Hero | Banner | Daily | Metrics | Espacio extra */
-            grid-template-rows: min-content 1fr min-content min-content min-content 1fr;
+            /* Filas: Header | Hero | Banner | Daily | Metrics (Hidden) | Espacio extra */
+            grid-template-rows: min-content 1fr min-content min-content 1fr;
             gap: 8px; 
             padding: 10px 12px 12px 12px;
             width: 100%;
@@ -256,7 +257,7 @@
             order: 1;
             flex-direction: row !important;
             gap: 6px;
-            /* AUMENTO DE MARGEN INFERIOR A 25px */
+            /* AUMENTO DE MARGEN INFERIOR PARA ESPACIADO: 25px */
             margin: 0 0 25px 0; 
             height: 100%; 
             align-items: stretch;
@@ -314,50 +315,12 @@
             font-size: 0.7rem; 
         }
 
-        /* 5º: METRICS (Order 4) - MODIFICADO PARA SER IDÉNTICO A DAILY LAB */
+        /* 5º: METRICS (Order 4) - OCULTAR COMPLETAMENTE */
         .col-center .card-metrics {
-            display: flex !important; /* Hacemos visible */
-            grid-column: 1 / -1;
-            order: 4;
-            width: 100%;
-            /* ALTURA FIJA UNIFICADA: 70px (Igual que Daily Lab) */
-            min-height: 70px; 
-            padding: 8px 15px;
-            margin: 0;
-            flex-direction: row; /* Layout horizontal */
-            align-items: center;
-            justify-content: space-between;
-            /* ESTILO COPIADO DE DAILY LAB */
-            background: linear-gradient(145deg, rgba(250, 204, 21, 0.15), rgba(0,0,0,0) 70%); 
-            border: 2px solid var(--accent); /* Borde amarillo */
-            border-radius: 16px;
-            box-shadow: 0 0 20px rgba(250, 204, 21, 0.15);
-        }
-        /* Ajustes internos para Metrics en barra */
-        .metrics-header { width: auto; margin-bottom: 0; gap: 10px; }
-        .metrics-title { font-size: 0.7rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
-        .metrics-icon { display: none; } /* Ocultar icono extra */
-        /* Eliminamos el elemento <svg> directo y lo reemplazamos con un div para el "botón" de Performance */
-        .pie-container { flex: 0 0 auto; justify-content: flex-end; }
-        .pie-chart-main { width: 30px; height: 30px; box-shadow: none; } /* Gráfico más pequeño */
-        /* Nuevo estilo para el botón de Performance */
-        .metrics-button {
-            background: var(--accent);
-            color: #000;
-            font-weight: 900;
-            font-size: 0.7rem;
-            padding: 6px 15px;
-            border-radius: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-align: center;
-            border: none;
-            cursor: pointer;
-            width: auto; /* Para que no ocupe todo el ancho */
+            display: none !important; 
         }
 
-
-        /* ELEMENTOS OCULTOS */
+        /* ELEMENTOS YA OCULTOS */
         .col-side .card-notes, /* Notes */
         .col-right .usage-container, /* Activity Log */
         .col-right .card-promo-style:first-child /* IA Lab */
@@ -440,7 +403,7 @@
             <div class="card-promo-style" onclick="openAIModal('ia_search')">
                 <div class="promo-header"><div class="ai-icon">🤖</div><div class="promo-title">IA LAB ✨</div></div>
                 <div class="promo-desc">Smart Search. Find or generate questions instantly.</div>
-                <button class="btn-start">ASK AI</button>
+                <button class="btn-start" onclick="startQuizEngine('ia_search')">ASK AI</button>
             </div>
             <!-- Elemento oculto en móvil (por CSS) --><div class="card card-secondary usage-container square-card-bottom">
                 <div class="usage-header"><div class="card-title" style="font-size:0.85rem;">Activity Log</div></div>
@@ -456,4 +419,187 @@
                 <div class="learning-icon">🧠</div><h3>Stand Alone</h3><p>Practice specific topics.</p>
             </div>
             <div class="learning-card" onclick="openSelectionView('itemsets')">
-                <div class="learning-icon">🔗</div><h3>Item
+                <div class="learning-icon">🔗</div><h3>Item Sets</h3><p>Complex scenarios.</p>
+            </div>
+        </div>
+        <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Home</button>
+    </div>
+
+    <div id="simulation-view" class="hidden">
+        <div class="learning-cards-row">
+            <div class="learning-card" onclick="openSimulationCustomization()">
+                <div class="learning-icon">🛠️</div><h3>Customize</h3><p>Adjust time and subjects.</p>
+            </div>
+            <div class="learning-card" onclick="startQuizEngine('simulation_standard')">
+                <div class="learning-icon">▶️</div><h3>Start Exam</h3><p>Begin standard exam mode.</p>
+            </div>
+        </div>
+        <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Home</button>
+    </div>
+
+    <div id="pomodoro-view" class="hidden">
+        <div class="learning-cards-row">
+            <div class="learning-card" onclick="openPomodoroSession()">
+                <div class="learning-icon">🍅</div><h3>IA Pomodoro</h3><p>Focus timer technique.</p>
+            </div>
+        </div>
+        <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Home</button>
+    </div>
+
+    <!-- Modal de configuración de la fecha (INICIAL) -->
+    <div id="date-setup-modal" class="modal-overlay active">
+        <div class="modal-content">
+            <div class="modal-header"><div class="modal-title">📅 Set Exam Date</div></div>
+            <p style="color:#aaa; margin-bottom:20px;">When is your INBDE exam?</p>
+            <input type="date" id="exam-date-input" class="date-input">
+            <p id="date-error-message" style="color: #ef4444; font-size: 0.9rem; margin-top: -10px; display: none; text-align: left;">Please select a date.</p>
+            <button class="btn-start-confirm" onclick="saveExamDate()">Start Prep 🚀</button>
+        </div>
+    </div>
+    
+    <!-- Otros modales (ocultos) --><div id="ai-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><div class="modal-title"><span id="ai-modal-icon">🧪</span><span id="ai-modal-title">AI Tutor</span></div><button class="close-btn" onclick="closeAIModal()">×</button></div><p id="ai-modal-desc" style="color:#aaa; font-size:0.9rem;">Ask any dental question.</p><textarea id="ai-input" class="ai-input-area" placeholder="E.g. Explain Amelogenesis..."></textarea><button id="ai-submit-btn" class="ai-action-btn" onclick="callGemini()"><span class="loader" id="ai-loader"></span><span id="ai-btn-text">Generate with AI ✨</span></button><div id="ai-output" class="ai-response"></div></div></div>
+    <div id="quiz-settings-modal" class="modal-overlay quiz-settings-modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">⚙️ Quiz Settings</div><button class="close-btn" onclick="closeQuizSettings()">×</button></div><p style="color:#aaa; margin-bottom:20px;">Configure your practice session.</p><select class="question-count-select" id="quiz-count"><option value="20">20 Questions</option><option value="25">25 Questions</option></select><button class="btn-start-confirm" onclick="startQuizEngine('practice_custom')">START NOW 🚀</button></div></div>
+
+
+</div>
+
+<script>
+    // Configuración y variables (Simplificado para HTML estático)
+    const headerWelcome = document.getElementById('header-welcome-section');
+    
+    // --- LÓGICA DE FECHA (CORREGIDA para evitar alertas) ---
+    function initCountdown() {
+        const storedDate = localStorage.getItem('examDate');
+        if (!storedDate) { 
+            document.getElementById('date-setup-modal').classList.add('active'); 
+        } else { 
+            document.getElementById('date-setup-modal').classList.remove('active'); 
+            updateDaysLeft(storedDate); 
+        }
+    }
+    
+    function saveExamDate() {
+        const dateInput = document.getElementById('exam-date-input').value;
+        const errorMessage = document.getElementById('date-error-message');
+        
+        if (!dateInput) {
+            errorMessage.style.display = 'block';
+            return; 
+        }
+
+        errorMessage.style.display = 'none';
+        localStorage.setItem('examDate', dateInput);
+        
+        document.getElementById('date-setup-modal').classList.remove('active');
+        updateDaysLeft(dateInput);
+    }
+    
+    function updateDaysLeft(dateString) {
+        const target = new Date(dateString); 
+        const today = new Date();
+        const diffTime = target - today; 
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        const display = diffDays > 0 ? `${diffDays} Days Left` : "Exam Day!";
+        document.getElementById('countdown-value').innerText = display;
+    }
+    function openDateModal() { 
+        document.getElementById('date-setup-modal').classList.add('active'); 
+        document.getElementById('date-error-message').style.display = 'none';
+    }
+
+
+    // --- LÓGICA DE NAVEGACIÓN DE VISTAS ---
+    function switchView(targetId, showHeader = false) {
+        const views = ['dashboard-content', 'learning-view', 'simulation-view', 'pomodoro-view', 'selection-view', 'simulation-customization-view', 'pomodoro-customization-view', 'pomodoro-timer-view'];
+        
+        views.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.classList.add('hidden');
+        });
+
+        const targetElement = document.getElementById(targetId);
+        if(targetElement) {
+            targetElement.classList.remove('hidden');
+            targetElement.classList.add('fade-in');
+        }
+
+        if(showHeader) headerWelcome.style.display = 'flex';
+        else headerWelcome.style.display = 'none';
+    }
+
+    function goBackToDashboard() { switchView('dashboard-content', true); }
+    function showLearningLab() { switchView('learning-view'); }
+    function showSimulationLab() { switchView('simulation-view'); }
+    function showPomodoro() { switchView('pomodoro-view'); }
+    function openSelectionView(mode) { switchView('quiz-settings-modal'); }
+    function openSimulationCustomization() { switchView('quiz-settings-modal'); } 
+    function openPomodoroSession() { switchView('pomodoro-view'); }
+    function goBackToLearning() { switchView('learning-view'); }
+    function goBackToSimulation() { switchView('simulation-view'); }
+    function goBackToPomodoro() { switchView('pomodoro-view'); }
+    function openQuizSettings() { document.getElementById('quiz-settings-modal').classList.add('active'); }
+    function closeQuizSettings() { document.getElementById('quiz-settings-modal').classList.remove('active'); }
+    function openAIModal() { document.getElementById('ai-modal').classList.add('active'); }
+    function closeAIModal() { document.getElementById('ai-modal').classList.remove('active'); }
+    
+    // Lógica Pomodoro (SAFE)
+    let timerInterval; let timeLeft = 1500; let isRunning = false; let isBreak = false; 
+
+    function toggleTimer() {
+        if (isRunning) { 
+            clearInterval(timerInterval); 
+            isRunning = false;
+        } else {
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) { 
+                    timeLeft--; 
+                    updateTimerDisplay(); 
+                } else { 
+                    completeCycle(); 
+                }
+            }, 1000);
+            isRunning = true;
+        }
+        // Nota: Ya que el Pomodoro en la vista móvil está simplificado (sin botones de play/pause), 
+        // esta función solo se usa como placeholder de inicio/fin en la vista completa.
+    }
+    
+    function completeCycle() {
+        clearInterval(timerInterval); 
+        isRunning = false;
+        console.log(isBreak ? "Break Over! Back to work." : "Time's up! Take a break.");
+        // Restablecer tiempo (simplificado, no se usan dots/cycles en móvil)
+        isBreak = !isBreak;
+        timeLeft = 1500; 
+        updateTimerDisplay();
+    }
+    
+    function updateTimerDisplay() {
+        const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+        const s = (timeLeft % 60).toString().padStart(2, '0');
+        // Usando solo el display del modal para la versión desktop.
+        // En móvil, el display simplificado usa ID 'timer-display'.
+        const displayElement = document.getElementById('timer-display');
+        if (displayElement) {
+            displayElement.innerText = `${m}:${s}`;
+        }
+    }
+    
+    // Funciones placeholders para redirección.
+    function safeNavigate(url) { 
+        console.log("Navegación simulada a: " + url); 
+    }
+    function startQuizEngine(mode) { 
+        console.log(`Starting quiz mode: ${mode}`); 
+    }
+    function startRetryMistakes() { 
+        console.log("Starting retry mistakes mode."); 
+    }
+
+
+    // --- INICIALIZACIÓN ---
+    document.addEventListener('DOMContentLoaded', initCountdown);
+</script>
+
+</body>
+</html>
