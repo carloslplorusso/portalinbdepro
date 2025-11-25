@@ -153,10 +153,12 @@ function openQuizSettings() {
         return;
     }
     document.getElementById('quiz-settings-modal').classList.add('active');
+    document.getElementById('quiz-settings-modal').style.display = 'flex'; // Asegurar visualización
 }
 
 function closeQuizSettings() {
     document.getElementById('quiz-settings-modal').classList.remove('active');
+    document.getElementById('quiz-settings-modal').style.display = 'none';
 }
 
 function startQuiz() {
@@ -197,7 +199,7 @@ function openAIModal(mode) {
     // Limpiar estado anterior
     if(modal) {
         modal.classList.add('active');
-        const input = document.getElementById('ai-input'); // Asegúrate de tener este ID en tu HTML
+        const input = document.getElementById('ai-input'); 
         if(input) input.value = '';
         if(output) output.innerHTML = '';
     }
@@ -252,6 +254,117 @@ async function performAISearch() {
 
 // Vincular la función al nombre que usaste en el HTML
 window.callGemini = performAISearch; 
+
+// --- LOGICA DE NOTAS (NUEVA SECCIÓN AÑADIDA) ---
+
+function openNotesModal() {
+    const modal = document.getElementById('notes-modal');
+    if (modal) {
+        modal.style.display = 'flex'; // Usamos flex para centrarlo según tu CSS
+        loadUserNotes(); // Cargar notas al abrir
+    }
+}
+
+function closeNotesModal() {
+    const modal = document.getElementById('notes-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+async function loadUserNotes() {
+    const container = document.getElementById('notes-list-container');
+    if (!container) return;
+    
+    container.innerHTML = '<div style="color:gray; text-align:center; padding:20px;">Loading notes...</div>';
+
+    // Verificar usuario
+    if (!currentUser || currentUser.id === 'test-user') {
+        container.innerHTML = '<div style="color:#666; padding:10px;">Notes are stored locally in Test Mode. (Login to save to cloud)</div>';
+        // Podrías implementar localStorage aquí si quisieras
+        return;
+    }
+
+    try {
+        const { data, error } = await _supabase
+            .from('user_notes')
+            .select('*')
+            .eq('user_email', currentUser.email)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        container.innerHTML = '';
+
+        if (data.length === 0) {
+            container.innerHTML = '<div style="color:#444; text-align:center; margin-top:20px;">No notes yet. Write something!</div>';
+            return;
+        }
+
+        data.forEach(note => {
+            const noteEl = document.createElement('div');
+            noteEl.style.cssText = "background:#111; border:1px solid #333; padding:10px; margin-bottom:10px; border-radius:8px; position:relative;";
+            
+            // Formato simple de fecha
+            const date = new Date(note.created_at).toLocaleDateString();
+            
+            noteEl.innerHTML = `
+                <div style="color:#ccc; font-size:0.9rem; white-space: pre-wrap;">${note.content}</div>
+                <div style="color:#555; font-size:0.7rem; margin-top:5px;">${date}</div>
+                <button onclick="deleteNote('${note.id}')" style="position:absolute; top:5px; right:5px; background:transparent; border:none; color:#666; cursor:pointer;">🗑️</button>
+            `;
+            container.appendChild(noteEl);
+        });
+
+    } catch (err) {
+        console.error("Error loading notes:", err);
+        container.innerHTML = '<div style="color:red;">Error loading notes.</div>';
+    }
+}
+
+async function saveNote() {
+    const input = document.getElementById('new-note-input');
+    const content = input.value.trim();
+
+    if (!content) return;
+
+    if (!currentUser || currentUser.id === 'test-user') {
+        alert("Please login to save notes to the cloud.");
+        return;
+    }
+
+    try {
+        const { error } = await _supabase
+            .from('user_notes')
+            .insert([{ user_email: currentUser.email, content: content }]);
+
+        if (error) throw error;
+
+        input.value = ''; // Limpiar input
+        loadUserNotes(); // Recargar lista
+
+    } catch (err) {
+        console.error("Error saving note:", err);
+        alert("Failed to save note.");
+    }
+}
+
+async function deleteNote(noteId) {
+    if (!confirm("Delete this note?")) return;
+
+    try {
+        const { error } = await _supabase
+            .from('user_notes')
+            .delete()
+            .eq('id', noteId);
+
+        if (error) throw error;
+        loadUserNotes(); // Recargar
+
+    } catch (err) {
+        console.error("Error deleting note:", err);
+    }
+}
 
 // --- UTILIDADES DE FECHA ---
 function initCountdown() {}
