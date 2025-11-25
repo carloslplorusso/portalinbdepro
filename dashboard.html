@@ -302,140 +302,41 @@
    /* =========================================
    3. MEDIA QUERIES (VISTA MÓVIL)
    ========================================= */
-@media (max-width: 1024px) {
-    body { height: 100dvh; overflow: hidden; align-items: flex-start; padding: 0; }
-    
-    .lab-container {
-        height: 100dvh;
-        display: grid;
-        /* ESTRUCTURA MÓVIL (1 COLUMNA FLUIDA) */
-        grid-template-columns: 1fr; 
-        /* Filas: Header | Hero | Banner | Daily | Metrics (Hidden) | Espacio extra */
-        grid-template-rows: min-content 1fr min-content min-content 1fr;
-        gap: 8px; 
-        padding: 10px 12px 12px 12px;
-        width: 100%;
-    }
-
-    /* Redefinir columnas y áreas para el layout móvil */
-    .col-side, .col-center { display: contents; }
-
-    /* --- ORDENAMIENTO Y VISIBILIDAD --- */
-
-    /* 1º: HEADER (Order 0) - Centrado */
-    .header-area { 
-        grid-column: 1 / -1; 
-        order: 0; 
-        padding-bottom: 5px; 
-        min-height: auto; 
-        align-items: center; 
-        justify-content: center; 
-        text-align: center;
-        margin-bottom: 15px; /* ESPACIO AÑADIDO */
-    }
-    .lab-title { font-size: 1.5rem; }
-    .header-countdown { padding: 2px 8px; font-size: 0.7rem; }
-    .user-welcome span:first-child { display: none; }
-    .user-welcome { font-size: 0.9rem; }
-    #header-welcome-section { 
-        flex-direction: column; 
-        justify-content: center; 
-        align-items: center; 
-        width: 100%; 
-        max-width: 300px; 
-        margin-top: 5px; 
-    }
-
-    /* 2º: HERO CARDS (Order 1) - Iconos Mobile */
-    .center-row-hero {
-        grid-column: 1 / -1; 
-        order: 1;
-        flex-direction: row !important;
-        gap: 6px;
-        /* AUMENTO DE MARGEN INFERIOR PARA ESPACIADO: 25px */
-        margin: 0 0 25px 0; 
-        height: 100%; 
-        align-items: stretch;
-        justify-content: space-around;
-        flex-wrap: nowrap;
-    }
-    .hero-card {
-        min-height: 0;
-        padding: 12px 5px;
-        flex-direction: column; 
-        justify-content: center;
-        flex: 1;
-        aspect-ratio: 1 / 1;
-        max-width: 100px;
-    }
-    .hero-card .icon { margin-bottom: 5px; font-size: 2rem; }
-    .hero-card .title { font-size: 0.8rem; line-height: 1.1; font-weight: 700; }
-    .hero-card .sub { display: none; }
-
-    /* 3º: BANNER LEARN (Order 2) - Barra Horizontal Pequeña */
-    .card-learn-banner { 
-        grid-column: 1 / -1; 
-        order: 2;
-        margin: 0; 
-        padding: 8px 15px; 
-        min-height: 45px; 
+/* --- REGLAS AÑADIDAS: VISTAS INTERNAS (LEARNING/SIMULATION/POMODORO) --- */
+    .learning-cards-row {
         flex-direction: row;
-        justify-content: center;
-        align-items: center;
-    }
-    .card-learn-banner h2 { font-size: 0.85rem; }
-
-    /* 4º: DAILY LAB (Order 3) - Barra Horizontal Pequeña */
-    .col-left .card-promo-style:first-child {
-        display: flex !important; /* Hacemos visible */
-        grid-column: 1 / -1;
-        order: 3;
+        gap: 15px; /* Espacio reducido entre tarjetas */
         width: 100%;
-        /* ALTURA FIJA UNIFICADA: 70px */
-        min-height: 70px;
-        padding: 8px 15px;
-        margin: 0;
-        flex-direction: row; /* Layout horizontal */
-        align-items: center;
-        justify-content: space-between;
-        border: 2px solid var(--accent);
-    }
-    /* Ajustes internos para Daily Lab en barra */
-    .col-left .card-promo-style:first-child .promo-header { margin-bottom: 0; gap: 10px; }
-    .col-left .card-promo-style:first-child .promo-desc { display: none; } /* Ocultar descripción */
-    .col-left .card-promo-style:first-child .btn-start { 
-        width: auto; 
-        margin: 0; 
-        padding: 6px 15px; 
-        font-size: 0.7rem; 
+        justify-content: center;
+        /* Asegurar que el contenedor use el 100% de espacio disponible */
+        max-width: 100%;
     }
 
-    /* 5º: METRICS (Order 4) - OCULTAR COMPLETAMENTE */
-    .col-center .card-metrics {
-        display: none !important; 
+    .learning-card {
+        width: 48%; /* Dos tarjetas por fila, con pequeño espacio */
+        height: auto; /* Dejar que el contenido defina la altura */
+        min-height: 180px;
+        padding: 15px; /* Reducir padding */
+        
+        /* Sobrescribir el estilo de hover que podría ser demasiado grande */
+        transform: none !important;
+        box-shadow: none !important;
     }
-
-    /* ELEMENTOS YA OCULTOS */
-    .col-side .card-notes, /* Notes */
-    .col-right .usage-container, /* Activity Log */
-    .col-right .card-promo-style:first-child /* IA Lab */
-    {
-        display: none !important;
+    
+    .learning-icon {
+        font-size: 2.5rem; /* Icono más pequeño */
+        margin-bottom: 10px;
     }
-
-    /* Ajustar vistas internas para ocupar toda la pantalla */
-    #learning-view, #simulation-view, #pomodoro-view, #selection-view, #simulation-customization-view, #pomodoro-customization-view, #pomodoro-timer-view {
-         grid-column: 1 / -1; 
-         grid-row: 2 / -1; 
-         position: absolute; 
-         z-index: 100; /* Asegurar que esté por encima del dashboard */
-         height: 100%;
-         width: 100%;
-         top: 0;
-         left: 0;
-         padding: 10px;
+    
+    .learning-card h3 { 
+        font-size: 1rem; /* Título más pequeño */
     }
-}
+    
+    .learning-card p {
+        font-size: 0.8rem; /* Descripción más pequeña */
+        line-height: 1.2;
+    }
+    /* --- FIN REGLAS AÑADIDAS --- */
 </style>
 </head>
 <body>
