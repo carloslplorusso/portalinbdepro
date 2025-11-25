@@ -191,11 +191,14 @@
     .pie-chart-main { width: 90px; height: 90px; border-radius: 50%; background: conic-gradient(var(--accent) 0% 65%, #27272a 65% 100%); box-shadow: 0 0 15px rgba(0,0,0,0.5); }
     .usage-container { align-items: center; justify-content: center; gap: 10px; }
     .usage-header { width: 100%; text-align: left; }
-    .ring-chart { width: 60px; height: 60px; border-radius: 50%; background: conic-gradient(var(--accent) 65%, #27272a 0); display: flex; justify-content: center; align-items: center; }
+    
+    /* Ring Chart Modificado para soportar ID */
+    .ring-chart { width: 60px; height: 60px; border-radius: 50%; background: conic-gradient(var(--accent) 0%, #27272a 0); display: flex; justify-content: center; align-items: center; transition: background 1s ease; }
     .ring-chart::after { content: ""; width: 48px; height: 48px; background: var(--card-bg); border-radius: 50%; }
+    
     .activity-dots { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; width: 100%; }
-    .dot { width: 6px; height: 6px; background: #333; border-radius: 1px; }
-    .dot.active { background: var(--accent); }
+    .dot { width: 6px; height: 6px; background: #333; border-radius: 1px; transition: background 0.3s; }
+    .dot.active { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
 
     /* --- LEARNING / SIMULATION / POMODORO VIEWS (DESKTOP) --- */
     #learning-view, #simulation-view, #pomodoro-view { grid-column: 1 / -1; grid-row: 2 / -1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 30px; height: 100%; }
@@ -474,11 +477,9 @@
 <div class="lab-container">
 
     <header class="header-area">
-    <h1 class="lab-title" onclick="goBackToDashboard()">
-        INBDE PRO <span style="color: var(--accent); font-weight: 700;">Lab</span>
-    </h1>
-    <div class="lab-subtitle">Train in our lab. Become a Pro.</div>
-    <div id="header-welcome-section">
+        <h1 class="lab-title" onclick="goBackToDashboard()">INBDE PRO <span style="font-weight:300; opacity:0.5;">Lab</span></h1>
+        <div class="lab-subtitle">Train in our lab. Become a Pro.</div>
+        <div id="header-welcome-section">
             <div class="user-welcome">
                 <span>Welcome back, <span id="user-name-display" style="color:var(--accent); font-weight:700;">Doctor</span></span>
                 <button class="btn-logout-icon" onclick="logout()" title="Sign Out">⏻</button>
@@ -535,8 +536,9 @@
             </div>
             <div class="card card-secondary usage-container square-card-bottom">
                 <div class="usage-header"><div class="card-title" style="font-size:0.85rem;">Activity Log</div></div>
-                <div class="ring-chart"></div>
-                <div class="activity-dots"><div class="dot active"></div><div class="dot active"></div><div class="dot"></div><div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot active"></div><div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot active"></div><div class="dot"></div></div>
+                <div class="ring-chart" id="activity-ring"></div>
+                <div class="activity-dots" id="activity-dots-container">
+                    </div>
             </div>
         </div>
     </div>
@@ -597,12 +599,12 @@
         <h2 id="pomodoro-custom-title">Customize Experience</h2>
         <div class="customization-container">
             <div class="custom-section card-categories open">
-                   <div class="cat-header"><h3>Select Study Topics</h3></div>
-                   <div class="cat-list">
-                        <div class="subject-item special-select-all" onclick="toggleSelectAll(this)"><div class="custom-checkbox"></div> Select All</div>
-                        <div class="subject-item" onclick="toggleCheck(this)"><div class="custom-checkbox"></div> Anatomy</div>
-                        <div class="subject-item" onclick="toggleCheck(this)"><div class="custom-checkbox"></div> Pharmacology</div>
-                   </div>
+                 <div class="cat-header"><h3>Select Study Topics</h3></div>
+                 <div class="cat-list">
+                    <div class="subject-item special-select-all" onclick="toggleSelectAll(this)"><div class="custom-checkbox"></div> Select All</div>
+                    <div class="subject-item" onclick="toggleCheck(this)"><div class="custom-checkbox"></div> Anatomy</div>
+                    <div class="subject-item" onclick="toggleCheck(this)"><div class="custom-checkbox"></div> Pharmacology</div>
+                 </div>
             </div>
             <div class="custom-section config-panel" style="display: flex; flex-direction: column; justify-content: center;">
                 <div class="card-start-quiz" onclick="openPomodoroSession()">
@@ -636,6 +638,21 @@
 
 </div>
 
+<div id="ai-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><div class="modal-title"><span id="ai-modal-icon">🧪</span><span id="ai-modal-title">AI Tutor</span></div><button class="close-btn" onclick="closeAIModal()">×</button></div><p id="ai-modal-desc" style="color:#aaa; font-size:0.9rem;">Ask any dental question.</p><textarea id="ai-input" class="ai-input-area" placeholder="E.g. Explain Amelogenesis..."></textarea><button id="ai-submit-btn" class="ai-action-btn" onclick="callGemini()"><span class="loader" id="ai-loader"></span><span id="ai-btn-text">Generate with AI ✨</span></button><div id="ai-output" class="ai-response"></div></div></div>
+<div id="quiz-settings-modal" class="modal-overlay quiz-settings-modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">⚙️ Quiz Settings</div><button class="close-btn" onclick="closeQuizSettings()">×</button></div><p style="color:#aaa; margin-bottom:20px;">Configure your practice session.</p><label class="settings-label">Number of Questions:</label><select class="question-count-select" id="quiz-count"><option value="20">20 Questions</option><option value="25">25 Questions</option><option value="30">30 Questions</option><option value="50">50 Questions</option></select><button class="btn-start-confirm" onclick="startQuiz()">START NOW 🚀</button></div></div>
+
+<div id="date-setup-modal" class="modal-overlay active"><div class="modal-content"><div class="modal-header"><div class="modal-title">📅 Set Exam Date</div></div><p style="color:#aaa; margin-bottom:20px;">When is your INBDE exam?</p><input type="date" id="exam-date-input" class="date-input"><button class="btn-start-confirm" onclick="saveExamDate()">Start Prep 🚀</button></div></div>
+
+<div id="recovery-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header"><div class="modal-title">Set Permanent Password</div></div>
+        <p style="color:#aaa; margin-bottom:20px;">Create a secure password to ensure you can log in next time.</p>
+        <input type="password" id="new-password-input" class="input-pass" placeholder="New Password (min 6 chars)">
+        <button class="btn-start-confirm" onclick="saveNewPassword()">Save & Re-Login</button>
+        <button onclick="document.getElementById('recovery-modal').classList.remove('active')" style="background:none; border:none; color:#666; margin-top:15px; cursor:pointer;">Cancel</button>
+    </div>
+</div>
+
 <div id="notes-modal" class="modal-overlay">
     <div class="modal-content" style="height: 80vh; max-height: 700px;">
         <div class="modal-header">
@@ -656,21 +673,6 @@
                 <div style="text-align: center; color: #666; padding: 20px;">Loading notes...</div>
             </div>
         </div>
-    </div>
-</div>
-
-<div id="ai-modal" class="modal-overlay"><div class="modal-content"><div class="modal-header"><div class="modal-title"><span id="ai-modal-icon">🧪</span><span id="ai-modal-title">AI Tutor</span></div><button class="close-btn" onclick="closeAIModal()">×</button></div><p id="ai-modal-desc" style="color:#aaa; font-size:0.9rem;">Ask any dental question.</p><textarea id="ai-input" class="ai-input-area" placeholder="E.g. Explain Amelogenesis..."></textarea><button id="ai-submit-btn" class="ai-action-btn" onclick="callGemini()"><span class="loader" id="ai-loader"></span><span id="ai-btn-text">Generate with AI ✨</span></button><div id="ai-output" class="ai-response"></div></div></div>
-<div id="quiz-settings-modal" class="modal-overlay quiz-settings-modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">⚙️ Quiz Settings</div><button class="close-btn" onclick="closeQuizSettings()">×</button></div><p style="color:#aaa; margin-bottom:20px;">Configure your practice session.</p><label class="settings-label">Number of Questions:</label><select class="question-count-select" id="quiz-count"><option value="20">20 Questions</option><option value="25">25 Questions</option><option value="30">30 Questions</option><option value="50">50 Questions</option></select><button class="btn-start-confirm" onclick="startQuiz()">START NOW 🚀</button></div></div>
-
-<div id="date-setup-modal" class="modal-overlay active"><div class="modal-content"><div class="modal-header"><div class="modal-title">📅 Set Exam Date</div></div><p style="color:#aaa; margin-bottom:20px;">When is your INBDE exam?</p><input type="date" id="exam-date-input" class="date-input"><button class="btn-start-confirm" onclick="saveExamDate()">Start Prep 🚀</button></div></div>
-
-<div id="recovery-modal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header"><div class="modal-title">Set Permanent Password</div></div>
-        <p style="color:#aaa; margin-bottom:20px;">Create a secure password to ensure you can log in next time.</p>
-        <input type="password" id="new-password-input" class="input-pass" placeholder="New Password (min 6 chars)">
-        <button class="btn-start-confirm" onclick="saveNewPassword()">Save & Re-Login</button>
-        <button onclick="document.getElementById('recovery-modal').classList.remove('active')" style="background:none; border:none; color:#666; margin-top:15px; cursor:pointer;">Cancel</button>
     </div>
 </div>
 
@@ -724,6 +726,12 @@
 
         // Cargar Datos
         await loadData();
+        
+        // MODIFICADO: Cargar Actividad Diaria
+        if(currentUser.id !== 'test-user') {
+            logActivity();
+            loadActivityVisuals();
+        }
     }
 
     async function loadData() {
@@ -1222,6 +1230,63 @@
         } else {
             input.value = ''; // Limpiar input
             fetchNotes(); // Recargar lista
+        }
+    }
+
+    // --- MODIFICACIÓN: LÓGICA DE ACTIVIDAD (Activity Log) ---
+
+    // 1. Registrar Actividad al inicio
+    async function logActivity() {
+        // Intentar insertar. Si falla por duplicado (mismo día), no pasa nada.
+        // Requiere tabla 'user_activity_log' con primary key (user_id, activity_date)
+        await _supabase
+            .from('user_activity_log')
+            .insert([{ user_id: currentUser.id }])
+            .select(); // No manejamos error porque el duplicado es esperado
+    }
+
+    // 2. Cargar y Visualizar Datos
+    async function loadActivityVisuals() {
+        // Traer actividad de los últimos 30 días
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const { data, error } = await _supabase
+            .from('user_activity_log')
+            .select('activity_date')
+            .eq('user_id', currentUser.id)
+            .gte('activity_date', thirtyDaysAgo.toISOString().split('T')[0]);
+
+        if (error || !data) return;
+
+        // A. Ring Chart (Actividad Mensual)
+        const uniqueDays = new Set(data.map(d => d.activity_date)).size;
+        const percentage = Math.min(Math.round((uniqueDays / 30) * 100), 100);
+        
+        const ringChart = document.getElementById('activity-ring');
+        if (ringChart) {
+            // Actualizar gradiente dinámicamente
+            ringChart.style.background = `conic-gradient(var(--accent) ${percentage}%, #27272a 0)`;
+        }
+
+        // B. Activity Dots (Últimos 12 días)
+        const dotsContainer = document.getElementById('activity-dots-container');
+        if (dotsContainer) {
+            dotsContainer.innerHTML = '';
+            
+            // Generar los últimos 12 días (del más antiguo al más reciente para visualización)
+            for (let i = 11; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateString = d.toISOString().split('T')[0];
+                
+                const isActive = data.some(record => record.activity_date === dateString);
+                
+                const dot = document.createElement('div');
+                dot.className = `dot ${isActive ? 'active' : ''}`;
+                dot.title = dateString; // Tooltip simple
+                dotsContainer.appendChild(dot);
+            }
         }
     }
 </script>
