@@ -1,23 +1,17 @@
-// --- FUNCIONES Y VARIABLES GLOBALES (DEBE REEMPLAZAR EL CONTENIDO DE app.js) ---
+// --- FUNCIONES Y VARIABLES GLOBALES ---
 
-// Las variables de estado (como userStatus, quizData, etc.) se asumen definidas
-// en quiz_engine.html o en la inicialización principal de la aplicación.
-// Esta es la lógica que debe estar disponible globalmente.
+// 1. VARIABLE GLOBAL PARA EL MODO (NUEVO)
+// Esta variable recordará qué botón pulsó el usuario (Standalone, Item Sets, Simulation, etc.)
+let currentSelectionMode = 'practice';
 
-// 1. FUNCIÓN PARA EL DAILY RUN (Llamada desde dashboard.html)
+// 2. FUNCIÓN PARA EL DAILY RUN
 function startDailyRun() {
     console.log("Starting Daily Run...");
-    // Redirige al quiz engine forzando modo 'daily' y 10 preguntas
     window.location.href = 'quiz_engine.html?mode=daily&count=10';
 }
 
-// Nota: La variable 'let userStatus = { learning: 0, reviewing: 0, mastered: 0 };'
-// y 'let userAnswers = {};' deben estar definidas en la parte superior del script de quiz_engine.html.
-// Aquí solo se incluyen las funciones que dependen de ese estado.
-
-// 2. FUNCIÓN HANDLESTATUS (para los botones del semáforo en quiz_engine.html)
+// 3. MANEJO DE ESTADO (SEMÁFORO)
 function handleStatus(status) {
-    // Estas variables globales (userStatus, nextQuestion) deben existir en el ámbito de quiz_engine.html
     if (typeof userStatus !== 'undefined' && userStatus[status] !== undefined) {
         userStatus[status]++;
     }
@@ -26,20 +20,17 @@ function handleStatus(status) {
     if (typeof nextQuestion === 'function') {
         nextQuestion();
     } else {
-        console.warn("nextQuestion() not found. Ensure app.js is loaded in the correct context (quiz_engine.html).");
+        console.warn("nextQuestion() not found. Ensure app.js is loaded in the correct context.");
     }
 }
 
-// 3. FUNCIÓN FINISHQUIZ (Lógica de resultados actualizada para quiz_engine.html)
+// 4. FUNCIÓN FINISHQUIZ (Lógica de resultados)
 function finishQuiz() {
-    // Se asume que quizData, userAnswers, timerInterval, etc., son variables globales.
-
-    // Lógica para detener la simulación si está corriendo
     if (typeof timerInterval !== 'undefined') {
         clearInterval(timerInterval);
     }
     
-    // Ocultar elementos de la interfaz de simulación
+    // Ocultar elementos de la interfaz
     const inbdeHeader = document.querySelector('.inbde-header');
     const inbdeFooter = document.querySelector('.inbde-footer');
     const mainContainer = document.getElementById('main-container');
@@ -51,25 +42,21 @@ function finishQuiz() {
     if (inbdeHeader) inbdeHeader.classList.add('hidden');
     if (inbdeFooter) inbdeFooter.classList.add('hidden');
     
-    // Ocultar paneles de juego
     if (mainContainer) mainContainer.style.display = 'block';
     if (leftPanel) leftPanel.classList.add('hidden');
-    if (rightPanel) rightPanel.style.width = '100%'; // Usar ancho completo
+    if (rightPanel) rightPanel.style.width = '100%'; 
     if (quizContent) quizContent.classList.add('hidden');
     if (reviewModal) reviewModal.style.display = 'none';
     
-    // 1. Cálculos de Aciertos (Score Técnico)
+    // Cálculos
     let correct = 0;
     const total = typeof quizData !== 'undefined' ? quizData.length : 0;
     
-    // Generar lista de revisión detallada
     let listHTML = '';
     if (typeof quizData !== 'undefined' && quizData.length > 0) {
         quizData.forEach((q, idx) => {
             const userAns = userAnswers[q.id];
-            const isCorrect = userAns && q.correct_answer && 
-                                userAns.trim().includes(q.correct_answer.trim());
-            
+            const isCorrect = userAns && q.correct_answer && userAns.trim().includes(q.correct_answer.trim());
             if(isCorrect) correct++;
 
             listHTML += `
@@ -83,7 +70,6 @@ function finishQuiz() {
         });
     }
 
-    // 2. Cálculos de Semáforo (Self-Assessment)
     const totalStatus = typeof userStatus !== 'undefined' ? userStatus.learning + userStatus.reviewing + userStatus.mastered : 0; 
     const safeTotal = totalStatus > 0 ? totalStatus : 1; 
     
@@ -91,7 +77,6 @@ function finishQuiz() {
     const pctReviewing = Math.round((userStatus.reviewing / safeTotal) * 100);
     const pctMastered = Math.round((userStatus.mastered / safeTotal) * 100);
 
-    // 3. Inyectar HTML de Resultados
     const resultsHTML = `
         <h1 class="text-3xl font-bold mb-6 text-yellow-400">Session Complete</h1>
         
@@ -146,51 +131,40 @@ function finishQuiz() {
     }
 }
 
-
-// --- LÓGICA DE ACTIVIDAD (Funciones auxiliares para el dashboard) ---
-
-// Función auxiliar para obtener días del mes
+// --- LÓGICA DE ACTIVIDAD (DASHBOARD) ---
 function getDaysInMonth(year, month) {
     return new Date(year, month + 1, 0).getDate();
 }
 
-// Datos simulados de actividad (En producción, esto vendría de Supabase 'user_analytics')
-// Formato: 'YYYY-MM-DD': true
 const mockUserActivity = {
     '2023-10-01': true, '2023-10-02': true, '2023-10-05': true,
     '2023-10-10': true, '2023-10-11': true, '2023-10-12': true,
     '2023-10-25': true,
-    '2025-11-25': true // Añadir el día de hoy (ejemplo)
+    '2025-11-25': true 
 };
 
-// Renderizar los puntos mini en el dashboard
 function renderMiniActivity() {
-    // CORRECCIÓN: Usar el ID 'activity-dots-container' que existe en dashboard.html
     const container = document.getElementById('activity-dots-container'); 
     if(!container) return;
     
     container.innerHTML = '';
     const today = new Date();
-    const daysToShow = 9; // Mostrar 9 días (tamaño del grid original en el HTML)
+    const daysToShow = 9; 
     
     for (let i = daysToShow - 1; i >= 0; i--) {
         const d = new Date();
         d.setDate(today.getDate() - i);
-        // Formato: YYYY-MM-DD
         const monthStr = (d.getMonth() + 1).toString().padStart(2, '0');
         const dayStr = d.getDate().toString().padStart(2, '0');
         const dateStr = `${d.getFullYear()}-${monthStr}-${dayStr}`;
         
         const dot = document.createElement('div');
         dot.className = 'dot';
-        
         if (mockUserActivity[dateStr]) dot.classList.add('active'); 
-        
         container.appendChild(dot);
     }
 }
 
-// Lógica del Modal de Calendario
 function openActivityModal() {
     const modal = document.getElementById('activity-modal');
     if (modal) {
@@ -213,28 +187,23 @@ function renderFullCalendar() {
     if(!container) return;
     
     const now = new Date();
-    // Usamos el mes actual para la demo
     const year = now.getFullYear();
     const month = now.getMonth(); 
     const daysInMonth = getDaysInMonth(year, month);
     
-    // Contenido del calendario
     let html = `
         <h4 style="text-align:center; color:var(--accent); margin-bottom:10px; font-weight:bold;">${new Date(year, month).toLocaleString('en-US', { month: 'long', year: 'numeric' })}</h4>
         <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:5px; text-align:center;">`;
     
-    // Headers (Días de la semana)
     ['S','M','T','W','T','F','S'].forEach(d => {
         html += `<div style="color:#666; font-size:0.8rem; font-weight:bold;">${d}</div>`;
     });
 
-    // Celdas vacías de relleno
     const firstDay = new Date(year, month, 1).getDay();
     for (let i = 0; i < firstDay; i++) {
         html += `<div></div>`;
     }
 
-    // Días del mes
     for (let i = 1; i <= daysInMonth; i++) {
         const d = new Date(year, month, i);
         const monthStr = (month + 1).toString().padStart(2, '0');
@@ -253,29 +222,21 @@ function renderFullCalendar() {
         html += `<div style="${color} ${border} border-radius:4px; padding:8px 0; font-size:0.9rem;">${i}</div>`;
     }
     html += `</div>`;
-    
     container.innerHTML = html;
 }
+
 /* =========================================
-   CORE NAVIGATION & UI LOGIC (FIXES)
+   CORE NAVIGATION & UI LOGIC
    ========================================= */
 
-// --- 1. GESTIÓN DE VISTAS (Navegación) ---
-
-// Función genérica para cambiar entre pantallas (Dashboard, Learning, Simulation, etc.)
+// --- GESTIÓN DE VISTAS (Navegación) ---
 function switchView(targetId) {
-    // 1. Ocultar el Dashboard principal
     const dashboard = document.getElementById('dashboard-content');
     if (dashboard) dashboard.classList.add('hidden');
 
-    // 2. Ocultar todas las sub-vistas conocidas
     const views = [
-        'learning-view', 
-        'simulation-view', 
-        'pomodoro-view', 
-        'selection-view', 
-        'pomodoro-timer-view',
-        'quiz-settings-modal' // Por si acaso quedó abierto
+        'learning-view', 'simulation-view', 'pomodoro-view', 
+        'selection-view', 'pomodoro-timer-view', 'quiz-settings-modal'
     ];
     
     views.forEach(id => {
@@ -283,30 +244,24 @@ function switchView(targetId) {
         if (el) el.classList.add('hidden');
     });
 
-    // 3. Mostrar la vista objetivo
     const target = document.getElementById(targetId);
     if (target) {
         target.classList.remove('hidden');
-        target.classList.add('fade-in'); // Efecto de entrada
-    } else {
-        console.error(`View with ID '${targetId}' not found.`);
+        target.classList.add('fade-in');
     }
 }
 
-// Funciones específicas llamadas por los botones onclick
 function showLearningLab() { switchView('learning-view'); }
 function showSimulationLab() { switchView('simulation-view'); }
 function showPomodoro() { switchView('pomodoro-view'); }
 
 function goBackToDashboard() {
-    // Ocultar sub-vistas
     const views = ['learning-view', 'simulation-view', 'pomodoro-view', 'selection-view', 'pomodoro-timer-view'];
     views.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
     });
 
-    // Mostrar Dashboard
     const dbContent = document.getElementById('dashboard-content');
     if (dbContent) {
         dbContent.classList.remove('hidden');
@@ -318,9 +273,11 @@ function goBackToLearning() { switchView('learning-view'); }
 function goBackToPomodoro() { switchView('pomodoro-view'); }
 
 
-// --- 2. SELECTION VIEW LOGIC (Categorías dinámicas) ---
+// --- SELECTION VIEW LOGIC (MODIFICADO) ---
 function openSelectionView(mode) {
-    // Cambiar título según el modo
+    // 1. Guardamos el modo seleccionado ('standalone', 'itemsets', 'simulation') [NUEVO]
+    currentSelectionMode = mode;
+
     const titleEl = document.getElementById('selection-mode-title');
     if (titleEl) {
         if (mode === 'standalone') titleEl.innerText = 'Stand Alone Practice';
@@ -328,7 +285,6 @@ function openSelectionView(mode) {
         else if (mode === 'simulation') titleEl.innerText = 'Customize Simulation';
     }
 
-    // Aquí simularíamos carga de categorías (o llamarías a Supabase)
     const list = document.getElementById('dynamic-cat-list');
     if (list) {
         list.innerHTML = `
@@ -342,14 +298,12 @@ function openSelectionView(mode) {
     switchView('selection-view');
 }
 
-// Abrir configuración del Quiz (cantidad de preguntas)
 function openQuizSettings() {
     const modal = document.getElementById('quiz-settings-modal');
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('active');
         
-        // Rellenar select si está vacío
         const select = document.getElementById('quiz-count');
         if(select && select.options.length === 0) {
             select.innerHTML = `
@@ -369,25 +323,25 @@ function closeQuizSettings() {
     }
 }
 
+// 5. START QUIZ (MODIFICADO)
 function startQuiz() {
     const count = document.getElementById('quiz-count').value;
-    // Redirigir al engine con los parámetros
-    window.location.href = `quiz_engine.html?mode=practice&count=${count}`;
+    // Ahora usa la variable global para enviar el modo correcto
+    window.location.href = `quiz_engine.html?mode=${currentSelectionMode}&count=${count}`;
 }
 
-// Función genérica para botones de "Start" directo
 function startQuizEngine(mode) {
-    window.location.href = `quiz_engine.html?mode=${mode}&count=50`; // Default count
+    window.location.href = `quiz_engine.html?mode=${mode}&count=50`; 
 }
 
 
-// --- 3. QUICK NOTES LOGIC ---
+// --- QUICK NOTES LOGIC ---
 function openNotesModal() {
     const modal = document.getElementById('notes-modal');
     if(modal) {
         modal.classList.remove('hidden');
-        modal.classList.add('active'); // Clase para opacidad CSS
-        loadNotes(); // Cargar notas guardadas
+        modal.classList.add('active'); 
+        loadNotes(); 
     }
 }
 
@@ -404,13 +358,12 @@ function saveNote() {
     const text = input.value.trim();
     if (!text) return;
 
-    // Guardar en LocalStorage (Persistencia básica)
     let notes = JSON.parse(localStorage.getItem('inbde_user_notes') || '[]');
     notes.push({ text: text, date: new Date().toISOString() });
     localStorage.setItem('inbde_user_notes', JSON.stringify(notes));
 
-    input.value = ''; // Limpiar
-    loadNotes(); // Recargar lista
+    input.value = ''; 
+    loadNotes(); 
 }
 
 function loadNotes() {
@@ -424,7 +377,6 @@ function loadNotes() {
         return;
     }
 
-    // Renderizar notas (más recientes primero)
     container.innerHTML = notes.reverse().map(n => `
         <div style="background:rgba(255,255,255,0.05); padding:12px; border-radius:8px; margin-bottom:8px; border-left:3px solid var(--accent);">
             <div style="color:#eee;">${n.text}</div>
@@ -434,7 +386,7 @@ function loadNotes() {
 }
 
 
-// --- 4. IA LAB LOGIC ---
+// --- IA LAB LOGIC ---
 function openAIModal(mode) {
     const modal = document.getElementById('ai-modal');
     if(modal) {
@@ -458,11 +410,9 @@ async function callGemini() {
     
     if(!inputEl || !inputEl.value.trim()) return;
     
-    // UI de carga
     outputEl.style.display = 'block';
     outputEl.innerHTML = '<div style="color:var(--accent);">🤖 Thinking...</div>';
 
-    // Simulación (Aquí conectarías tu API Key real si la tienes segura en backend)
     setTimeout(() => {
         outputEl.innerHTML = `
             <strong>AI Result:</strong><br>
@@ -473,9 +423,9 @@ async function callGemini() {
 }
 
 
-// --- 5. POMODORO TIMER LOGIC ---
+// --- POMODORO TIMER LOGIC ---
 let pomoInterval;
-let pomoTime = 25 * 60; // 25 minutos
+let pomoTime = 25 * 60; 
 let isPomoRunning = false;
 
 function openPomodoroSession() {
@@ -494,12 +444,10 @@ function toggleTimer() {
     const btn = document.getElementById('play-icon');
     
     if(isPomoRunning) {
-        // Pausar
         clearInterval(pomoInterval);
         isPomoRunning = false;
         if(btn) btn.innerText = "▶";
     } else {
-        // Iniciar
         isPomoRunning = true;
         if(btn) btn.innerText = "❚❚";
         pomoInterval = setInterval(() => {
@@ -526,13 +474,12 @@ function resetPomo() {
 }
 
 
-// --- 6. AUTHENTICATION (Logout) ---
+// --- AUTHENTICATION ---
 async function logout() {
     if(typeof _supabase !== 'undefined') {
         await _supabase.auth.signOut();
         window.location.href = 'index.html';
     } else {
-        // Fallback si supabase no está definido globalmente
         window.location.href = 'index.html';
     }
 }
