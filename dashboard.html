@@ -494,7 +494,7 @@
             <div class="card-promo-style">
                 <div class="promo-header"><div class="fire-icon">🔥</div><div class="promo-title">DAILY LAB <br>RUN</div></div>
                 <div class="promo-desc">10-question sprint. Keep the streak alive.</div>
-                <button class="btn-start" onclick="startQuizEngine('daily')">START NOW</button>
+                <button class="btn-start" onclick="startDailyRun()">START NOW</button>
             </div>
             <div class="card card-secondary card-notes square-card-bottom" onclick="openAIModal('notes')">
                 <div class="card-title">📝 Notes ✨</div>
@@ -1045,6 +1045,78 @@
     async function callGemini() {
         // Lógica de IA Placeholder
         window.confirm("AI Integration would trigger here.");
+    }
+
+    // --- LÓGICA DAILY RUN (ALEATORIO DIARIO) ---
+
+    // 1. Generador de números aleatorios con semilla (para que sea igual todo el día)
+    function seededRandom(seed) {
+        var m = 0x80000000;
+        var a = 1103515245;
+        var c = 12345;
+        var state = seed ? seed : Math.floor(Math.random() * (m - 1));
+        return function() {
+            state = (a * state + c) % m;
+            return state / (m - 1);
+        }
+    }
+
+    // 2. Convertir string (fecha) a número hash
+    function hashCode(str) {
+        var hash = 0;
+        for (var i = 0; i < str.length; i++) {
+            var character = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + character;
+            hash = hash & hash; 
+        }
+        return Math.abs(hash);
+    }
+
+    // 3. Función Principal del Daily Run
+    function startDailyRun() {
+        if (!allQuizzes || allQuizzes.length === 0) {
+            // Si los datos aún no cargan, intentamos esperar o avisar
+            if(confirm("Data is loading. Click OK to try fetching again or Cancel to wait.")) {
+                 loadData().then(startDailyRun);
+            }
+            return;
+        }
+
+        // A. Filtrar solo preguntas 'Stand Alone' (tipo 'single' o null, excluyendo itemsets/simulaciones)
+        // Nota: Ajusta la lógica 'q.tipo' según cómo estén guardados en tu Supabase real.
+        const standAloneQuestions = allQuizzes.filter(q => 
+            q.tipo !== 'itemsets' && q.tipo !== 'simulation'
+        );
+
+        if (standAloneQuestions.length < 10) {
+            alert("Not enough questions in database for a Daily Run (Need 10).");
+            return;
+        }
+
+        // B. Generar Semilla basada en la fecha local (YYYY-MM-DD)
+        // Esto asegura que "Random" sea igual para todos los intentos del mismo día.
+        const todayStr = new Date().toLocaleDateString('en-CA'); // Formato YYYY-MM-DD
+        const seed = hashCode(todayStr);
+        const rng = seededRandom(seed);
+
+        // C. Mezclar el array (Shuffle) usando el RNG con semilla
+        let shuffled = [...standAloneQuestions]; // Copia para no dañar el orden original
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(rng() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+
+        // D. Tomar las primeras 10
+        const selected10 = shuffled.slice(0, 10);
+        
+        // E. Extraer los IDs y pasarlos a la URL
+        const selectedIds = selected10.map(q => q.id).join(',');
+
+        console.log("Starting Daily Run for:", todayStr, "Questions:", selectedIds);
+
+        // F. Redirigir al motor de quiz
+        // Pasamos 'mode=daily' y un nuevo parámetro 'ids' que el motor deberá leer
+        window.location.href = `quiz_engine.html?mode=daily&count=10&ids=${selectedIds}`;
     }
 </script>
 
