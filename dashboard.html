@@ -299,20 +299,28 @@
     /* =========================================
        3. MEDIA QUERIES (VISTA MÓVIL)
        ========================================= */
+   /* =========================================
+       3. MEDIA QUERIES (VISTA MÓVIL)
+       ========================================= */
     @media (max-width: 1024px) {
-        body { height: 100dvh; overflow: hidden; align-items: flex-start; padding: 0; }
+        /* CAMBIO 1: height: auto, min-height: 100dvh y overflow-y: auto habilitan el scroll */
+        body { height: auto; min-height: 100dvh; overflow-y: auto; align-items: flex-start; padding: 0; }
         
         .lab-container {
-            height: 100dvh;
+            /* CAMBIO 2: height: auto permite que el contenedor crezca más allá de la pantalla */
+            height: auto;
             display: grid;
             /* ESTRUCTURA BENTO 2 COLUMNAS */
             grid-template-columns: 1fr 1fr; 
             /* Filas ajustadas: Header | Banner | Hero | Daily/Metrics | Notes/Activity | IA (Footer) */
-            grid-template-rows: min-content min-content 1fr min-content min-content min-content;
+            grid-template-rows: min-content min-content 400px min-content min-content min-content; /* Se ajustó la fila del Hero a 400px fijos para dar espacio */
             gap: 8px; 
-            padding: 10px 12px 12px 12px;
+            padding: 10px 12px 40px 12px; /* Añadido padding inferior para scroll extra */
             width: 100%;
+            overflow: visible;
         }
+
+        /* ... el resto del código dentro del media query sigue igual ... */
 
         .col-side, .col-center { display: contents; }
 
