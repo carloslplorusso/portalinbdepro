@@ -510,101 +510,116 @@
         }
 
         // --- 2. LOAD DATA (CORRECCIÓN DE LÓGICA RPC) ---
-        async function loadQuestionsFromDB() {
-            try {
-                let data, error;
-                let rpc_name;
+       // --- 2. LOAD DATA (FUNCIÓN DE CARGA CENTRAL) ---
+async function loadQuestionsFromDB() {
+    try {
+        // Variables para la respuesta de la base de datos
+        let data = null;
+        let error = null;
+        let rpc_name = null;
+        let params = {};
 
-                // Definimos todos los modos que deben usar preguntas Stand-Alone (Fondo Oscuro)
-                const STAND_ALONE_MODES = ['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'];
+        // Variables de la URL
+        const paramIds = urlParams.get('ids'); 
+        const STAND_ALONE_MODES = ['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'];
+        
+        // >>>>>>>>>>> LÓGICA DE DETERMINACIÓN DE CARGA <<<<<<<<<<<
 
-                // 1. DETERMINACIÓN DEL MODO Y DE LA RPC A LLAMAR
-                if (currentMode.includes('simulation') || currentMode === 'itemsets') {
-                    // MODO 1: SIMULACIÓN / ITEM SET (SÓLO preguntas CON case_id)
-                    rpc_name = 'get_simulation_questions'; 
-                    document.getElementById('mode-subtitle').innerText = "Clinical Simulation";
-                } 
-                else if (STAND_ALONE_MODES.includes(currentMode)) {
-                    // MODO 2: PRÁCTICA / STAND ALONE / DAILY (SÓLO preguntas SIN case_id)
-                    if (currentMode === 'retry_mistakes') {
-                        // Caso especial: Llama a la RPC que filtra por errores
-                        rpc_name = 'get_failed_questions'; 
-                    } else {
-                        rpc_name = 'get_stand_alone_questions'; 
-                    }
-                    document.getElementById('mode-subtitle').innerText = "Interactive Practice";
-                }
-                else {
-                    // FALLBACK: Si no hay modo, asumimos práctica
-                    rpc_name = 'get_stand_alone_questions'; 
-                }
-
-                // 2. LLAMADA A LA BASE DE DATOS
-                // Usamos un objeto vacío como segundo argumento si no se requieren parámetros.
-                const params = rpc_name === 'get_failed_questions' ? { user_id: currentUser.id, quantity: paramCount } : { quantity: paramCount };
-                const response = await _supabase.rpc(rpc_name, params);
-                
-                data = response.data;
-                error = response.error;
-
-                if (error) throw error;
-                if (!data || data.length === 0) {
-                    document.getElementById('question-text').innerText = `No se encontraron preguntas para el modo '${currentMode}'. Asegúrese de que hay datos con el filtro correcto.`;
-                    return;
-                }
-
-                // --- GESTIÓN DE CASOS CLÍNICOS ---
-                const caseIds = [...new Set(data.map(q => q.case_id).filter(id => id !== null))];
-                let casesMap = {};
-
-                if (caseIds.length > 0) {
-                    const { data: casesData } = await _supabase
-                        .from('clinical_cases')
-                        .select('*')
-                        .in('id', caseIds);
-                        
-                    if(casesData) casesData.forEach(c => casesMap[c.id] = c);
-                }
-
-                // --- MAPEO DE DATOS ---
-                quizData = data.map(item => {
-                    const relatedCase = item.case_id ? casesMap[item.case_id] : null;
-                    const patient = relatedCase && relatedCase.patient_data ? relatedCase.patient_data : {};
-
-                    return {
-                        id: item.id,
-                        text: item.question_text,           
-                        materia: item.category,           
-                        
-                        // Datos del Caso
-                        patientInfo: relatedCase ? `Age: ${patient.age || 'N/A'}, Gender: ${patient.gender || 'N/A'}` : "Stand Alone Question",
-                        chiefComplaint: relatedCase ? (patient.cc || "N/A") : "N/A",
-                        history: relatedCase ? (patient.history || "See scenario") : "N/A",
-                        findings: relatedCase ? (patient.findings || "See scenario") : "N/A",
-                        
-                        photoUrl: item.image_url,           
-                        
-                        options: [
-                            { id: 'A', text: item.option_a },  
-                            { id: 'B', text: item.option_b },
-                            { id: 'C', text: item.option_c },
-                            { id: 'D', text: item.option_d }
-                        ],
-                        correctOption: getOptionLetter(item.correct_answer, item), 
-                        explanation: item.explanation || "No explanation provided.",
-                        userAnswer: null, // Track user selection (ID)
-                        isCorrect: null,  // Track final correctness
-                        srsRating: null   // Track SRS rating
-                    };
-                });
-
-                document.getElementById('total-q-num').textContent = quizData.length;
-
-            } catch (err) {
-                console.error("Error loading questions:", err);
-                document.getElementById('question-text').innerText = `Error loading database: ${err.message}. Revise sus RPCs.`;
-            }
+        if (currentMode === 'daily' && paramIds) {
+            // MODO DAILY RUN: Carga de preguntas fijas por ID
+            const idsArray = paramIds.split(',');
+            
+            // 1. LLAMADA DIRECTA A LA TABLA (NO RPC)
+            const response = await _supabase
+                .from('questions_bank') // <--- ¡Tu tabla de preguntas!
+                .select('*')
+                .in('id', idsArray);
+            
+            data = response.data;
+            error = response.error;
+            
+        } else if (currentMode.includes('simulation') || currentMode === 'itemsets') {
+            // MODO 1: SIMULACIÓN / ITEM SET (Define RPC para conjuntos)
+            rpc_name = 'get_simulation_questions'; 
+            params = { quantity: paramCount };
+            
+        } else if (STAND_ALONE_MODES.includes(currentMode)) {
+            // MODO 2: PRÁCTICA / STAND ALONE / RETRY (Define RPC para stand-alone)
+            rpc_name = (currentMode === 'retry_mistakes') ? 'get_failed_questions' : 'get_stand_alone_questions'; 
+            params = { quantity: paramCount };
+        } 
+        
+        // >>>>>>>>>>> MANEJO DE LLAMADAS RPC <<<<<<<<<<<
+        // Si el modo no fue 'daily' con IDs, y se definió un RPC, lo ejecutamos aquí.
+        if (rpc_name) {
+            // Usamos 'quantity' en los parámetros si no se definió antes (lo cual se hace en los bloques anteriores)
+            if (!params.quantity) params = { quantity: paramCount }; 
+            
+            const response = await _supabase.rpc(rpc_name, params);
+            data = response.data;
+            error = response.error;
         }
+
+        // --- MANEJO DE ERRORES Y CASOS CLÍNICOS ---
+
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            document.getElementById('question-text').innerText = `No se encontraron preguntas para el modo '${currentMode}'. Asegúrese de que hay datos con el filtro correcto.`;
+            return;
+        }
+
+        // --- GESTIÓN DE CASOS CLÍNICOS ---
+        const caseIds = [...new Set(data.map(q => q.case_id).filter(id => id !== null))];
+        let casesMap = {};
+
+        if (caseIds.length > 0) {
+            const { data: casesData } = await _supabase
+                .from('clinical_cases')
+                .select('*')
+                .in('id', caseIds);
+                
+            if(casesData) casesData.forEach(c => casesMap[c.id] = c);
+        }
+
+        // --- MAPEO DE DATOS ---
+        quizData = data.map(item => {
+            const relatedCase = item.case_id ? casesMap[item.case_id] : null;
+            const patient = relatedCase && relatedCase.patient_data ? relatedCase.patient_data : {};
+
+            return {
+                id: item.id,
+                text: item.question_text,          
+                materia: item.category,          
+                
+                // Datos del Caso
+                patientInfo: relatedCase ? `Age: ${patient.age || 'N/A'}, Gender: ${patient.gender || 'N/A'}` : "Stand Alone Question",
+                chiefComplaint: relatedCase ? (patient.cc || "N/A") : "N/A",
+                history: relatedCase ? (patient.history || "See scenario") : "N/A",
+                findings: relatedCase ? (patient.findings || "See scenario") : "N/A",
+                
+                photoUrl: item.image_url,          
+                
+                options: [
+                    { id: 'A', text: item.option_a }, 
+                    { id: 'B', text: item.option_b },
+                    { id: 'C', text: item.option_c },
+                    { id: 'D', text: item.option_d }
+                ],
+                correctOption: getOptionLetter(item.correct_answer, item), 
+                explanation: item.explanation || "No explanation provided.",
+                userAnswer: null, // Track user selection (ID)
+                isCorrect: null,  // Track final correctness
+                srsRating: null   // Track SRS rating
+            };
+        });
+
+        document.getElementById('total-q-num').textContent = quizData.length;
+
+    } catch (err) {
+        console.error("Error loading questions:", err);
+        document.getElementById('question-text').innerText = `Error loading database: ${err.message}. Revise sus RPCs.`;
+    }
+}
 
         // Helper para deducir la letra correcta
         function getOptionLetter(correctText, item) {
