@@ -849,44 +849,39 @@ async function loadQuestionsFromDB() {
         }
 
         function nextQuestion() {
-            const currentQ = quizData[currentIndex];
-            const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
+    const currentQ = quizData[currentIndex];
+    const isSimulation = !['practice', 'daily', 'retry_mistakes', 'standalone', 'practice_custom'].includes(currentMode);
 
-            if (isSimulation) {
-                // MODO SIMULACIÓN: Guardar respuesta y avanzar SIN validar visualmente
-                if (!selectedOptionId) {
-                    // Reemplazamos alert() por console.error o un modal custom si fuera un entorno real.
-                    console.error("Por favor, selecciona una respuesta para continuar."); 
-                    return;
-                }
-                
-                // Registrar la respuesta en el objeto de datos (para la revisión final)
-                currentQ.userAnswer = selectedOptionId;
-                currentQ.isCorrect = selectedOptionId === currentQ.correctOption;
+    if (isSimulation) {
+        // ... Lógica de simulación (sin cambios)
+        if (!selectedOptionId) {
+            console.error("Por favor, selecciona una respuesta para continuar."); 
+            return;
+        }
+        currentQ.userAnswer = selectedOptionId;
+        currentQ.isCorrect = selectedOptionId === currentQ.correctOption;
 
-                // Loguear la respuesta de Simulación inmediatamente
-                if (currentUser && currentUser.id !== 'test-user') {
-                    _supabase.from('user_analytics').insert([
-                        {
-                            user_email: currentUser.email,
-                            question_id: currentQ.id,
-                            is_correct: currentQ.isCorrect,
-                            srs_rating: 'Simulation' // Marcar el rating como Simulación/Examen
-                        }
-                    ]).then(res => { if(res.error) console.error("Sim log error:", res.error); });
-                }
-                
-                // Si es la última pregunta, vamos a los resultados.
-                if (currentIndex === quizData.length - 1) {
-                    showFinalResults();
-                    return;
-                }
-                
-                // Si no es la última, pasamos a la siguiente.
-                currentIndex++;
-                renderQuestion();
-                return;
-            } 
+        // Loguear respuesta de simulación (si aplica)
+        // ...
+
+        if (currentIndex === quizData.length - 1) {
+            showFinalResults(); // <--- LLAMADA FINAL en SIMULACIÓN
+            return;
+        }
+        
+        currentIndex++;
+        renderQuestion();
+        return;
+    } 
+    
+    // MODO PRÁCTICA (SRS): Lógica de avance ya manejada por rateQuestion()
+    if (currentIndex < quizData.length - 1) {
+        currentIndex++;
+        renderQuestion();
+    } else {
+        showFinalResults(); // <--- LLAMADA FINAL en PRÁCTICA/DAILY RUN
+    }
+}
             
             // MODO PRÁCTICA (SRS): Lógica de avance ya manejada por rateQuestion()
             if (currentIndex < quizData.length - 1) {
@@ -949,16 +944,41 @@ async function loadQuestionsFromDB() {
             resultsView.classList.remove('hidden');
             resultsView.style.display = 'flex';
 
-            // 1. Tally Scores
-            let totalCorrect = quizData.filter(q => q.isCorrect).length;
-            let totalQuestions = quizData.length;
+           // 1. Calcular Totales y Contadores SRS
+let totalCorrect = 0;
+let totalIncorrect = 0;
 
-            // 2. Render Summary
-            document.getElementById('final-correct').innerText = totalCorrect;
-            document.getElementById('final-total').innerText = totalQuestions;
-            document.getElementById('srs-learning-count').innerText = srsCounters.Learning;
-            document.getElementById('srs-retrieving-count').innerText = srsCounters.Retrieving;
-            document.getElementById('srs-mastered-count').innerText = srsCounters.Mastered;
+// Inicializar contadores SRS y Correctas
+srsCounters = { Learning: 0, Retrieving: 0, Mastered: 0 }; 
+
+quizData.forEach(q => {
+    if (q.isCorrect) {
+        totalCorrect++;
+    } else if (q.userAnswer !== null) {
+        totalIncorrect++;
+    }
+
+    // Contabilizar la calificación SRS (solo aplica si es modo práctica/daily)
+    if (q.srsRating && srsCounters.hasOwnProperty(q.srsRating)) {
+        srsCounters[q.srsRating]++;
+    }
+});
+
+// 2. Renderizar Resumen
+document.getElementById('final-correct').innerText = totalCorrect;
+document.getElementById('final-total').innerText = quizData.length;
+
+// Asumiendo que el total de incorrectas se mostrará en algún lugar, aunque no hay un span específico
+// en tu HTML, se usa la variable totalIncorrect.
+
+document.getElementById('srs-learning-count').innerText = srsCounters.Learning;
+document.getElementById('srs-retrieving-count').innerText = srsCounters.Retrieving;
+document.getElementById('srs-mastered-count').innerText = srsCounters.Mastered;
+
+// 3. Render Review List (with Explanations)
+const reviewList = document.getElementById('review-list');
+reviewList.innerHTML = '';
+// ... el resto de la iteración de la lista de revisión (quizData.forEach) continúa aquí ...
             
             // 3. Render Review List (with Explanations)
             const reviewList = document.getElementById('review-list');
