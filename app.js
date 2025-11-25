@@ -403,3 +403,10 @@ function closeAIModal() {
 async function logout() { await _supabase.auth.signOut(); window.location.href = 'index.html'; }
 function initCountdown() {} // Placeholder fecha
 function showRecoveryAlert() { alert("Set new password."); }
+// --- AGREGA ESTO AL FINAL DE APP.JS ---
+
+function startDailyRun() {
+    console.log("Starting Daily Run...");
+    // Redirige al quiz engine forzando modo 'daily' y 10 preguntas
+    window.location.href = 'quiz_engine.html?mode=daily&count=10';
+}
