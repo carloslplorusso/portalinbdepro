@@ -1,25 +1,3 @@
-<div class="card card-metrics square-card-bottom" onclick="openActivityModal()">
-    <div class="metrics-header"><span class="metrics-title">ACTIVITY LOG</span></div>
-    <div class="activity-dots" id="activity-calendar-mini">
-        <span style="font-size:0.7rem; color:#666;">Loading activity...</span>
-    </div>
-</div>
-
-<div id="activity-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h3 style="margin:0; color:white;">Activity Calendar</h3>
-            <span class="close-btn" onclick="closeActivityModal()">×</span>
-        </div>
-        <div id="full-calendar-container" style="color:white;">
-            </div>
-    </div>
-</div>
-
-
-codigo original
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -292,7 +270,7 @@ codigo original
             </div>
         </div>
 
-                <div class="col-center">
+        <div class="col-center">
             <div class="card-learn-banner">
                 <div class="banner-icon">✨</div>
                 <h2>Learn about the INBDE our way</h2>
@@ -316,7 +294,7 @@ codigo original
                 </div>
             </div>
 
-                        <div class="card card-metrics square-card-bottom" onclick="window.location.href='stats.html'">
+            <div class="card card-metrics square-card-bottom" onclick="window.location.href='stats.html'">
                 <div class="metrics-header">
                     <span class="metrics-title">PERFORMANCE</span>
                     <span style="font-size:0.8rem; color:var(--accent);">View Stats →</span>
@@ -327,21 +305,21 @@ codigo original
                     </div>
                 </div>
             </div>
-        </div>         <div class="col-side col-right">
+        </div>         
+        
+        <div class="col-side col-right">
             <div class="card card-promo-style" onclick="openAIModal('ia_search')">
                 <div class="promo-header"><div class="ai-icon">🤖</div><div class="promo-title">IA LAB</div></div>
                 <div class="promo-desc">Smart Search. Find questions instantly.</div>
                 <button class="btn-start" style="background:#fff; color:#000;">ASK AI</button>
             </div>
-            <div class="card card-metrics square-card-bottom">
+                        <div class="card card-metrics square-card-bottom" onclick="openActivityModal()">
                 <div class="metrics-header"><span class="metrics-title">ACTIVITY LOG</span></div>
                 <div class="activity-dots" id="activity-dots-container">
-                    <div class="dot active"></div><div class="dot"></div><div class="dot active"></div>
-                    <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
-                    <div class="dot active"></div><div class="dot active"></div><div class="dot"></div>
+                    <span style="font-size:0.7rem; color:#666;">Loading activity...</span>
                 </div>
             </div>
-        </div>
+                    </div>
     </div>
 
     <div id="learning-view" class="hidden">
@@ -410,7 +388,7 @@ codigo original
                 </select>
             <button class="btn-start" onclick="startQuiz()">START NOW</button>
         </div>
-        </div>
+    </div>
 
     <div id="date-setup-modal" class="modal-overlay hidden">
         <div class="modal-content">
@@ -451,10 +429,30 @@ codigo original
 
 </div>
 
+<div id="activity-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3 style="margin:0; color:white;">Activity Calendar</h3>
+            <span class="close-btn" onclick="closeActivityModal()">×</span>
+        </div>
+        <div id="full-calendar-container" style="color:white;">
+            </div>
+        <div style="margin-top:20px; font-size:0.8rem; color:#666;">
+            <span style="color:#10b981;">■</span> Day with activity. 
+            <span style="color:var(--accent); margin-left:10px;">■</span> Current day.
+        </div>
+    </div>
+</div>
 <script src="app.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Asume que renderMiniActivity y otras funciones de inicio están en app.js
+        if(typeof renderMiniActivity === 'function') {
+            renderMiniActivity();
+        }
+        // Puedes agregar aquí otras funciones de inicio si es necesario (ej: initCountdown)
+    });
+</script>
 
 </body>
 </html>
-
-
-aplica la modificacion y dame el codigo completo listo para pegar
