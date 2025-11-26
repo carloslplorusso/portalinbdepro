@@ -180,16 +180,18 @@
         </div>
     </div>
 
+    <script src="app.js"></script>
     <script>
         // --- CONFIG ---
-        const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
+        // Se ha movido la inicialización de Supabase a app.js.
+        // const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
+        // const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
         
         // CLAVE ELIMINADA POR SEGURIDAD. AÑADIMOS EL ENDPOINT SEGURO.
         // const GEMINI_API_KEY = "AIzaSyCGdQ_3ZkPdqdtvM4TRa59t14ZxqDlxxlY";
         const GEMINI_PROXY_URL = 'https://arumiloijqsxthlswojt.supabase.co/functions/v1/gemini-proxy';
 
-        const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); // Usamos la variable global _supabase
 
         // --- STATE ---
         const urlParams = new URLSearchParams(window.location.search);
@@ -224,6 +226,7 @@
         }
 
         async function loadQuestions() {
+            // Utilizamos la variable global _supabase
             const { data, error } = await _supabase.from('questions_bank').select('*').limit(count);
             
             if(error || !data || data.length === 0) {
@@ -316,6 +319,7 @@
         }
 
         async function saveStatusToSupabase(questionId, status) {
+            // Utilizamos la variable global _supabase
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) return;
             const { error } = await _supabase.from('user_progress').insert([
