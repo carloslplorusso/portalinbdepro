@@ -38,7 +38,7 @@
         body.sim-mode .mark-btn.active { background: #facc15; color: black; border-color: #eab308; }
 
         /* =======================================
-           --- MODO PRÁCTICA (DARK) - CORREGIDO ---
+           --- MODO PRÁCTICA (DARK) - REVISADO ---
            ======================================= */
         body.practice-mode { 
             background-color: var(--bg-main); 
@@ -47,13 +47,13 @@
         }
 
         body.practice-mode #main-container {
-            /* Contenedor centralizado para Desktop y scrollable para Mobile/Desktop */
+            /* Contenedor centralizado y scrollable para preguntas largas */
             max-width: 900px;
             margin: 0 auto;
             min-height: 100vh; 
             display: block; 
             padding: 20px; 
-            overflow-y: auto; /* Habilitar SCROLL para preguntas largas */
+            overflow-y: auto; /* Habilitar SCROLL para que el texto no se corte */
             -webkit-overflow-scrolling: touch; 
         }
 
@@ -156,13 +156,43 @@
         .btn-reviewing { background-color: var(--accent); color: black !important; }
         .btn-mastered { background-color: var(--correct); color: black !important; }
 
-        /* Result Screen (Dark Mode adaptation) */
+        /* --- ESTILOS DEL PIE CHART DE RESULTADOS (NUEVOS/REVISADOS) --- */
         body.practice-mode .result-container { 
             background: var(--card-bg); 
             color: var(--text-main); 
             border: 1px solid var(--card-border); 
+            padding: clamp(20px, 5vw, 40px);
+            border-radius: 20px;
+            margin-top: 20px;
         }
-        .pie-chart::after { background: var(--card-bg); }
+        
+        .pie-chart {
+            width: 150px; height: 150px; border-radius: 50%; 
+            margin: 20px auto; 
+            position: relative;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            /* Fondo por defecto, será sobrescrito por JS (conic-gradient) */
+            background: conic-gradient(#27272a 0% 100%);
+        }
+        
+        /* Círculo interior para darle un aspecto de "donut" */
+        .pie-chart::after { 
+            content: ""; position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%);
+            width: 100px; height: 100px; 
+            background: var(--card-bg); /* Fondo del Quiz */
+            border-radius: 50%;
+        }
+
+        .stat-badge {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .bg-red-custom { background-color: var(--wrong); color: white; }
+        .bg-yellow-custom { background-color: var(--accent); color: black; }
+        .bg-green-custom { background-color: var(--correct); color: black; }
 
 
         /* COMMON UTILS - Aseguramos los colores base */
@@ -235,15 +265,7 @@
     <script src="app.js"></script>
     <script>
         // --- CONFIG ---
-        // Se ha movido la inicialización de Supabase a app.js.
-        // const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
-        // const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
-        
-        // CLAVE ELIMINADA POR SEGURIDAD. AÑADIMOS EL ENDPOINT SEGURO.
-        // const GEMINI_API_KEY = "AIzaSyCGdQ_3ZkPdqdtvM4TRa59t14ZxqDlxxlY";
         const GEMINI_PROXY_URL = 'https://arumiloijqsxthlswojt.supabase.co/functions/v1/gemini-proxy';
-
-        // const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); // Usamos la variable global _supabase
 
         // --- STATE ---
         const urlParams = new URLSearchParams(window.location.search);
@@ -442,12 +464,15 @@
                     <button onclick="goBackToHome()" class="mt-8 w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700">RETURN TO DASHBOARD</button>
                 `;
             } else {
-                // Practice Mode Results logic...
+                // Lógica de Resultados del Modo Práctica (REVISADA con Pie Chart)
                 const totalStatus = userStatusCounts.learning + userStatusCounts.reviewing + userStatusCounts.mastered;
                 const safeTotal = totalStatus || 1;
                 const pctRed = (userStatusCounts.learning / safeTotal) * 100;
                 const pctYellow = (userStatusCounts.reviewing / safeTotal) * 100;
-                const chartStyle = `background: conic-gradient(#ef4444 0% ${pctRed}%, #facc15 ${pctRed}% ${pctRed + pctYellow}%, #22c55e ${pctRed + pctYellow}% 100%);`;
+                
+                // Genera el estilo conic-gradient para el Pie Chart usando las variables CSS
+                const chartStyle = `background: conic-gradient(var(--wrong) 0% ${pctRed}%, var(--accent) ${pctRed}% ${pctRed + pctYellow}%, var(--correct) ${pctRed + pctYellow}% 100%);`;
+
                 resultScreen.innerHTML = `
                     <h1 class="text-3xl font-bold mb-2 text-yellow-400">Practice Complete</h1>
                     <div class="flex justify-center gap-6 mb-8">
@@ -469,7 +494,7 @@
             }
         }
 
-        // --- AI HELPERS (FINAL CORRECTIONS) ---
+        // --- AI HELPERS (Funcionalidad Gemini verificada) ---
         async function triggerAIExplanation() {
             const q = quizData[currentIndex];
             const box = document.getElementById('ai-explanation-box');
@@ -479,6 +504,7 @@
             if(q.explanation && q.explanation.trim() !== "") {
                 box.innerHTML = `<strong>Rationale (DB):</strong><br>${q.explanation}`;
             } else {
+                // Llama a Gemini si no hay explicación en la base de datos
                 askGemini(document.getElementById('btn-explain'), q.question_text, q.correct_answer);
             }
         }
@@ -492,7 +518,7 @@
             const prompt = `Explain briefly why "${correct}" is the correct answer for this dental question: "${qText}".`;
             
             try {
-                // LLAMADA SEGURA AL PROXY: Usa GEMINI_PROXY_URL
+                // LLAMADA SEGURA AL PROXY
                 const response = await fetch(GEMINI_PROXY_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -505,6 +531,7 @@
 
                 const data = await response.json();
                 const text = data.candidates[0].content.parts[0].text;
+                // Limpieza de formato Markdown
                 outputDiv.innerHTML = `<div class="p-3 bg-blue-50 rounded border border-blue-100 text-sm text-gray-700"><strong>AI Explanation:</strong><br>${text.replace(/\*\*/g, '').replace(/\n/g, '<br>')}</div>`;
             } catch(e) {
                 console.error(e);
@@ -517,7 +544,7 @@
             const prompt = `Explain concisely why "${correct}" is the correct answer for: "${qText}".`;
             
             try {
-                // LLAMADA SEGURA AL PROXY: Usa GEMINI_PROXY_URL
+                // LLAMADA SEGURA AL PROXY
                 const response = await fetch(GEMINI_PROXY_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -530,13 +557,14 @@
 
                 const data = await response.json();
                 const text = data.candidates[0].content.parts[0].text;
+                // Limpieza de formato Markdown
                 box.innerHTML = text.replace(/\*\*/g, '<strong>').replace(/\*/g, '').replace(/\n/g, '<br>');
             } catch(e) {
                 console.error(e);
                 box.innerHTML = "<span style='color:red'>Error al contactar el servicio de IA seguro (Proxy).</span>";
             }
         }
-
+        // ... (el resto de funciones como startSimulationTimer, openReviewModal, etc. se mantienen igual)
         function startSimulationTimer() {
             timerInterval = setInterval(() => {
                 if(secondsLeft <= 0) { finishQuiz(); } 
