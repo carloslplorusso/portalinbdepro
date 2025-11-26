@@ -385,7 +385,7 @@ async function saveNote() {
     // --- LÓGICA DE PERSISTENCIA MIGRADA A SUPABASE ---
     const { error } = await _supabase
         .from('user_notes')
-        .insert({ user_id: userId, text: text });
+        .insert({ user_id: userId, content: text }); // <-- CORREGIDO: Usar 'content' en lugar de 'text'
         
     if (error) {
         console.error('Error saving note to Supabase:', error);
@@ -411,7 +411,8 @@ async function loadNotes() {
     // --- LÓGICA DE CARGA MIGRADA DE LOCALSTORAGE A SUPABASE ---
     const { data: notes, error } = await _supabase
         .from('user_notes')
-        .select('text, created_at')
+        // CORREGIDO: Seleccionar la columna 'content' para coincidir con la inserción y la DB
+        .select('content, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -428,7 +429,7 @@ async function loadNotes() {
 
     container.innerHTML = notes.map(n => `
         <div style="background:rgba(255,255,255,0.05); padding:12px; border-radius:8px; margin-bottom:8px; border-left:3px solid var(--accent);">
-            <div style="color:#eee;">${n.text}</div>
+            <div style="color:#eee;">${n.content}</div>
             <div style="color:#666; font-size:0.7rem; margin-top:5px;">${new Date(n.created_at).toLocaleDateString()} ${new Date(n.created_at).toLocaleTimeString()}</div>
         </div>
     `).join('');
@@ -437,38 +438,38 @@ async function loadNotes() {
 
 // --- IA LAB LOGIC ---
 function openAIModal(mode) {
-    const modal = document.getElementById('ai-modal');
-    if(modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('active');
-        document.getElementById('ai-input').focus();
-    }
+    const modal = document.getElementById('ai-modal');
+    if(modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+        document.getElementById('ai-input').focus();
+    }
 }
 
 function closeAIModal() {
-    const modal = document.getElementById('ai-modal');
-    if(modal) {
-        modal.classList.remove('active');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    }
+    const modal = document.getElementById('ai-modal');
+    if(modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
 }
 
 async function callGemini() {
-    const inputEl = document.getElementById('ai-input');
-    const outputEl = document.getElementById('ai-output');
-    
-    if(!inputEl || !inputEl.value.trim()) return;
-    
-    outputEl.style.display = 'block';
-    outputEl.innerHTML = '<div style="color:var(--accent);">🤖 Thinking...</div>';
+    const inputEl = document.getElementById('ai-input');
+    const outputEl = document.getElementById('ai-output');
+    
+    if(!inputEl || !inputEl.value.trim()) return;
+    
+    outputEl.style.display = 'block';
+    outputEl.innerHTML = '<div style="color:var(--accent);">🤖 Thinking...</div>';
 
-    setTimeout(() => {
-        outputEl.innerHTML = `
-            <strong>AI Result:</strong><br>
-            I found 3 relevant questions related to "<em>${inputEl.value}</em>".<br><br>
-            <button class="btn-start" onclick="startQuizEngine('ai_generated')" style="padding:5px 10px; font-size:0.8rem;">Start Generated Quiz</button>
-        `;
-    }, 1500);
+    setTimeout(() => {
+        outputEl.innerHTML = `
+            <strong>AI Result:</strong><br>
+            I found 3 relevant questions related to "<em>${inputEl.value}</em>".<br><br>
+            <button class="btn-start" onclick="startQuizEngine('ai_generated')" style="padding:5px 10px; font-size:0.8rem;">Start Generated Quiz</button>
+        `;
+    }, 1500);
 }
 
 
@@ -478,57 +479,57 @@ let pomoTime = 25 * 60;
 let isPomoRunning = false;
 
 function openPomodoroSession() {
-    switchView('pomodoro-timer-view');
-    resetPomo();
+    switchView('pomodoro-timer-view');
+    resetPomo();
 }
 
 function updatePomoDisplay() {
-    const m = Math.floor(pomoTime / 60).toString().padStart(2, '0');
-    const s = (pomoTime % 60).toString().padStart(2, '0');
-    const display = document.getElementById('timer-display');
-    if(display) display.innerText = `${m}:${s}`;
+    const m = Math.floor(pomoTime / 60).toString().padStart(2, '0');
+    const s = (pomoTime % 60).toString().padStart(2, '0');
+    const display = document.getElementById('timer-display');
+    if(display) display.innerText = `${m}:${s}`;
 }
 
 function toggleTimer() {
-    const btn = document.getElementById('play-icon');
-    
-    if(isPomoRunning) {
-        clearInterval(pomoInterval);
-        isPomoRunning = false;
-        if(btn) btn.innerText = "▶";
-    } else {
-        isPomoRunning = true;
-        if(btn) btn.innerText = "❚❚";
-        pomoInterval = setInterval(() => {
-            if(pomoTime > 0) {
-                pomoTime--;
-                updatePomoDisplay();
-            } else {
-                clearInterval(pomoInterval);
-                alert("Time is up!");
-                isPomoRunning = false;
-                if(btn) btn.innerText = "▶";
-            }
-        }, 1000);
-    }
+    const btn = document.getElementById('play-icon');
+    
+    if(isPomoRunning) {
+        clearInterval(pomoInterval);
+        isPomoRunning = false;
+        if(btn) btn.innerText = "▶";
+    } else {
+        isPomoRunning = true;
+        if(btn) btn.innerText = "❚❚";
+        pomoInterval = setInterval(() => {
+            if(pomoTime > 0) {
+                pomoTime--;
+                updatePomoDisplay();
+            } else {
+                clearInterval(pomoInterval);
+                alert("Time is up!");
+                isPomoRunning = false;
+                if(btn) btn.innerText = "▶";
+            }
+        }, 1000);
+    }
 }
 
 function resetPomo() {
-    clearInterval(pomoInterval);
-    isPomoRunning = false;
-    pomoTime = 25 * 60;
-    updatePomoDisplay();
-    const btn = document.getElementById('play-icon');
-    if(btn) btn.innerText = "▶";
+    clearInterval(pomoInterval);
+    isPomoRunning = false;
+    pomoTime = 25 * 60;
+    updatePomoDisplay();
+    const btn = document.getElementById('play-icon');
+    if(btn) btn.innerText = "▶";
 }
 
 
 // --- AUTHENTICATION ---
 async function logout() {
-    if(typeof _supabase !== 'undefined') {
-        await _supabase.auth.signOut();
-        window.location.href = 'index.html';
-    } else {
-        window.location.href = 'index.html';
-    }
+    if(typeof _supabase !== 'undefined') {
+        await _supabase.auth.signOut();
+        window.location.href = 'index.html';
+    } else {
+        window.location.href = 'index.html';
+    }
 }
