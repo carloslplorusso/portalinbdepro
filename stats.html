@@ -224,11 +224,10 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
 <script>
-    // --- SUPABASE CONFIG ---
-    const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
-    const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Se asume que _supabase ya está definido globalmente por app.js
 
     async function loadStats() {
         // 1. Verificar Sesión
