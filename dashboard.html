@@ -245,14 +245,14 @@
 
 <div class="lab-container">
     <header class="header-area">
-        <h1 class="lab-title" onclick="goBackToDashboard()">INBDE PRO <span style="opacity:0.5; font-weight:300;">Lab</span></h1>
+        <h1 class="lab-title" id="lab-title-desktop">INBDE PRO <span style="opacity:0.5; font-weight:300;">Lab</span></h1>
         <div class="lab-subtitle">Train in our lab. Become a Pro.</div>
         <div id="header-welcome-section">
             <div class="user-welcome">
                 <span>Welcome, <span id="user-name-display" style="color:var(--accent); font-weight:700;">Doctor</span></span>
-                <button onclick="logout()" style="background:none; border:1px solid #ff6b6b; color:#ff6b6b; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center;">✕</button>
+                <button id="btn-logout-desktop" style="background:none; border:1px solid #ff6b6b; color:#ff6b6b; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center;">✕</button>
             </div>
-            <div class="header-countdown" onclick="openDateModal()" id="countdown-badge">
+            <div class="header-countdown" id="countdown-badge">
                 <span id="countdown-value">-- Days Left</span> ⏱
             </div>
         </div>
@@ -264,9 +264,9 @@
             <div class="card card-promo-style">
                 <div class="promo-header"><div class="fire-icon">🔥</div><div class="promo-title">DAILY LAB RUN</div></div>
                 <div class="promo-desc">10-question sprint. Keep the streak alive.</div>
-                <button class="btn-start" onclick="startDailyRun()">START NOW</button>
+                <button class="btn-start" id="btn-daily-run">START NOW</button>
             </div>
-            <div class="card card-notes square-card-bottom" onclick="openNotesModal()">
+            <div class="card card-notes square-card-bottom" id="card-notes-desktop">
                 <div class="metrics-header"><span class="metrics-title">QUICK NOTES</span><span>📝</span></div>
                 <div style="font-size:0.8rem; opacity:0.5; margin-top:10px;">Click to open notebook...</div>
             </div>
@@ -279,17 +279,17 @@
             </div>
             
             <div class="center-row-hero">
-                <div class="hero-card" onclick="showLearningLab()">
+                <div class="hero-card" id="card-learning-lab">
                     <div class="icon">🧪</div>
                     <div class="title">Learning Lab</div>
                     <div class="sub">Study Mode</div>
                 </div>
-                <div class="hero-card" onclick="showSimulationLab()">
+                <div class="hero-card" id="card-simulation-lab">
                     <div class="icon">⚡</div>
                     <div class="title">Simulation</div>
                     <div class="sub">Exam Mode</div>
                 </div>
-                <div class="hero-card" onclick="showPomodoro()">
+                <div class="hero-card" id="card-pomodoro-lab">
                     <div class="icon">🍅</div>
                     <div class="title">Pomodoro</div>
                     <div class="sub">Focus Timer</div>
@@ -310,12 +310,12 @@
         </div> 
         
         <div class="col-side col-right">
-            <div class="card card-promo-style" onclick="openAIModal('ia_search')">
+            <div class="card card-promo-style" id="card-ia-lab">
                 <div class="promo-header"><div class="ai-icon">🤖</div><div class="promo-title">IA LAB</div></div>
                 <div class="promo-desc">Smart Search. Find questions instantly.</div>
-                <button class="btn-start" style="background:#fff; color:#000;">ASK AI</button>
+                <button class="btn-start" id="btn-ia-lab-start" style="background:#fff; color:#000;">ASK AI</button>
             </div>
-            <div class="card card-metrics square-card-bottom" onclick="openActivityModal()">
+            <div class="card card-metrics square-card-bottom" id="card-activity-log">
                 <div class="metrics-header"><span class="metrics-title">ACTIVITY LOG</span></div>
                 <div class="activity-dots" id="activity-dots-container">
                     <span style="font-size:0.7rem; color:#666;">Loading activity...</span>
@@ -326,33 +326,33 @@
 
     <div id="learning-view" class="hidden">
         <div class="learning-cards-row">
-            <div class="learning-card" onclick="openSelectionView('standalone')">
+            <div class="learning-card" id="btn-learn-standalone">
                 <div class="learning-icon">🧠</div><h3>Stand Alone</h3><p>Practice specific topics.</p>
             </div>
-            <div class="learning-card" onclick="openSelectionView('itemsets')">
+            <div class="learning-card" id="btn-learn-itemsets">
                 <div class="learning-icon">🔗</div><h3>Item Sets</h3><p>Complex scenarios.</p>
             </div>
         </div>
-        <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Dashboard</button>
+        <button class="btn-back-small" id="btn-back-learning">← Back to Dashboard</button>
     </div>
 
     <div id="simulation-view" class="hidden">
         <div class="learning-cards-row">
-            <div class="learning-card" onclick="openSelectionView('simulation')">
+            <div class="learning-card" id="btn-sim-customize">
                 <div class="learning-icon">🛠️</div><h3>Customize</h3><p>Configure your exam.</p>
             </div>
-            <div class="learning-card" onclick="startQuizEngine('simulation_standard')">
+            <div class="learning-card" id="btn-sim-start">
                 <div class="learning-icon">▶️</div><h3>Standard Exam</h3><p>Full INBDE simulation.</p>
             </div>
         </div>
-        <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Dashboard</button>
+        <button class="btn-back-small" id="btn-back-simulation">← Back to Dashboard</button>
     </div>
 
     <div id="pomodoro-view" class="hidden">
-        <div class="learning-card" onclick="openPomodoroSession()">
+        <div class="learning-card" id="btn-pomo-session">
             <div class="learning-icon">🍅</div><h3>Start Session</h3><p>25 min Focus / 5 min Break</p>
         </div>
-        <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Dashboard</button>
+        <button class="btn-back-small" id="btn-back-pomodoro">← Back to Dashboard</button>
     </div>
 
     <div id="pomodoro-timer-view" class="hidden">
@@ -360,11 +360,11 @@
         <div class="pomo-container">
             <div id="timer-display" class="pomo-timer-display">25:00</div>
             <div style="display:flex; gap:20px;">
-                <button class="pomo-btn main" id="play-icon" onclick="toggleTimer()">▶</button>
-                <button class="pomo-btn" onclick="resetPomo()">↺</button>
+                <button class="pomo-btn main" id="btn-pomo-toggle">▶</button>
+                <button class="pomo-btn" id="btn-pomo-reset">↺</button>
             </div>
         </div>
-        <button class="btn-back-small" onclick="goBackToPomodoro()">Exit</button>
+        <button class="btn-back-small" id="btn-back-timer">Exit</button>
       </div>
 
     <div id="selection-view" class="hidden">
@@ -374,21 +374,21 @@
                 <div class="cat-header"><h3>Subjects</h3></div>
                 <div id="dynamic-cat-list">Loading...</div>
             </div>
-            <div class="card-start-quiz" onclick="openQuizSettings()">
+            <div class="card-start-quiz" id="btn-start-quiz-selection">
                 <div class="start-icon">🚀</div><h3>Next</h3>
             </div>
         </div>
-        <button class="btn-back-small" onclick="goBackToLearning()">← Back</button>
+        <button class="btn-back-small" id="btn-back-selection">← Back</button>
     </div>
 
     <div id="quiz-settings-modal" class="modal-overlay hidden">
         <div class="modal-content" style="text-align:center;">
-            <span class="close-btn" onclick="closeQuizSettings()">×</span>
+            <span class="close-btn" id="btn-close-quiz-settings">×</span>
             <h3>Quiz Settings</h3>
             <p style="color:#aaa; margin-bottom:10px;">Select length:</p>
             <select id="quiz-count" style="width:100%; padding:15px; margin:10px 0 20px 0; background:#000; color:#fff; border:1px solid var(--accent); border-radius:8px;">
                 </select>
-            <button class="btn-start" onclick="startQuiz()">START NOW</button>
+            <button class="btn-start" id="btn-start-quiz-confirm">START NOW</button>
         </div>
     </div>
 
@@ -396,7 +396,7 @@
         <div class="modal-content">
             <h3>Set Exam Date</h3>
             <input type="date" id="exam-date-input" style="width:100%; padding:10px; margin:10px 0; background:#000; color:#fff; border:1px solid #444;">
-            <button class="btn-start" onclick="saveExamDate()">Save</button>
+            <button class="btn-start" id="btn-save-exam-date">Save</button>
         </div>
     </div>
 
@@ -404,12 +404,12 @@
         <div class="modal-content" style="display:flex; flex-direction:column; height: 80vh; max-height: 600px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                 <h3 style="margin:0;">My Quick Notes</h3>
-                <span class="close-btn" onclick="closeNotesModal()">×</span>
+                <span class="close-btn" id="btn-close-notes-modal">×</span>
             </div>
 
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <input id="new-note-input" type="text" placeholder="Type a note..." style="flex:1; background:#000; border:1px solid #444; color:white; padding:12px; border-radius:10px; outline:none;">
-                <button onclick="saveNote()" style="background:var(--accent); color:black; border:none; border-radius:10px; padding:0 20px; font-weight:bold; cursor:pointer;">SAVE</button>
+                <button id="btn-save-note" style="background:var(--accent); color:black; border:none; border-radius:10px; padding:0 20px; font-weight:bold; cursor:pointer;">SAVE</button>
             </div>
 
             <div id="notes-list-container" style="flex:1; overflow-y:auto; padding-right:5px;">
@@ -420,11 +420,11 @@
 
     <div id="ai-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <span class="close-btn" onclick="closeAIModal()">×</span>
+            <span class="close-btn" id="btn-close-ai-modal">×</span>
             <h3>🤖 IA Lab Search</h3>
             <p style="color:#888; font-size:0.9rem;">Type a keyword to find related questions (e.g., "Ameloblastoma").</p>
             <textarea id="ai-input" class="ai-input-area" placeholder="Search question bank..."></textarea>
-            <button class="ai-action-btn" onclick="callGemini()">Search & Start Quiz</button>
+            <button class="ai-action-btn" id="btn-ai-submit">Search & Start Quiz</button>
             <div id="ai-output" class="ai-response" style="margin-top:15px;"></div>
         </div>
     </div>
@@ -433,7 +433,7 @@
         <div class="modal-content">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                 <h3 style="margin:0; color:white;">Activity Calendar</h3>
-                <span class="close-btn" onclick="closeActivityModal()">×</span>
+                <span class="close-btn" id="btn-close-activity-modal">×</span>
             </div>
             <div id="full-calendar-container" style="color:white;">
                 </div>
@@ -447,15 +447,5 @@
 </div>
 
 <script src="app.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Asume que renderMiniActivity y otras funciones de inicio están en app.js
-        if(typeof renderMiniActivity === 'function') {
-            renderMiniActivity();
-        }
-        // Puedes agregar aquí otras funciones de inicio si es necesario (ej: initCountdown)
-    });
-</script>
-
 </body>
 </html>
