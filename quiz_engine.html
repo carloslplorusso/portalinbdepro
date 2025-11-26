@@ -11,8 +11,20 @@
         /* Base Reset */
         body { margin: 0; font-family: 'Inter', sans-serif; overflow: hidden; }
         .hidden { display: none !important; }
-        
-        /* --- MODO SIMULACIÓN (LIGHT) --- */
+
+        /* --- VARIABLES GLOBALES DARK MODE --- */
+        :root {
+            --accent: #facc15; /* Amarillo */
+            --bg-main: #0a0a0a;
+            --card-bg: #121214;
+            --card-border: #333333;
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --correct: #22c55e;
+            --wrong: #ef4444;
+        }
+
+        /* --- MODO SIMULACIÓN (LIGHT) - Mantenido para SIM --- */
         body.sim-mode { background-color: #f0f0f0; color: #333; }
         body.sim-mode .inbde-header { background: #0060a9; color: white; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
         body.sim-mode .inbde-footer { background: linear-gradient(to bottom, #0060a9 0%, #004b8d 100%); height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: fixed; bottom: 0; width: 100%; }
@@ -25,101 +37,141 @@
         body.sim-mode .option-row.selected { background: #dceefb; border-color: #0060a9; }
         body.sim-mode .mark-btn.active { background: #facc15; color: black; border-color: #eab308; }
 
-        /* --- MODO PRÁCTICA (DARK) --- */
-        body.practice-mode { background-color: #000; color: #fff; background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%); }
-        body.practice-mode .inbde-header, body.practice-mode .inbde-footer { display: none; }
-        
-        body.practice-mode #main-container { 
-            max-width: 800px; 
-            margin: 0 auto; 
-            /* MODIFICACIÓN: Usamos min-height y display: block para scroll en móvil */
+        /* =======================================
+           --- MODO PRÁCTICA (DARK) - CORREGIDO ---
+           ======================================= */
+        body.practice-mode { 
+            background-color: var(--bg-main); 
+            color: var(--text-main); 
+            background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%); 
+        }
+
+        body.practice-mode #main-container {
+            /* Contenedor centralizado para Desktop y scrollable para Mobile/Desktop */
+            max-width: 900px;
+            margin: 0 auto;
             min-height: 100vh; 
             display: block; 
             padding: 20px; 
-            overflow-y: auto; 
+            overflow-y: auto; /* Habilitar SCROLL para preguntas largas */
             -webkit-overflow-scrolling: touch; 
         }
 
+        body.practice-mode .inbde-header, body.practice-mode .inbde-footer { display: none; }
         body.practice-mode #left-panel { display: none; }
         body.practice-mode #right-panel { width: 100%; background: transparent; }
 
-        /* COMMON UTILS */
-        .review-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 50; display: none; justify-content: center; align-items: center; }
-        .review-content { background: white; width: 80%; max-height: 80vh; overflow-y: auto; padding: 20px; border-radius: 8px; }
-        .q-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 10px; margin-top: 20px; }
-        .q-box { width: 40px; height: 40px; border: 1px solid #ccc; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 0.8rem; }
-        .q-box.answered { background: #dceefb; }
-        .q-box.marked { border: 2px solid #facc15; font-weight: bold; }
-        .q-box.current { border: 2px solid #0060a9; }
+        /* Estructura Principal del Quiz */
+        #quiz-content {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: clamp(15px, 5vw, 30px); /* Padding adaptativo */
+            margin-bottom: 25px;
+        }
 
-        /* ESTILOS DE FEEDBACK VISUAL AÑADIDOS */
+        #question-text {
+            font-size: clamp(1.1rem, 4vw, 1.4rem);
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        /* --- ESTILOS DE OPCIONES ELEGANTES --- */
+        #options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Separación entre opciones */
+        }
+
+        .option-row {
+            /* Estructura simétrica con borde */
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 10px;
+            padding: 15px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: flex-start; 
+            transition: all 0.2s;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+
+        .option-row:hover:not(.correct-immediate):not(.wrong-immediate) {
+            background: #1c1c20; 
+            border-color: var(--text-muted);
+        }
+        
         .option-row .custom-radio {
+            /* Estilo del círculo de selección */
             width: 20px; 
             height: 20px; 
             border-radius: 50%; 
-            border: 2px solid #555; 
+            border: 2px solid var(--text-muted); 
             margin-right: 15px; 
-            min-width: 20px;
+            min-width: 20px; 
+            transition: all 0.2s;
         }
+
+        /* --- ESTILOS DE FEEDBACK (CORREGIDOS) --- */
         .option-row.correct-immediate {
-            background: rgba(34, 197, 94, 0.1); 
-            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.15); /* Tono verde */
+            border-color: var(--correct);
+            font-weight: 700;
         }
         .option-row.correct-immediate .custom-radio {
-            background-color: #22c55e;
-            border-color: #22c55e;
+            background-color: var(--correct);
+            border-color: var(--correct);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
         }
+
         .option-row.wrong-immediate {
-            background: rgba(239, 68, 68, 0.1); 
-            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.15); /* Tono rojo */
+            border-color: var(--wrong);
+            font-weight: 700;
         }
         .option-row.wrong-immediate .custom-radio {
-            background-color: #ef4444;
-            border-color: #ef4444;
+            background-color: var(--wrong);
+            border-color: var(--wrong);
         }
-        /* FIN ESTILOS DE FEEDBACK VISUAL */
 
-        /* RESULT SCREEN & PIE CHART */
-        .result-container { padding: 30px; text-align: center; border-radius: 20px; margin: 20px auto; max-width: 800px; overflow-y: auto; max-height: 90vh; }
-        /* Estilo específico para resultados dark */
-        body.practice-mode .result-container { background: #121214; color: white; border: 1px solid #333; }
-        /* Estilo específico para resultados light */
-        body.sim-mode .result-container { background: white; color: #333; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-
-        .pie-chart {
-            width: 180px; height: 180px; border-radius: 50%; margin: 20px auto;
-            position: relative;
-            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        /* Feedback Area and Buttons */
+        .feedback-area {
+            margin-top: 25px; 
+            padding-top: 25px;
+            border-top: 1px solid var(--card-border);
         }
-        /* El centro del donut */
-        .pie-chart::after {
-            content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 120px; height: 120px; background: #121214; border-radius: 50%;
+        .btn-status {
+            background-color: #333; 
+            color: white;
+            opacity: 0.95;
+            transition: opacity 0.1s;
         }
-        body.sim-mode .pie-chart::after { background: white; }
+        .btn-status:hover {
+            opacity: 1;
+        }
+        .btn-learning { background-color: var(--wrong); color: white !important; }
+        .btn-reviewing { background-color: var(--accent); color: black !important; }
+        .btn-mastered { background-color: var(--correct); color: black !important; }
 
-        .stat-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin: 5px; }
-        .bg-red-custom { background: #ef4444; color: white; }
-        .bg-yellow-custom { background: #facc15; color: black; }
-        .bg-green-custom { background: #22c55e; color: black; }
+        /* Result Screen (Dark Mode adaptation) */
+        body.practice-mode .result-container { 
+            background: var(--card-bg); 
+            color: var(--text-main); 
+            border: 1px solid var(--card-border); 
+        }
+        .pie-chart::after { background: var(--card-bg); }
 
-        /* SIMULATION LIST STYLES */
-        .sim-review-item { text-align: left; border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
-        .sim-review-item:last-child { border: none; }
-        .sim-review-q { font-weight: 600; margin-bottom: 5px; }
-        
-        .ai-btn { background: linear-gradient(45deg, #7c3aed, #db2777); color: white; border: none; padding: 6px 16px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: transform 0.2s; font-weight: 600; }
-        .ai-btn:hover { transform: scale(1.05); }
 
-        /* STATUS BUTTONS */
-        .feedback-area { margin-top: 20px; padding-top: 20px; border-top: 1px solid #333; display: none; animation: fadeIn 0.3s ease; }
-        .status-btn-container { display: flex; gap: 10px; margin-top: 15px; justify-content: center; }
-        .btn-status { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 800; color: #000; cursor: pointer; text-transform: uppercase; font-size: 0.8rem; transition: transform 0.2s; opacity: 0.9; }
-        .btn-status:hover { transform: scale(1.05); opacity: 1; }
-        .btn-learning { background-color: #ef4444; color: white; }
-        .btn-reviewing { background-color: #facc15; color: black; }
-        .btn-mastered { background-color: #22c55e; color: black; }
-        .instruction-text { text-align: center; color: #aaa; font-size: 0.8rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        /* COMMON UTILS - Aseguramos los colores base */
+        .review-modal { background: rgba(0,0,0,0.9); }
+        .review-content { background: #fff; color: #333; }
+        .q-box.answered { background: #a1a1aa; color: #333; } /* Grey for answered in Dark Mode review */
+        .q-box.marked { border: 2px solid var(--accent); font-weight: bold; color: var(--accent); }
+        .q-box.current { border: 2px solid #0060a9; color: #0060a9; }
+
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
