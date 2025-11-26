@@ -27,9 +27,7 @@
     .status-success { background: #dcfce7; color: #166534; }
     .status-error { background: #fee2e2; color: #ef4444; }
 
-    .key-section { background: #121212; color: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-    .key-section label { color: #fcdc11; margin-top: 0; }
-    .key-section input { background: #333; border-color: #444; color: white; }
+    .key-section { display: none; /* OCULTAMOS ESTA SECCIÓN */ }
     
     /* ESTILOS PARA EL TOGGLE DE TIPO DE SUSCRIPCIÓN */
     .radio-group { display: flex; gap: 15px; margin-top: 10px; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
@@ -103,70 +101,65 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+    // URL de su proyecto Supabase y el endpoint de la función Edge
+    // La URL base (sin /functions/v1/...) está en app.js, pero para evitar depender de otro archivo, la definimos aquí para el fetch.
     const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
+    const INVITE_ENDPOINT = `${SUPABASE_URL}/functions/v1/admin-invite-user`; 
+    
+    // Eliminamos todo el código relacionado con la Service Role Key
 
-    window.onload = () => {
-        const savedKey = localStorage.getItem('supabase_admin_key');
-        if (savedKey) document.getElementById('service-key').value = savedKey;
-    };
-
-    function saveKey() {
-        const key = document.getElementById('service-key').value.trim();
-        if (!key) return alert("Please enter a key first.");
-        localStorage.setItem('supabase_admin_key', key);
-        alert("Key saved!");
-    }
-
-    function getAdminClient() {
-        const key = document.getElementById('service-key').value.trim();
-        if (!key) { alert("Missing Service Role Key!"); return null; }
-        return window.supabase.createClient(SUPABASE_URL, key);
-    }
-
-    // --- TOGGLE ENTRE MESES Y FECHA ---
     function toggleMode() {
         const mode = document.querySelector('input[name="sub-mode"]:checked').value;
         document.getElementById('section-months').className = mode === 'months' ? 'mode-section active' : 'mode-section';
         document.getElementById('section-fixed').className = mode === 'fixed' ? 'mode-section active' : 'mode-section';
     }
 
-    // --- OBTENER DATOS DE CONFIGURACIÓN ---
     function getSubscriptionData() {
         const mode = document.querySelector('input[name="sub-mode"]:checked').value;
         
         if (mode === 'fixed') {
             const dateVal = document.getElementById('fixed-date-input').value;
             if (!dateVal) { alert("Please select a valid expiration date!"); return null; }
-            return { fixed_expiry_date: dateVal }; // Enviamos la fecha exacta
+            // La función Edge espera 'metaData' con el tipo de suscripción
+            return { fixed_expiry_date: dateVal, type: 'fixed' }; 
         } else {
             const months = document.getElementById('months-select').value;
-            return { subscription_months: parseInt(months) }; // Enviamos los meses
+            return { subscription_months: parseInt(months), type: 'months' };
         }
     }
 
-    // --- INVITAR UNO SOLO ---
+    // --- FUNCIÓN HELPER PARA LLAMAR A LA FUNCIÓN EDGE ---
+    async function callInviteEndpoint(email, metaData) {
+        const response = await fetch(INVITE_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, metaData: metaData }),
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Invitation failed on server.');
+        }
+        
+        return data;
+    }
+
+    // --- 1. INVITAR UNO SOLO (Quick Invite) ---
     async function inviteSingle() {
         const email = document.getElementById('single-email').value.trim();
         const metaData = getSubscriptionData();
-        if (!metaData || !email) return; // Validación
+        if (!metaData || !email) return;
 
         const statusBox = document.getElementById('status-single');
-        const adminClient = getAdminClient();
-        if (!adminClient) return;
-
         statusBox.style.display = 'block';
         statusBox.className = 'status-box';
         statusBox.innerText = "Sending...";
 
         try {
-            const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
-                redirectTo: 'https://carloslplorusso.github.io/portalinbdepro/dashboard.html',
-                data: metaData // Aquí va la magia (meses o fecha)
-            });
+            await callInviteEndpoint(email, metaData);
 
-            if (error) throw error;
-
-            const typeMsg = metaData.fixed_expiry_date ? `Expires: ${metaData.fixed_expiry_date}` : `Duration: ${metaData.subscription_months} months`;
+            const typeMsg = metaData.type === 'fixed' ? `Expires: ${metaData.fixed_expiry_date}` : `Duration: ${metaData.subscription_months} months`;
             statusBox.className = 'status-box status-success';
             statusBox.innerText = `✅ Invitation sent to ${email}\n(${typeMsg})`;
             document.getElementById('single-email').value = ''; 
@@ -177,17 +170,14 @@
         }
     }
 
-    // --- INVITAR LOTE ---
+    // --- 2. INVITAR LOTE (Bulk Invite) ---
     async function inviteBulk() {
         const text = document.getElementById('bulk-list').value.trim();
         const metaData = getSubscriptionData();
         if (!metaData || !text) return;
 
-        const adminClient = getAdminClient();
-        if (!adminClient) return;
-
         const emails = text.split(/\r?\n/).map(e => e.trim()).filter(e => e);
-        const typeMsg = metaData.fixed_expiry_date ? `expires on ${metaData.fixed_expiry_date}` : `for ${metaData.subscription_months} months`;
+        const typeMsg = metaData.type === 'fixed' ? `expires on ${metaData.fixed_expiry_date}` : `for ${metaData.subscription_months} months`;
 
         if (!confirm(`Send invites to ${emails.length} users?\nAccess: ${typeMsg}`)) return;
 
@@ -200,16 +190,13 @@
         
         for (const email of emails) {
             try {
-                const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
-                    redirectTo: 'https://carloslplorusso.github.io/portalinbdepro/dashboard.html',
-                    data: metaData
-                });
-                if (error) throw error;
+                await callInviteEndpoint(email, metaData);
                 statusBox.innerText += `\n✅ Sent: ${email}`;
                 success++;
             } catch (err) {
                 statusBox.innerText += `\n❌ Error (${email}): ${err.message}`;
             }
+            // Pequeña pausa para evitar sobrecargar el Rate Limiting
             await new Promise(r => setTimeout(r, 100));
         }
         alert(`Done! ${success} invites sent.`);
