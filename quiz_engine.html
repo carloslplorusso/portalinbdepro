@@ -20,7 +20,6 @@
 
         /* ================================================================= */
         /* === ESTILOS MODO PRÁCTICA (DARK / STANDALONE) === */
-        /* Copiado y adaptado de MODO_PRACTICA_DARK_LISTO.html */
         /* ================================================================= */
         body.mode-practice {
             background-color: #050505;
@@ -83,7 +82,6 @@
 
         /* ================================================================= */
         /* === ESTILOS MODO SIMULACIÓN (LIGHT / ITEMSETS) === */
-        /* Copiado y adaptado de modo_simulacion_listo.html */
         /* ================================================================= */
         body.mode-simulation {
             background-color: #f2f2f2;
@@ -334,8 +332,10 @@
         const mode = urlParams.get('mode') || 'practice'; 
         const count = parseInt(urlParams.get('count')) || 10;
         
-        // Determina si es simulación basado en 'simulation' o 'itemsets'
-        const isSimulation = (mode === 'simulation' || mode === 'itemsets');
+        // CORRECCIÓN REALIZADA AQUÍ:
+        // Ahora acepta cualquier modo que contenga la palabra 'simulation',
+        // cubriendo así 'simulation', 'simulation_standard', 'itemsets', etc.
+        const isSimulation = (mode.includes('simulation') || mode === 'itemsets');
 
         let quizData = [];
         let currentIndex = 0;
