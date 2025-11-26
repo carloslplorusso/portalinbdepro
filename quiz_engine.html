@@ -1,94 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>INBDE Pro Engine</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        /* Base Reset */
-        body { margin: 0; font-family: 'Inter', sans-serif; overflow: hidden; }
-        .hidden { display: none !important; }
-        
-        /* --- MODO SIMULACIÓN (LIGHT) --- */
-        body.sim-mode { background-color: #f0f0f0; color: #333; }
-        body.sim-mode .inbde-header { background: #0060a9; color: white; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
-        body.sim-mode .inbde-footer { background: linear-gradient(to bottom, #0060a9 0%, #004b8d 100%); height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: fixed; bottom: 0; width: 100%; }
-        body.sim-mode #main-container { display: flex; height: calc(100vh - 120px); margin-top: 0; }
-        body.sim-mode #left-panel { width: 40%; background: white; border-right: 1px solid #ccc; padding: 15px; overflow-y: auto; }
-        body.sim-mode #right-panel { width: 60%; background: white; padding: 20px; overflow-y: auto; }
-        body.sim-mode .btn-glossy { background: linear-gradient(#4c96d7, #1a6cb0); color: white; border: 1px solid #0d4e85; padding: 8px 20px; font-weight: bold; cursor: pointer; }
-        body.sim-mode .option-row { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; }
-        body.sim-mode .option-row:hover { background: #f9f9f9; }
-        body.sim-mode .option-row.selected { background: #dceefb; border-color: #0060a9; }
-        body.sim-mode .mark-btn.active { background: #facc15; color: black; border-color: #eab308; }
-
-        /* --- MODO PRÁCTICA (DARK) --- */
-        body.practice-mode { background-color: #000; color: #fff; background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%); }
-        body.practice-mode .inbde-header, body.practice-mode .inbde-footer { display: none; }
-        
-       body.practice-mode #main-container { 
-    max-width: 800px; 
-    margin: 0 auto; 
-    /* CAMBIO 1: Usamos min-height para que pueda crecer */
-    min-height: 100vh; 
-    /* CAMBIO 2: Usamos display: block para evitar conflictos de Flexbox con el scroll */
-    display: block; 
-    /* Quitamos flex-direction: column; ya que no se necesita con display: block */
-    padding: 20px; 
-    
-    /* FIX: Habilitar Scroll para Preguntas Largas en Móviles */
-    overflow-y: auto; 
-    -webkit-overflow-scrolling: touch; 
-}
-
-        /* COMMON UTILS */
-        .review-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 50; display: none; justify-content: center; align-items: center; }
-        .review-content { background: white; width: 80%; max-height: 80vh; overflow-y: auto; padding: 20px; border-radius: 8px; }
-        .q-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 10px; margin-top: 20px; }
-        .q-box { width: 40px; height: 40px; border: 1px solid #ccc; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 0.8rem; }
-        .q-box.answered { background: #dceefb; }
-        .q-box.marked { border: 2px solid #facc15; font-weight: bold; }
-        .q-box.current { border: 2px solid #0060a9; }
-
-        /* RESULT SCREEN & PIE CHART */
-        .result-container { padding: 30px; text-align: center; border-radius: 20px; margin: 20px auto; max-width: 800px; overflow-y: auto; max-height: 90vh; }
-        /* Estilo específico para resultados dark */
-        body.practice-mode .result-container { background: #121214; color: white; border: 1px solid #333; }
-        /* Estilo específico para resultados light */
-        body.sim-mode .result-container { background: white; color: #333; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-
-        .pie-chart {
-            width: 180px; height: 180px; border-radius: 50%; margin: 20px auto;
-            position: relative;
-            box-shadow: 0 0 20px rgba(0,0,0,0.3);
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INBDE Pro Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Base Reset */
+        body { margin: 0; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .hidden { display: none !important; }
         
-        /* ESTILOS DE FEEDBACK VISUAL (CORRECTAMENTE POSICIONADOS) */
+        /* --- MODO SIMULACIÓN (LIGHT) --- */
+        body.sim-mode { background-color: #f0f0f0; color: #333; }
+        body.sim-mode .inbde-header { background: #0060a9; color: white; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        body.sim-mode .inbde-footer { background: linear-gradient(to bottom, #0060a9 0%, #004b8d 100%); height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: fixed; bottom: 0; width: 100%; }
+        body.sim-mode #main-container { display: flex; height: calc(100vh - 120px); margin-top: 0; }
+        body.sim-mode #left-panel { width: 40%; background: white; border-right: 1px solid #ccc; padding: 15px; overflow-y: auto; }
+        body.sim-mode #right-panel { width: 60%; background: white; padding: 20px; overflow-y: auto; }
+        body.sim-mode .btn-glossy { background: linear-gradient(#4c96d7, #1a6cb0); color: white; border: 1px solid #0d4e85; padding: 8px 20px; font-weight: bold; cursor: pointer; }
+        body.sim-mode .option-row { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; }
+        body.sim-mode .option-row:hover { background: #f9f9f9; }
+        body.sim-mode .option-row.selected { background: #dceefb; border-color: #0060a9; }
+        body.sim-mode .mark-btn.active { background: #facc15; color: black; border-color: #eab308; }
+
+        /* --- MODO PRÁCTICA (DARK) --- */
+        body.practice-mode { background-color: #000; color: #fff; background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%); }
+        body.practice-mode .inbde-header, body.practice-mode .inbde-footer { display: none; }
+        
+        body.practice-mode #main-container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            /* MODIFICACIÓN: Usamos min-height y display: block para scroll en móvil */
+            min-height: 100vh; 
+            display: block; 
+            padding: 20px; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; 
+        }
+
+        body.practice-mode #left-panel { display: none; }
+        body.practice-mode #right-panel { width: 100%; background: transparent; }
+
+        /* COMMON UTILS */
+        .review-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 50; display: none; justify-content: center; align-items: center; }
+        .review-content { background: white; width: 80%; max-height: 80vh; overflow-y: auto; padding: 20px; border-radius: 8px; }
+        .q-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 10px; margin-top: 20px; }
+        .q-box { width: 40px; height: 40px; border: 1px solid #ccc; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 0.8rem; }
+        .q-box.answered { background: #dceefb; }
+        .q-box.marked { border: 2px solid #facc15; font-weight: bold; }
+        .q-box.current { border: 2px solid #0060a9; }
+
+        /* ESTILOS DE FEEDBACK VISUAL AÑADIDOS */
         .option-row .custom-radio {
             width: 20px; 
             height: 20px; 
             border-radius: 50%; 
             border: 2px solid #555; 
             margin-right: 15px; 
-            min-width: 20px; /* Evita que el flexbox lo encoja */
+            min-width: 20px;
         }
-        
-        /* Estilo para la respuesta correcta (verde) */
         .option-row.correct-immediate {
-            background: rgba(34, 197, 94, 0.1); /* bg-green-500/10 */
+            background: rgba(34, 197, 94, 0.1); 
             border-color: #22c55e;
         }
         .option-row.correct-immediate .custom-radio {
             background-color: #22c55e;
             border-color: #22c55e;
         }
-        
-        /* Estilo para la respuesta incorrecta (rojo) */
         .option-row.wrong-immediate {
-            background: rgba(239, 68, 68, 0.1); /* bg-red-500/10 */
+            background: rgba(239, 68, 68, 0.1); 
             border-color: #ef4444;
         }
         .option-row.wrong-immediate .custom-radio {
@@ -97,87 +79,441 @@
         }
         /* FIN ESTILOS DE FEEDBACK VISUAL */
 
-        /* El centro del donut */
-        .pie-chart::after {
-            content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 120px; height: 120px; background: #121214; border-radius: 50%;
-        }
-        body.sim-mode .pie-chart::after { background: white; }
+        /* RESULT SCREEN & PIE CHART */
+        .result-container { padding: 30px; text-align: center; border-radius: 20px; margin: 20px auto; max-width: 800px; overflow-y: auto; max-height: 90vh; }
+        /* Estilo específico para resultados dark */
+        body.practice-mode .result-container { background: #121214; color: white; border: 1px solid #333; }
+        /* Estilo específico para resultados light */
+        body.sim-mode .result-container { background: white; color: #333; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
 
-        .stat-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin: 5px; }
-        .bg-red-custom { background: #ef4444; color: white; }
-        .bg-yellow-custom { background: #facc15; color: black; }
-        .bg-green-custom { background: #22c55e; color: black; }
+        .pie-chart {
+            width: 180px; height: 180px; border-radius: 50%; margin: 20px auto;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+        /* El centro del donut */
+        .pie-chart::after {
+            content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 120px; height: 120px; background: #121214; border-radius: 50%;
+        }
+        body.sim-mode .pie-chart::after { background: white; }
 
-        /* SIMULATION LIST STYLES */
-        .sim-review-item { text-align: left; border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
-        .sim-review-item:last-child { border: none; }
-        .sim-review-q { font-weight: 600; margin-bottom: 5px; }
-        
-        .ai-btn { background: linear-gradient(45deg, #7c3aed, #db2777); color: white; border: none; padding: 6px 16px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: transform 0.2s; font-weight: 600; }
-        .ai-btn:hover { transform: scale(1.05); }
+        .stat-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin: 5px; }
+        .bg-red-custom { background: #ef4444; color: white; }
+        .bg-yellow-custom { background: #facc15; color: black; }
+        .bg-green-custom { background: #22c55e; color: black; }
 
-        /* STATUS BUTTONS */
-        .feedback-area { margin-top: 20px; padding-top: 20px; border-top: 1px solid #333; display: none; animation: fadeIn 0.3s ease; }
-        .status-btn-container { display: flex; gap: 10px; margin-top: 15px; justify-content: center; }
-        .btn-status { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 800; color: #000; cursor: pointer; text-transform: uppercase; font-size: 0.8rem; transition: transform 0.2s; opacity: 0.9; }
-        .btn-status:hover { transform: scale(1.05); opacity: 1; }
-        .btn-learning { background-color: #ef4444; color: white; }
-        .btn-reviewing { background-color: #facc15; color: black; }
-        .btn-mastered { background-color: #22c55e; color: black; }
-        .instruction-text { text-align: center; color: #aaa; font-size: 0.8rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        /* SIMULATION LIST STYLES */
+        .sim-review-item { text-align: left; border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
+        .sim-review-item:last-child { border: none; }
+        .sim-review-q { font-weight: 600; margin-bottom: 5px; }
+        
+        .ai-btn { background: linear-gradient(45deg, #7c3aed, #db2777); color: white; border: none; padding: 6px 16px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: transform 0.2s; font-weight: 600; }
+        .ai-btn:hover { transform: scale(1.05); }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+        /* STATUS BUTTONS */
+        .feedback-area { margin-top: 20px; padding-top: 20px; border-top: 1px solid #333; display: none; animation: fadeIn 0.3s ease; }
+        .status-btn-container { display: flex; gap: 10px; margin-top: 15px; justify-content: center; }
+        .btn-status { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 800; color: #000; cursor: pointer; text-transform: uppercase; font-size: 0.8rem; transition: transform 0.2s; opacity: 0.9; }
+        .btn-status:hover { transform: scale(1.05); opacity: 1; }
+        .btn-learning { background-color: #ef4444; color: white; }
+        .btn-reviewing { background-color: #facc15; color: black; }
+        .btn-mastered { background-color: #22c55e; color: black; }
+        .instruction-text { text-align: center; color: #aaa; font-size: 0.8rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
 <body>
 
-    <header class="inbde-header">
-        <div style="width: 200px;">Question <span id="q-current">1</span> of <span id="q-total">--</span></div>
-        <div class="font-bold text-center flex-1">INBDE Simulation</div>
-        <div style="width: 200px; text-align: right;">Time: <span id="timer-display">--:--</span></div>
-    </header>
+    <header class="inbde-header">
+        <div style="width: 200px;">Question <span id="q-current">1</span> of <span id="q-total">--</span></div>
+        <div class="font-bold text-center flex-1">INBDE Simulation</div>
+        <div style="width: 200px; text-align: right;">Time: <span id="timer-display">--:--</span></div>
+    </header>
 
-    <div id="main-container">
-        <div id="left-panel">
-            <h3 class="font-bold border-b mb-2">Patient Profile</h3>
-            <div id="patient-info">Loading case...</div>
-        </div>
+    <div id="main-container">
+        <div id="left-panel">
+            <h3 class="font-bold border-b mb-2">Patient Profile</h3>
+            <div id="patient-info">Loading case...</div>
+        </div>
 
-        <div id="right-panel">
-            <div id="quiz-content">
-                <p id="question-text" class="text-lg font-semibold mb-6">Loading Question...</p>
-                <div id="options-container"></div>
+        <div id="right-panel">
+            <div id="quiz-content">
+                <p id="question-text" class="text-lg font-semibold mb-6">Loading Question...</p>
+                <div id="options-container"></div>
 
-                <div id="feedback-area" class="feedback-area">
-                    <button id="btn-explain" class="ai-btn w-full mb-4 justify-center" onclick="triggerAIExplanation()">
-                        ✨ Explain with AI
-                    </button>
-                    <div id="ai-explanation-box" class="ai-response mt-2 text-gray-300 text-sm hidden p-3 bg-gray-800 rounded mb-4"></div>
+                <div id="feedback-area" class="feedback-area">
+                    <button id="btn-explain" class="ai-btn w-full mb-4 justify-center" onclick="triggerAIExplanation()">
+                        ✨ Explain with AI
+                    </button>
+                    <div id="ai-explanation-box" class="ai-response mt-2 text-gray-300 text-sm hidden p-3 bg-gray-800 rounded mb-4"></div>
 
-                    <p class="instruction-text">Self-Assessment: How confident are you?</p>
-                    <div class="status-btn-container">
-                        <button class="btn-status btn-learning" onclick="handleStatus('learning')">Learning</button>
-                        <button class="btn-status btn-reviewing" onclick="handleStatus('reviewing')">Reviewing</button>
-                        <button class="btn-status btn-mastered" onclick="handleStatus('mastered')">Mastered</button>
-                    </div>
-                </div>
-            </div>
+                    <p class="instruction-text">Self-Assessment: How confident are you?</p>
+                    <div class="status-btn-container">
+                        <button class="btn-status btn-learning" onclick="handleStatus('learning')">Learning</button>
+                        <button class="btn-status btn-reviewing" onclick="handleStatus('reviewing')">Reviewing</button>
+                        <button class="btn-status btn-mastered" onclick="handleStatus('mastered')">Mastered</button>
+                    </div>
+                </div>
+            </div>
 
-            <div id="result-screen" class="hidden result-container"></div>
-        </div>
-    </div>
+            <div id="result-screen" class="hidden result-container"></div>
+        </div>
+    </div>
 
-    <footer class="inbde-footer">
-        <button class="btn-glossy" onclick="prevQuestion()">Previous</button>
-        <button class="btn-glossy mark-btn" id="btn-mark" onclick="toggleMark()">Mark</button>
-        <button class="btn-glossy" onclick="openReviewModal()">Review (List)</button>
-        <button class="btn-glossy" onclick="nextQuestion()">Next</button>
-    </footer>
+    <footer class="inbde-footer">
+        <button class="btn-glossy" onclick="prevQuestion()">Previous</button>
+        <button class="btn-glossy mark-btn" id="btn-mark" onclick="toggleMark()">Mark</button>
+        <button class="btn-glossy" onclick="openReviewModal()">Review (List)</button>
+        <button class="btn-glossy" onclick="nextQuestion()">Next</button>
+    </footer>
 
-    <div id="review-modal" class="review-modal">
-        <div class="review-content">
-            <h2 class="text-xl font-bold text-black">Question Status</h2>
-            <div class="q-grid" id="review-grid"></div>
-            <div class="flex justify-end gap-4 mt-6">
-                <button class="px-4 py-2 bg-gray-200 rounded text-black" onclick="close
+    <div id="review-modal" class="review-modal">
+        <div class="review-content">
+            <h2 class="text-xl font-bold text-black">Question Status</h2>
+            <div class="q-grid" id="review-grid"></div>
+            <div class="flex justify-end gap-4 mt-6">
+                <button class="px-4 py-2 bg-gray-200 rounded text-black" onclick="closeReviewModal()">Keep Working</button>
+                <button class="px-4 py-2 bg-red-600 text-white rounded font-bold" onclick="finishQuiz()">FINISH EXAM</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIG ---
+        const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
+        
+        // CLAVE ELIMINADA POR SEGURIDAD. AÑADIMOS EL ENDPOINT SEGURO.
+        // const GEMINI_API_KEY = "AIzaSyCGdQ_3ZkPdqdtvM4TRa59t14ZxqDlxxlY";
+        const GEMINI_PROXY_URL = 'https://arumiloijqsxthlswojt.supabase.co/functions/v1/gemini-proxy';
+
+        const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- STATE ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode') || 'practice'; 
+        const count = parseInt(urlParams.get('count')) || 10;
+        const isSimulationMode = (mode.includes('simulation') || mode === 'itemsets');
+
+        let quizData = [];
+        let currentIndex = 0;
+        let markedQuestions = new Set();
+        let userAnswers = {}; 
+        let userStatusCounts = { learning: 0, reviewing: 0, mastered: 0 }; 
+        let timerInterval;
+        let secondsLeft = 0;
+        let isAnswered = false;
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            setupUI();
+            await loadQuestions();
+            if(isSimulationMode) startSimulationTimer();
+        });
+
+        function setupUI() {
+            const body = document.body;
+            if (isSimulationMode) {
+                body.classList.add('sim-mode');
+                secondsLeft = Math.round(count * 1.2 * 60); 
+            } else {
+                body.classList.add('practice-mode');
+            }
+        }
+
+        async function loadQuestions() {
+            const { data, error } = await _supabase.from('questions_bank').select('*').limit(count);
+            
+            if(error || !data || data.length === 0) {
+                console.log("Using fallback data.");
+                quizData = Array.from({length: count}, (_, i) => ({
+                    id: i, 
+                    question_text: `Question ${i+1}: What is the likely diagnosis for a radiolucency in the posterior mandible?`,
+                    option_a: "Ameloblastoma", option_b: "Dentigerous Cyst", option_c: "OKC", option_d: "Radicular Cyst",
+                    correct_answer: "OKC",
+                    explanation: "OKCs are known for posterior mandible location and high recurrence rates."
+                }));
+            } else {
+                quizData = data;
+            }
+            document.getElementById('q-total').innerText = quizData.length;
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            isAnswered = false;
+            const q = quizData[currentIndex];
+            
+            document.getElementById('feedback-area').style.display = 'none';
+            const aiBox = document.getElementById('ai-explanation-box');
+            aiBox.classList.add('hidden');
+            aiBox.innerHTML = '';
+            
+            document.getElementById('q-current').innerText = currentIndex + 1;
+            document.getElementById('question-text').innerText = q.question_text;
+            document.getElementById('patient-info').innerText = "Patient: Adult\nHistory: Routine exam.\nFindings: Asymptomatic.";
+            
+            const opts = document.getElementById('options-container');
+            opts.innerHTML = '';
+
+            ['option_a', 'option_b', 'option_c', 'option_d'].forEach(optKey => {
+                const optVal = q[optKey];
+                if(!optVal) return; 
+
+                const div = document.createElement('div');
+                div.className = 'option-row';
+                if (isSimulationMode && userAnswers[q.id] === optVal) {
+                    div.classList.add('selected');
+                }
+                div.innerHTML = `<div class="custom-radio"></div> ${optVal}`;
+                div.onclick = () => checkAnswer(q, optVal, div);
+                opts.appendChild(div);
+            });
+
+            const markBtn = document.getElementById('btn-mark');
+            if(markBtn) {
+                if (markedQuestions.has(currentIndex)) markBtn.classList.add('active');
+                else markBtn.classList.remove('active');
+            }
+        }
+
+        function checkAnswer(questionObj, selectedVal, element) {
+            if (isSimulationMode) {
+                userAnswers[questionObj.id] = selectedVal;
+                document.querySelectorAll('.option-row').forEach(r => r.classList.remove('selected'));
+                element.classList.add('selected');
+                return; 
+            }
+
+            if (isAnswered) return;
+            isAnswered = true;
+            userAnswers[questionObj.id] = selectedVal;
+
+            const correctVal = questionObj.correct_answer;
+            document.querySelectorAll('.option-row').forEach(div => {
+                div.style.cursor = 'default';
+                if (div.innerText.trim().includes(correctVal)) div.classList.add('correct-immediate');
+                if (div === element && !div.innerText.trim().includes(correctVal)) div.classList.add('wrong-immediate');
+            });
+
+            document.getElementById('feedback-area').style.display = 'block';
+            document.getElementById('feedback-area').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function handleStatus(status) {
+            userStatusCounts[status]++;
+            const qId = quizData[currentIndex].id;
+            saveStatusToSupabase(qId, status);
+
+            if (currentIndex < quizData.length - 1) {
+                currentIndex++;
+                renderQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        async function saveStatusToSupabase(questionId, status) {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) return;
+            const { error } = await _supabase.from('user_progress').insert([
+                { user_id: session.user.id, question_id: questionId, status: status, quiz_mode: mode, timestamp: new Date() }
+            ]);
+            if(error) console.warn("Supabase save error:", error);
+        }
+
+        function nextQuestion() {
+            if(currentIndex < quizData.length - 1) { currentIndex++; renderQuestion(); } else { finishQuiz(); }
+        }
+        function prevQuestion() {
+            if(currentIndex > 0) { currentIndex--; renderQuestion(); }
+        }
+        function toggleMark() {
+            if(markedQuestions.has(currentIndex)) markedQuestions.delete(currentIndex);
+            else markedQuestions.add(currentIndex);
+            renderQuestion(); 
+        }
+
+        function finishQuiz() {
+            if(timerInterval) clearInterval(timerInterval);
+            document.querySelector('.inbde-header').classList.add('hidden');
+            document.querySelector('.inbde-footer').classList.add('hidden');
+            document.getElementById('left-panel').classList.add('hidden');
+            document.getElementById('quiz-content').classList.add('hidden');
+            document.getElementById('review-modal').style.display = 'none';
+            
+            const mainContainer = document.getElementById('main-container');
+            mainContainer.style.display = 'block';
+            mainContainer.style.height = 'auto';
+            mainContainer.style.overflowY = 'auto';
+            document.getElementById('right-panel').style.width = '100%';
+            
+            let correctCount = 0;
+            quizData.forEach(q => { if(userAnswers[q.id] === q.correct_answer) correctCount++; });
+            const scorePct = Math.round((correctCount / quizData.length) * 100);
+            const incorrectCount = quizData.length - correctCount;
+
+            const resultScreen = document.getElementById('result-screen');
+            resultScreen.classList.remove('hidden');
+
+            if (isSimulationMode) {
+                let listHTML = quizData.map((q, idx) => {
+                    const isCorrect = userAnswers[q.id] === q.correct_answer;
+                    const colorClass = isCorrect ? 'text-green-600' : 'text-red-600';
+                    const icon = isCorrect ? '✓' : '✕';
+                    return `
+                        <div class="sim-review-item">
+                            <div style="flex:1;">
+                                <div class="sim-review-q"><span class="${colorClass} font-bold mr-2">${icon} Q${idx+1}:</span> ${q.question_text}</div>
+                                <div class="text-sm text-gray-500">Correct Answer: ${q.correct_answer}</div>
+                            </div>
+                            <button class="ai-btn ml-4" onclick="askGeminiInList(this, '${q.question_text.replace(/'/g, "\\'")}', '${q.correct_answer.replace(/'/g, "\\'")}')">✨ Explain This</button>
+                            <div class="ai-response hidden w-full mt-2 p-2 bg-gray-100 rounded text-sm"></div>
+                        </div>`;
+                }).join('');
+
+                resultScreen.innerHTML = `
+                    <h1 class="text-3xl font-bold mb-2 text-blue-800">Results</h1>
+                    <div class="flex justify-around mb-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                        <div class="text-center"><div class="text-4xl font-bold text-green-600">${correctCount}</div><div class="text-xs uppercase text-gray-500">Correct</div></div>
+                        <div class="text-center"><div class="text-4xl font-bold text-red-500">${incorrectCount}</div><div class="text-xs uppercase text-gray-500">Incorrect</div></div>
+                        <div class="text-center"><div class="text-4xl font-bold text-blue-600">${scorePct}%</div><div class="text-xs uppercase text-gray-500">Score</div></div>
+                    </div>
+                    <h3 class="text-left font-bold text-xl mb-4 border-b pb-2">Detailed Review</h3>
+                    <div class="space-y-2">${listHTML}</div>
+                    <button onclick="goBackToHome()" class="mt-8 w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700">RETURN TO DASHBOARD</button>
+                `;
+            } else {
+                // Practice Mode Results logic...
+                const totalStatus = userStatusCounts.learning + userStatusCounts.reviewing + userStatusCounts.mastered;
+                const safeTotal = totalStatus || 1;
+                const pctRed = (userStatusCounts.learning / safeTotal) * 100;
+                const pctYellow = (userStatusCounts.reviewing / safeTotal) * 100;
+                const chartStyle = `background: conic-gradient(#ef4444 0% ${pctRed}%, #facc15 ${pctRed}% ${pctRed + pctYellow}%, #22c55e ${pctRed + pctYellow}% 100%);`;
+                resultScreen.innerHTML = `
+                    <h1 class="text-3xl font-bold mb-2 text-yellow-400">Practice Complete</h1>
+                    <div class="flex justify-center gap-6 mb-8">
+                        <div class="text-center bg-gray-800 p-3 rounded-lg w-24"><div class="text-3xl font-bold text-green-500">${correctCount}</div><div class="text-[10px] uppercase text-gray-400">Correct</div></div>
+                        <div class="text-center bg-gray-800 p-3 rounded-lg w-24"><div class="text-3xl font-bold text-red-500">${incorrectCount}</div><div class="text-[10px] uppercase text-gray-400">Incorrect</div></div>
+                        <div class="text-center bg-gray-800 p-3 rounded-lg w-24 border border-yellow-500"><div class="text-3xl font-bold text-yellow-400">${scorePct}%</div><div class="text-[10px] uppercase text-gray-400">Score</div></div>
+                    </div>
+                    <div class="bg-gray-900 p-6 rounded-xl border border-gray-700 mb-8">
+                        <h3 class="text-white font-bold mb-4 uppercase text-sm tracking-wider">Confidence Breakdown</h3>
+                        <div class="pie-chart" style="${chartStyle}"></div>
+                        <div class="flex justify-center gap-4 mt-4">
+                            <span class="stat-badge bg-red-custom">Learning: ${userStatusCounts.learning}</span>
+                            <span class="stat-badge bg-yellow-custom">Reviewing: ${userStatusCounts.reviewing}</span>
+                            <span class="stat-badge bg-green-custom">Mastered: ${userStatusCounts.mastered}</span>
+                        </div>
+                    </div>
+                    <button onclick="goBackToHome()" class="w-full bg-yellow-400 text-black font-bold py-3 rounded-lg hover:bg-yellow-300 transition-transform transform hover:scale-105">BACK TO DASHBOARD</button>
+                `;
+            }
+        }
+
+        // --- AI HELPERS (FINAL CORRECTIONS) ---
+        async function triggerAIExplanation() {
+            const q = quizData[currentIndex];
+            const box = document.getElementById('ai-explanation-box');
+            box.classList.remove('hidden');
+            box.innerHTML = '<span class="text-yellow-400">🤖 AI is thinking...</span>';
+            
+            if(q.explanation && q.explanation.trim() !== "") {
+                box.innerHTML = `<strong>Rationale (DB):</strong><br>${q.explanation}`;
+            } else {
+                askGemini(document.getElementById('btn-explain'), q.question_text, q.correct_answer);
+            }
+        }
+
+        async function askGeminiInList(btn, qText, correct) {
+            const itemDiv = btn.closest('.sim-review-item');
+            const outputDiv = itemDiv.querySelector('.ai-response'); 
+            outputDiv.classList.remove('hidden');
+            outputDiv.innerHTML = '<span class="text-blue-600">🤖 AI is analyzing...</span>';
+            
+            const prompt = `Explain briefly why "${correct}" is the correct answer for this dental question: "${qText}".`;
+            
+            try {
+                // LLAMADA SEGURA AL PROXY: Usa GEMINI_PROXY_URL
+                const response = await fetch(GEMINI_PROXY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Proxy call failed with status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const text = data.candidates[0].content.parts[0].text;
+                outputDiv.innerHTML = `<div class="p-3 bg-blue-50 rounded border border-blue-100 text-sm text-gray-700"><strong>AI Explanation:</strong><br>${text.replace(/\*\*/g, '').replace(/\n/g, '<br>')}</div>`;
+            } catch(e) {
+                console.error(e);
+                outputDiv.innerHTML = '<span class="text-red-500">Error al contactar el servicio de IA seguro (Proxy).</span>';
+            }
+        }
+
+        async function askGemini(btn, qText, correct) {
+            const box = document.getElementById('ai-explanation-box');
+            const prompt = `Explain concisely why "${correct}" is the correct answer for: "${qText}".`;
+            
+            try {
+                // LLAMADA SEGURA AL PROXY: Usa GEMINI_PROXY_URL
+                const response = await fetch(GEMINI_PROXY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Proxy call failed with status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const text = data.candidates[0].content.parts[0].text;
+                box.innerHTML = text.replace(/\*\*/g, '<strong>').replace(/\*/g, '').replace(/\n/g, '<br>');
+            } catch(e) {
+                console.error(e);
+                box.innerHTML = "<span style='color:red'>Error al contactar el servicio de IA seguro (Proxy).</span>";
+            }
+        }
+
+        function startSimulationTimer() {
+            timerInterval = setInterval(() => {
+                if(secondsLeft <= 0) { finishQuiz(); } 
+                else {
+                    secondsLeft--;
+                    const m = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
+                    const s = (secondsLeft % 60).toString().padStart(2, '0');
+                    document.getElementById('timer-display').innerText = `${m}:${s}`;
+                }
+            }, 1000);
+        }
+
+        function openReviewModal() {
+            const grid = document.getElementById('review-grid');
+            grid.innerHTML = '';
+            quizData.forEach((q, idx) => {
+                const box = document.createElement('div');
+                box.className = 'q-box';
+                box.innerText = idx + 1;
+                if(userAnswers[q.id]) box.classList.add('answered');
+                if(markedQuestions.has(idx)) box.classList.add('marked');
+                if(idx === currentIndex) box.classList.add('current');
+                box.onclick = () => { currentIndex = idx; renderQuestion(); closeReviewModal(); };
+                grid.appendChild(box);
+            });
+            document.getElementById('review-modal').style.display = 'flex';
+        }
+        function closeReviewModal() { document.getElementById('review-modal').style.display = 'none'; }
+
+        function goBackToHome() {
+            if(window.innerWidth <= 768) window.location.href = 'mobile.html';
+            else window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>
