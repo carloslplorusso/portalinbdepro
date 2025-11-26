@@ -9,7 +9,6 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // --- FUNCIONES Y VARIABLES GLOBALES ---
 
 // 1. VARIABLE GLOBAL PARA EL MODO (NUEVO)
-// Esta variable recordará qué botón pulsó el usuario (Standalone, Item Sets, Simulation, etc.)
 let currentSelectionMode = 'practice';
 
 // 2. FUNCIÓN PARA EL DAILY RUN
@@ -382,10 +381,10 @@ async function saveNote() {
         return;
     }
     
-    // --- LÓGICA DE PERSISTENCIA MIGRADA A SUPABASE ---
+    // --- LÓGICA DE PERSISTENCIA MIGRADA A SUPABASE (USANDO 'content') ---
     const { error } = await _supabase
         .from('user_notes')
-        .insert({ user_id: userId, content: text }); // <-- CORREGIDO: Usar 'content' en lugar de 'text'
+        .insert({ user_id: userId, content: text });
         
     if (error) {
         console.error('Error saving note to Supabase:', error);
@@ -408,10 +407,9 @@ async function loadNotes() {
         return;
     }
     
-    // --- LÓGICA DE CARGA MIGRADA DE LOCALSTORAGE A SUPABASE ---
+    // --- LÓGICA DE CARGA MIGRADA DE LOCALSTORAGE A SUPABASE (USANDO 'content') ---
     const { data: notes, error } = await _supabase
         .from('user_notes')
-        // CORREGIDO: Seleccionar la columna 'content' para coincidir con la inserción y la DB
         .select('content, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -467,8 +465,11 @@ async function callGemini() {
         outputEl.innerHTML = `
             <strong>AI Result:</strong><br>
             I found 3 relevant questions related to "<em>${inputEl.value}</em>".<br><br>
-            <button class="btn-start" onclick="startQuizEngine('ai_generated')" style="padding:5px 10px; font-size:0.8rem;">Start Generated Quiz</button>
+            <button class="btn-start" id="btn-start-ai-quiz" style="padding:5px 10px; font-size:0.8rem;">Start Generated Quiz</button>
         `;
+        // Adquirir el nuevo botón del DOM después de ser renderizado
+        document.getElementById('btn-start-ai-quiz')?.addEventListener('click', () => startQuizEngine('ai_generated'));
+
     }, 1500);
 }
 
@@ -477,6 +478,7 @@ async function callGemini() {
 let pomoInterval;
 let pomoTime = 25 * 60; 
 let isPomoRunning = false;
+let pMode = 'classic'; 
 
 function openPomodoroSession() {
     switchView('pomodoro-timer-view');
@@ -517,7 +519,7 @@ function toggleTimer() {
 function resetPomo() {
     clearInterval(pomoInterval);
     isPomoRunning = false;
-    pomoTime = 25 * 60;
+    pomoTime = pMode === 'classic' ? 25 * 60 : 50 * 60;
     updatePomoDisplay();
     const btn = document.getElementById('play-icon');
     if(btn) btn.innerText = "▶";
@@ -533,3 +535,120 @@ async function logout() {
         window.location.href = 'index.html';
     }
 }
+
+// --- LOGIC DE FECHA Y TIMER (MOVIDA DE MOCKUP.HTML) ---
+function initCountdown() {
+    const storedDate = localStorage.getItem('examDate');
+    if (storedDate) {
+        updateDaysLeft(storedDate);
+    } else {
+        document.getElementById('date-setup-modal')?.classList.add('active');
+    }
+}
+
+function saveExamDate() {
+    const dateInput = document.getElementById('exam-date-input');
+    const dateVal = dateInput?.value;
+    if (!dateVal) return alert("Please select a date.");
+    localStorage.setItem('examDate', dateVal);
+    document.getElementById('date-setup-modal')?.classList.remove('active');
+    updateDaysLeft(dateVal);
+}
+
+function updateDaysLeft(dateString) {
+    const target = new Date(dateString);
+    const today = new Date();
+    const diffTime = target - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    const display = diffDays > 0 ? `${diffDays} Days Left` : "Exam Day!";
+    const countdownValue = document.getElementById('countdown-value');
+    if (countdownValue) countdownValue.innerText = display;
+}
+
+function openDateModal() {
+    document.getElementById('date-setup-modal')?.classList.add('active');
+}
+
+function setPomodoroMode(mode) {
+    pMode = mode;
+    console.log(`Pomodoro mode set to: ${mode}`);
+    resetPomo();
+}
+
+
+// --- EVENT LISTENERS (Non-Intrusive JS) ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Inicialización de contadores
+    renderMiniActivity();
+    initCountdown(); 
+
+    // 2. DASHBOARD & GLOBAL NAVIGATION BINDINGS (Desktop)
+    document.querySelector('.lab-title')?.addEventListener('click', goBackToDashboard);
+    document.getElementById('btn-logout-desktop')?.addEventListener('click', logout);
+    document.getElementById('countdown-badge')?.addEventListener('click', openDateModal);
+    document.getElementById('btn-daily-run')?.addEventListener('click', startDailyRun);
+    
+    // 3. MAIN CARDS (Desktop)
+    document.getElementById('card-notes-desktop')?.addEventListener('click', openNotesModal);
+    document.getElementById('card-ia-lab')?.addEventListener('click', () => openAIModal('ia_search'));
+    document.getElementById('card-learning-lab')?.addEventListener('click', showLearningLab);
+    document.getElementById('card-simulation-lab')?.addEventListener('click', showSimulationLab);
+    document.getElementById('card-pomodoro-lab')?.addEventListener('click', showPomodoro);
+    document.getElementById('card-activity-log')?.addEventListener('click', openActivityModal);
+    document.getElementById('btn-ia-lab-start')?.addEventListener('click', () => openAIModal('ia_search'));
+
+    // 4. MOBILE DASHBOARD BINDINGS (mobile.html)
+    document.getElementById('btn-logout-mobile-avatar')?.addEventListener('click', logout);
+    document.getElementById('card-mobile-study')?.addEventListener('click', showLearningLab);
+    document.getElementById('card-mobile-simulate')?.addEventListener('click', showSimulationLab);
+    document.getElementById('card-mobile-daily')?.addEventListener('click', startDailyRun);
+    document.getElementById('card-mobile-ia')?.addEventListener('click', () => openAIModal('ia_search'));
+    document.getElementById('nav-home-mobile')?.addEventListener('click', goBackToDashboard);
+    document.getElementById('nav-notes-mobile')?.addEventListener('click', openNotesModal);
+    document.getElementById('nav-profile-mobile')?.addEventListener('click', logout);
+    
+    // 5. LEARNING & SIMULATION VIEW BINDINGS
+    document.getElementById('btn-learn-standalone')?.addEventListener('click', () => openSelectionView('standalone'));
+    document.getElementById('btn-learn-itemsets')?.addEventListener('click', () => openSelectionView('itemsets'));
+    document.getElementById('btn-sim-customize')?.addEventListener('click', () => openSelectionView('simulation'));
+    document.getElementById('btn-sim-start')?.addEventListener('click', () => startQuizEngine('simulation_standard'));
+    
+    document.getElementById('btn-sim-customize-mobile')?.addEventListener('click', () => openSelectionView('simulation'));
+    document.getElementById('btn-sim-start-mobile')?.addEventListener('click', () => startQuizEngine('simulation_standard'));
+    
+    document.getElementById('btn-pomo-session')?.addEventListener('click', openPomodoroSession);
+
+
+    // 6. BACK BUTTONS & MODAL NAVIGATION
+    document.getElementById('btn-back-learning')?.addEventListener('click', goBackToDashboard);
+    document.getElementById('btn-back-simulation')?.addEventListener('click', goBackToDashboard);
+    document.getElementById('btn-back-pomodoro')?.addEventListener('click', goBackToDashboard);
+    document.getElementById('btn-back-learn-mobile')?.addEventListener('click', goBackToDashboard);
+    document.getElementById('btn-back-simulation-mobile')?.addEventListener('click', goBackToDashboard);
+    document.getElementById('btn-start-quiz-selection')?.addEventListener('click', openQuizSettings);
+    document.getElementById('btn-back-selection')?.addEventListener('click', goBackToLearning);
+    document.getElementById('btn-back-selection-mobile-cancel')?.addEventListener('click', goBackToDashboard); // Mobile cancel button 
+
+    // 7. MODAL ACTIONS (Settings & AI)
+    document.getElementById('btn-start-quiz-confirm')?.addEventListener('click', startQuiz);
+    document.getElementById('btn-close-quiz-settings')?.addEventListener('click', closeQuizSettings);
+    document.getElementById('btn-save-exam-date')?.addEventListener('click', saveExamDate);
+    
+    document.getElementById('btn-close-ai-modal')?.addEventListener('click', closeAIModal);
+    document.getElementById('btn-ai-submit')?.addEventListener('click', callGemini);
+    document.getElementById('btn-ai-submit-mobile')?.addEventListener('click', callGemini);
+
+
+    // 8. NOTES MODAL ACTIONS
+    document.getElementById('btn-save-note')?.addEventListener('click', saveNote);
+    document.getElementById('btn-close-notes-modal')?.addEventListener('click', closeNotesModal);
+
+    // 9. POMODORO TIMER CONTROLS
+    document.getElementById('btn-pomo-toggle')?.addEventListener('click', toggleTimer);
+    document.getElementById('btn-pomo-reset')?.addEventListener('click', resetPomo);
+    document.getElementById('btn-back-timer')?.addEventListener('click', goBackToPomodoro);
+    
+    // 10. ACTIVITY MODAL
+    document.getElementById('btn-close-activity-modal')?.addEventListener('click', closeActivityModal);
+
+});
