@@ -185,27 +185,27 @@
                 <div class="welcome-text">WELCOME</div>
                 <div class="brand-text">Doctor <span style="color:var(--accent);">Pro</span></div>
             </div>
-            <div class="user-avatar" onclick="logout()">👨‍⚕️</div>
+            <div class="user-avatar" id="btn-logout-mobile-avatar">👨‍⚕️</div>
         </header>
 
         <div id="dashboard-content" class="app-container fade-in">
             <div class="dashboard-grid">
-                <div class="square-card" onclick="showLearningLab()">
+                <div class="square-card" id="card-mobile-study">
                     <div class="icon">🧪</div>
                     <div class="label">Study</div>
                     <div class="sub">Deep Dive</div>
                 </div>
-                <div class="square-card" onclick="showSimulationLab()">
+                <div class="square-card" id="card-mobile-simulate">
                     <div class="icon">⚡</div>
                     <div class="label">Simulate</div>
                     <div class="sub">Exam Mode</div>
                 </div>
-                <div class="square-card" onclick="startDailyRun()">
+                <div class="square-card" id="card-mobile-daily">
                     <div class="icon">🔥</div>
                     <div class="label">Daily Run</div>
                     <div class="sub">10-Q Sprint</div> 
                 </div>
-                <div class="square-card" onclick="openAIModal('ia_search')">
+                <div class="square-card" id="card-mobile-ia">
                     <div class="icon">🤖</div>
                     <div class="label">IA Lab</div>
                     <div class="sub">Smart Search</div>
@@ -216,42 +216,42 @@
         <div id="learning-view" class="app-container hidden">
             <h2 style="color:white; margin:0 0 20px 0;">Study Mode</h2>
             <div class="learning-cards-row">
-                <div class="learning-card" onclick="openSelectionView('standalone')"><h3>🧠 Stand Alone</h3></div>
-                <div class="learning-card" onclick="openSelectionView('itemsets')"><h3>🔗 Item Sets</h3></div>
+                <div class="learning-card" id="btn-learn-standalone"><h3>🧠 Stand Alone</h3></div>
+                <div class="learning-card" id="btn-learn-itemsets"><h3>🔗 Item Sets</h3></div>
             </div>
-            <button class="btn-back-small" onclick="goBackToDashboard()">Back Home</button>
+            <button class="btn-back-small" id="btn-back-learn-mobile">Back Home</button>
         </div>
 
         <div id="simulation-view" class="app-container hidden">
             <h2 style="color:white; margin:0 0 20px 0;">Simulation Lab</h2>
             <div class="learning-cards-row">
-                <div class="learning-card" onclick="openSelectionView('simulation')"><h3>🛠️ Customize</h3></div>
-                <div class="learning-card" onclick="startQuizEngine('simulation_standard')"><h3>▶️ Standard Exam</h3></div>
+                <div class="learning-card" id="btn-sim-customize-mobile"><h3>🛠️ Customize</h3></div>
+                <div class="learning-card" id="btn-sim-start-mobile"><h3>▶️ Standard Exam</h3></div>
             </div>
-            <button class="btn-back-small" onclick="goBackToDashboard()">Back Home</button>
+            <button class="btn-back-small" id="btn-back-simulation-mobile">Back Home</button>
         </div>
 
         <div id="selection-view" class="app-container hidden">
             <h2 id="selection-mode-title" style="color:white;">Topics</h2>
             <div id="dynamic-cat-list" style="margin-bottom:20px;"></div> 
             
-            <button class="square-card" style="width:100%; aspect-ratio:auto; height:60px; flex-direction:row; margin-top:10px; border-radius:12px;" onclick="openQuizSettings()">
+            <button class="square-card" style="width:100%; aspect-ratio:auto; height:60px; flex-direction:row; margin-top:10px; border-radius:12px;" id="btn-start-quiz-selection">
                 <span style="font-weight:bold; color:white;">NEXT STEP →</span>
             </button>
-            <button class="btn-back-small" onclick="goBackToDashboard()">Cancel</button>
-        </div>
-
+            <button class="btn-back-small" id="btn-back-selection-mobile-cancel">Cancel</button>
+        </div
+        >
         <nav class="bottom-nav">
-            <a class="nav-item active" onclick="goBackToDashboard()">
+            <a class="nav-item active" id="nav-home-mobile">
                 <span class="nav-icon">🏠</span><span>Home</span>
             </a>
             <a href="stats.html" class="nav-item">
                 <span class="nav-icon">📊</span><span>Stats</span>
             </a>
-            <a class="nav-item" onclick="openNotesModal()">
+            <a class="nav-item" id="nav-notes-mobile">
                 <span class="nav-icon">📝</span><span>Notes</span>
             </a>
-            <a class="nav-item" onclick="logout()">
+            <a class="nav-item" id="nav-profile-mobile">
                 <span class="nav-icon">⚙️</span><span>Profile</span>
             </a>
         </nav>
@@ -260,7 +260,7 @@
 
     <div id="quiz-settings-modal" class="modal-overlay hidden">
         <div class="modal-content" style="text-align:center;">
-            <span class="close-btn" onclick="closeQuizSettings()">×</span>
+            <span class="close-btn" id="btn-close-quiz-settings">×</span>
             <h3>Quiz Settings</h3>
             <p style="color:#aaa; margin-bottom:10px;">Select number of questions:</p>
             <select id="quiz-count" style="width:100%; padding:15px; margin:10px 0 25px 0; background:#000; color:#fff; border:1px solid var(--accent); border-radius:8px; font-size:1.1rem;">
@@ -269,7 +269,7 @@
                 <option value="30">30 Questions</option>
                 <option value="50">50 Questions</option>
             </select>
-            <button class="btn-start" onclick="startQuiz()">START NOW</button>
+            <button class="btn-start" id="btn-start-quiz-confirm">START NOW</button>
         </div>
     </div>
 
@@ -278,12 +278,12 @@
             
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; color:white;">
                 <h3 style="margin:0; font-weight:800; font-size:1.2rem;">My Quick Notes</h3>
-                <span onclick="closeNotesModal()" style="cursor:pointer; font-size:1.8rem; color:#666;">&times;</span>
+                <span id="btn-close-notes-modal" style="cursor:pointer; font-size:1.8rem; color:#666;">&times;</span>
             </div>
 
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <input id="new-note-input" type="text" placeholder="Type a note..." style="flex:1; background:#000; border:1px solid #444; color:white; padding:12px; border-radius:10px; outline:none;">
-                <button onclick="saveNote()" style="background:var(--accent); color:black; border:none; border-radius:10px; padding:0 15px; font-weight:bold; cursor:pointer;">SAVE</button>
+                <button id="btn-save-note" style="background:var(--accent); color:black; border:none; border-radius:10px; padding:0 15px; font-weight:bold; cursor:pointer;">SAVE</button>
             </div>
 
             <div id="notes-list-container" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:5px;">
@@ -296,13 +296,13 @@
         <div class="modal-content">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <h3 style="margin:0; font-weight:800; display:flex; gap:8px;">🤖 <span id="ai-modal-title">AI Lab</span></h3>
-                <span class="close-btn" onclick="closeAIModal()">×</span>
+                <span class="close-btn" id="btn-close-ai-modal">×</span>
             </div>
             <p style="color:#888; font-size:0.9rem;" id="ai-modal-desc">Type a keyword or question.</p>
             
             <textarea id="ai-input" class="ai-input-area" placeholder="E.g. Ameloblastoma treatment..."></textarea>
             
-            <button class="btn-start" onclick="callGemini()" style="margin-top:15px;">SEARCH WITH AI</button>
+            <button class="btn-start" id="btn-ai-submit-mobile" style="margin-top:15px;">SEARCH WITH AI</button>
             
             <div id="ai-output" style="margin-top:15px; color:#ccc; max-height:200px; overflow-y:auto;"></div>
         </div>
