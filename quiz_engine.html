@@ -459,16 +459,20 @@
             }
         }
 
-// --- AI HELPERS CORREGIDOS ---
+// --- AI HELPERS CORREGIDOS Y ROBUSTOS ---
+        
+        // Usamos 'gemini-pro' porque es el modelo más estable actualmente para claves gratuitas/estándar.
+        // Si prefieres el 1.5, puedes probar 'gemini-1.5-flash-latest'
+        const AI_MODEL = "gemini-pro"; 
+
         async function triggerAIExplanation() {
             const q = quizData[currentIndex];
             const box = document.getElementById('ai-explanation-box');
             box.classList.remove('hidden');
-            box.innerHTML = "🤖 Thinking...";
+            box.innerHTML = '<span class="text-yellow-400">🤖 AI is thinking...</span>';
             
-            // Si ya hay explicación en la BD, úsala para ahorrar tokens
             if(q.explanation && q.explanation.trim() !== "") {
-                box.innerHTML = `<strong>Rationale:</strong><br>${q.explanation}`;
+                box.innerHTML = `<strong>Rationale (DB):</strong><br>${q.explanation}`;
             } else {
                 askGemini(document.getElementById('btn-explain'), q.question_text, q.correct_answer);
             }
@@ -483,21 +487,29 @@
             const prompt = `Explain briefly why "${correct}" is the correct answer for this dental question: "${qText}".`;
             
             try {
-                // CORRECCIÓN: Usamos el modelo ESTÁNDAR 'gemini-1.5-flash'
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
                 
-                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                if (!response.ok) {
+                    // Leemos el error real que nos manda Google para entender qué pasa
+                    const errorBody = await response.text();
+                    throw new Error(`API Error ${response.status}: ${errorBody}`);
+                }
 
                 const data = await response.json();
+                // Verificación de seguridad por si la respuesta viene vacía
+                if (!data.candidates || data.candidates.length === 0) {
+                    throw new Error("AI returned no content.");
+                }
+
                 const text = data.candidates[0].content.parts[0].text;
                 outputDiv.innerHTML = `<div class="p-3 bg-blue-50 rounded border border-blue-100 text-sm text-gray-700"><strong>AI Explanation:</strong><br>${text.replace(/\*\*/g, '').replace(/\n/g, '<br>')}</div>`;
             } catch(e) {
-                console.error(e); // Para ver el error real en la consola (F12)
-                outputDiv.innerHTML = '<span class="text-red-500">Error connecting to AI. Check Console.</span>';
+                console.error("Full AI Error Details:", e); // Mira la consola para ver el detalle
+                outputDiv.innerHTML = `<span class="text-red-500">Error: ${e.message.substring(0, 50)}... (Check Console)</span>`;
             }
         }
 
@@ -506,25 +518,29 @@
             const prompt = `Explain concisely why "${correct}" is the correct answer for: "${qText}".`;
             
             try {
-                // CORRECCIÓN: Usamos el modelo ESTÁNDAR 'gemini-1.5-flash'
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
 
-                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    throw new Error(`API Error ${response.status}: ${errorBody}`);
+                }
 
                 const data = await response.json();
+                if (!data.candidates || data.candidates.length === 0) {
+                    throw new Error("AI returned no content.");
+                }
+
                 const text = data.candidates[0].content.parts[0].text;
-                // Limpieza de formato Markdown
                 box.innerHTML = text.replace(/\*\*/g, '<strong>').replace(/\*/g, '').replace(/\n/g, '<br>');
             } catch(e) {
-                console.error(e); // Importante para depurar
-                box.innerHTML = "<span style='color:red'>Error contacting AI. Check API Key.</span>";
+                console.error("Full AI Error Details:", e);
+                box.innerHTML = `<span style='color:red'>Error: ${e.message.substring(0, 60)}...</span>`;
             }
         }
-
         // --- UTILS ---
         function startSimulationTimer() {
             timerInterval = setInterval(() => {
