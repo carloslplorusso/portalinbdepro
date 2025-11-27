@@ -230,10 +230,18 @@
     // Se asume que _supabase ya está definido globalmente por app.js
 
     async function loadStats() {
-        // 1. Verificar Sesión
+        // Pequeño delay de seguridad para asegurar que el cliente de Supabase se hidrató
+        if (typeof _supabase === 'undefined') {
+            setTimeout(loadStats, 100); 
+            return;
+        }
+
         const { data: { session } } = await _supabase.auth.getSession();
+        
         if (!session) {
-             window.location.href = './index.html';
+             // Si no hay sesión, guardar URL y redirigir
+             console.warn("No session found in stats. Redirecting.");
+             window.location.href = 'index.html';
              return;
         }
 
