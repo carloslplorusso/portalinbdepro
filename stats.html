@@ -38,7 +38,7 @@
     /* --- 2. LAYOUT --- */
     .lab-container {
         width: 100%;
-        max-width: 600px; /* Optimizado para móvil/tablet */
+        max-width: 600px;
         height: 100dvh;
         display: flex;
         flex-direction: column;
@@ -86,7 +86,7 @@
     .hero-card .title { font-size: 1.5rem; font-weight: 800; color: #fff; margin: 0; }
     .hero-card .sub { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
 
-    /* --- 5. SEMÁFORO / CONFIDENCE CARD (NUEVO) --- */
+    /* --- 5. SEMÁFORO / CONFIDENCE CARD --- */
     .card-confidence {
         background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px;
         display: flex; flex-direction: column; align-items: center;
@@ -95,7 +95,7 @@
     
     .pie-chart {
         width: 140px; height: 140px; border-radius: 50%; margin: 10px auto; position: relative;
-        background: conic-gradient(#333 0% 100%); /* Default Grey */
+        background: conic-gradient(#333 0% 100%);
         box-shadow: 0 0 20px rgba(0,0,0,0.3);
         transition: background 1s ease;
     }
@@ -116,7 +116,7 @@
     .conf-label { font-size: 0.65rem; text-transform: uppercase; color: #888; margin-top: 2px; }
     .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
 
-    /* --- 6. TOPIC LIST --- */
+    /* --- 6. CATEGORY LIST --- */
     .card-expandable {
         background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; margin-bottom: 20px;
     }
@@ -166,7 +166,7 @@
         <div class="grid-2x2">
             <div class="hero-card">
                 <div class="title" id="total-quizzes">0</div>
-                <div class="sub">Topics</div>
+                <div class="sub">Categories</div>
             </div>
             <div class="hero-card">
                 <div class="title" id="total-questions">0</div>
@@ -226,7 +226,6 @@
 
 <script src="app.js"></script>
 <script>
-    // Función para volver al dashboard correcto (Mobile o Desktop)
     function goBack() {
         if (window.innerWidth <= 768) {
             window.location.href = 'mobile.html';
@@ -236,100 +235,114 @@
     }
 
     async function loadStats() {
-        // 1. ESPERA SEGURA: Aseguramos que app.js cargó Supabase
         if (typeof _supabase === 'undefined') {
             setTimeout(loadStats, 100); 
             return;
         }
 
-        // 2. RECUPERACIÓN ROBUSTA DE SESIÓN
-        // Primero intentamos obtener la sesión cacheada (rápida)
+        // --- GESTIÓN DE SESIÓN ---
         let { data: { session } } = await _supabase.auth.getSession();
-
-        // Si falla la caché, intentamos obtener el usuario del servidor (lento pero seguro)
-        // Esto soluciona el problema de que te pida login al cambiar de página
         if (!session) {
             const { data: { user }, error } = await _supabase.auth.getUser();
-            if (user) {
-                // Si encontramos usuario, reconstruimos un objeto de sesión mínimo para continuar
-                session = { user: user };
-            }
+            if (user) session = { user: user };
         }
-
-        // Si después de ambos intentos no hay sesión, entonces sí redirigimos
         if (!session) {
-             console.warn("No session found in stats. Redirecting.");
              window.location.href = 'index.html';
              return;
         }
 
-        // --- A partir de aquí es la lógica de carga de datos ---
-
-        // Mostrar Usuario
         const email = session.user.email;
         if(document.getElementById('user-display')) {
             document.getElementById('user-display').innerText = email.split('@')[0];
         }
 
-        // Consultar Vista 'resultados'
-        const { data, error } = await _supabase
-            .from('resultados') 
-            .select('*') 
+        // --- NUEVA LÓGICA: FETCH DIRECTO CON JOIN A QUESTIONS_BANK ---
+        // Esto asegura que usamos la columna 'category' real, no una vista antigua.
+        const { data: attempts, error } = await _supabase
+            .from('user_progress')
+            .select(`
+                status,
+                questions_bank!inner (
+                    category
+                )
+            `)
             .eq('user_id', session.user.id);
 
-        if (error) console.error("Error DB:", error);
+        if (error) {
+            console.error("Error fetching stats:", error);
+            return; // O manejar error visualmente
+        }
 
-        // Variables acumuladoras
+        // --- CÁLCULOS MATEMÁTICOS EN CLIENTE ---
         let totalQuestions = 0;
         let totalCorrect = 0;
+        
         let sumMastered = 0;   
         let sumReviewing = 0;  
         let sumLearning = 0;   
-        const topicList = [];
+        
+        const categoryMap = {}; // { 'Patología': {total: 10, correct: 5}, ... }
 
-        if (data && data.length > 0) {
-            data.forEach(row => {
-                const t = Number(row.total || 0);
-                const c = Number(row.correct || 0);
-                
-                const mastered = Number(row.count_mastered || 0);
-                const reviewing = Number(row.count_reviewing || 0);
-                const learning = Number(row.count_learning || 0);
+        if (attempts && attempts.length > 0) {
+            attempts.forEach(row => {
+                // Verificar integridad de datos
+                if (row.questions_bank && row.questions_bank.category) {
+                    const cat = row.questions_bank.category;
+                    const status = row.status;
+                    const isCorrect = (status === 'mastered'); // 'Mastered' cuenta como acierto para Accuracy
 
-                totalQuestions += t;
-                totalCorrect += c;
-                
-                sumMastered += mastered;
-                sumReviewing += reviewing;
-                sumLearning += learning;
+                    // Globales
+                    totalQuestions++;
+                    if (isCorrect) totalCorrect++;
 
-                topicList.push({
-                    name: row.materia,
-                    pct: t > 0 ? Math.round((c / t) * 100) : 0
-                });
+                    if (status === 'mastered') sumMastered++;
+                    else if (status === 'reviewing') sumReviewing++;
+                    else if (status === 'learning') sumLearning++;
+
+                    // Por Categoría
+                    if (!categoryMap[cat]) {
+                        categoryMap[cat] = { total: 0, correct: 0 };
+                    }
+                    categoryMap[cat].total++;
+                    if (isCorrect) categoryMap[cat].correct++;
+                }
             });
         }
 
         // Cálculos Finales
         const totalIncorrect = totalQuestions - totalCorrect;
         const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+
+        // Convertir Mapa a Array para renderizar
+        const topicList = Object.keys(categoryMap).map(key => ({
+            name: key,
+            pct: Math.round((categoryMap[key].correct / categoryMap[key].total) * 100)
+        }));
+
+        // --- ACTUALIZACIÓN DOM ---
         
-        // Actualizar DOM
-        document.getElementById('total-quizzes').innerText = data ? data.length : 0;
+        // 1. Contadores Globales
+        // Total de categorías únicas encontradas en el historial
+        document.getElementById('total-quizzes').innerText = Object.keys(categoryMap).length; 
         document.getElementById('total-questions').innerText = totalQuestions;
         document.getElementById('total-correct').innerText = totalCorrect;
         document.getElementById('total-incorrect').innerText = totalIncorrect;
         
+        // 2. Lógica Color Accuracy (Rojo < 71%, Verde >= 71%)
         const accEl = document.getElementById('accuracy-pct');
         accEl.innerText = accuracy + "%";
-        accEl.style.color = accuracy >= 80 ? "var(--success)" : (accuracy < 60 ? "var(--danger)" : "var(--accent)");
+        if (accuracy < 71) {
+            accEl.style.color = "var(--danger)";
+        } else {
+            accEl.style.color = "var(--success)";
+        }
 
+        // 3. Semáforo y Gráfico
         document.getElementById('count-mastered').innerText = sumMastered;
         document.getElementById('count-reviewing').innerText = sumReviewing;
         document.getElementById('count-learning').innerText = sumLearning;
         document.getElementById('total-mastered-display').innerText = sumMastered;
 
-        // Gráfico Circular
         const totalTraffic = sumMastered + sumReviewing + sumLearning;
         if (totalTraffic > 0) {
             const pctRed = (sumLearning / totalTraffic) * 100;
@@ -355,11 +368,11 @@
         }
         
         container.innerHTML = '';
+        // Ordenar por porcentaje descendente
         list.sort((a,b) => b.pct - a.pct).forEach(topic => {
-            let color = "var(--accent)";
-            if(topic.pct >= 80) color = "var(--success)";
-            if(topic.pct < 60) color = "var(--danger)";
-
+            // Siempre verde para la lista de categorías
+            const color = "var(--success)"; 
+            
             container.innerHTML += `
                 <div class="topic-item">
                     <div class="topic-row">
