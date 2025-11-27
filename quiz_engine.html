@@ -143,8 +143,14 @@
         
         <div id="prac-start-screen" class="fade-in">
             <h1 class="prac-title">INBDE Pro Lab</h1>
-            <p class="prac-desc">Practice Mode: Standalone & Daily Run</p>
-            <button class="btn-prac-start" onclick="initPracticeQuiz()">START PRACTICE</button>
+            <p class="prac-desc">Practice Mode: Select Intensity</p>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; max-width:400px; margin:0 auto;">
+                <button class="btn-prac-start" onclick="initPracticeQuiz(10)">10 Questions</button>
+                <button class="btn-prac-start" onclick="initPracticeQuiz(25)">25 Questions</button>
+                <button class="btn-prac-start" onclick="initPracticeQuiz(50)">50 Questions</button>
+                <button class="btn-prac-start" onclick="initPracticeQuiz(100)">100 Questions</button>
+            </div>
         </div>
 
         <div id="prac-quiz-screen" class="prac-quiz-container hidden fade-in">
@@ -330,11 +336,9 @@
         // ==========================================================
         const urlParams = new URLSearchParams(window.location.search);
         const mode = urlParams.get('mode') || 'practice'; 
-        const count = parseInt(urlParams.get('count')) || 10;
+        // Cambiado default de 10 a 100 para permitir selección en práctica
+        const count = parseInt(urlParams.get('count')) || 100;
         
-        // CORRECCIÓN REALIZADA AQUÍ:
-        // Ahora acepta cualquier modo que contenga la palabra 'simulation',
-        // cubriendo así 'simulation', 'simulation_standard', 'itemsets', etc.
         const isSimulation = (mode.includes('simulation') || mode === 'itemsets');
 
         let quizData = [];
@@ -348,6 +352,9 @@
         let markedQuestions = new Set();
         let simTimerInterval;
         let simTotalTime = 0; 
+
+        // Variable para almacenar el término de búsqueda si existe
+        const searchTerm = urlParams.get('term');
 
         // ==========================================================
         // INICIALIZACIÓN
@@ -369,74 +376,127 @@
             await fetchQuestions();
         });
 
-       async function fetchQuestions() {
-            // Nota: Se asume que app.js inicializa `_supabase` globalmente.
+        // MODIFICACIÓN B: FUNCIÓN FETCH REEMPLAZADA COMPLETA
+        async function fetchQuestions() {
             if(typeof _supabase === 'undefined') {
-                console.error("_supabase not found. Ensure app.js is loaded correctly.");
-                alert("Database connection error. Reload.");
+                alert("Database error: Supabase not found.");
                 return;
             }
 
-            // 1. Preparamos la consulta base haciendo JOIN con clinical_cases
-            let query = _supabase.from('questions_bank').select(`
-                *,
-                clinical_cases (*)
-            `);
+            let data = [];
+            let error = null;
 
-            // 2. FILTRADO INTELIGENTE SEGÚN EL MODO
-            if (isSimulation) {
-                // MODO SIMULACIÓN (Item Sets):
-                // Solo traemos preguntas que pertenezcan a un caso (case_id NO es nulo).
-                // Esto es vital para que cargue la info del paciente a la izquierda.
-                query = query.not('case_id', 'is', null);
-            } else {
-                // MODO PRÁCTICA (Standalone):
-                // Solo traemos preguntas sueltas (case_id ES nulo).
-                // Esto evita que salgan preguntas de casos clínicos complejos en el modo rápido.
-                query = query.is('case_id', null);
+            // --- LÓGICA 1: DAILY RUN (Aleatorio basado en fecha) ---
+            if (mode === 'daily') {
+                // 1. Traemos SOLO los IDs de todas las preguntas (es liviano)
+                const { data: allIds, error: idError } = await _supabase
+                    .from('questions_bank')
+                    .select('id');
+                
+                if (idError || !allIds) return;
+
+                // 2. "Barajar" usando la fecha como semilla (Seed)
+                // Esto hace que el orden sea aleatorio pero FIJO por hoy.
+                const todaySeed = new Date().toDateString(); // Ej: "Wed Nov 26 2025"
+                const seededRandom = (str) => {
+                    let hash = 0;
+                    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+                    return function() {
+                        const x = Math.sin(hash++) * 10000;
+                        return x - Math.floor(x);
+                    };
+                };
+                
+                const rng = seededRandom(todaySeed);
+                const shuffled = allIds.sort(() => 0.5 - rng()); // Ordenar usando la semilla
+                
+                // 3. Tomar los primeros 10 IDs
+                const selectedIds = shuffled.slice(0, 10).map(x => x.id);
+
+                // 4. Traer las preguntas completas de esos IDs
+                const { data: dailyQuestions, error: qError } = await _supabase
+                    .from('questions_bank')
+                    .select('*, clinical_cases (*)')
+                    .in('id', selectedIds);
+                
+                data = dailyQuestions;
+                error = qError;
+            } 
+            
+            // --- LÓGICA 2: BUSCADOR (IA LAB) ---
+            else if (mode === 'search' && searchTerm) {
+                const { data: searchData, error: searchError } = await _supabase
+                    .from('questions_bank')
+                    .select('*, clinical_cases (*)')
+                    .ilike('question_text', `%${searchTerm}%`); // Busca que contenga la palabra
+                
+                data = searchData;
+                error = searchError;
             }
 
-            // 3. Aplicamos el límite de preguntas seleccionadas por el usuario
-            query = query.limit(count);
+            // --- LÓGICA 3: MODO NORMAL / SIMULACIÓN ---
+            else {
+                let query = _supabase.from('questions_bank').select('*, clinical_cases (*)');
 
-            const { data, error } = await query;
+                if (isSimulation) {
+                    query = query.not('case_id', 'is', null); // Solo casos clínicos
+                } else {
+                    query = query.is('case_id', null); // Solo preguntas sueltas
+                }
+                
+                // Si es práctica normal, traemos un lote grande por defecto (count=100)
+                query = query.limit(count);
+                
+                const response = await query;
+                data = response.data;
+                error = response.error;
+            }
 
+            // MANEJO DE RESULTADOS
             if (error) {
                 console.error("Error fetching data:", error);
-                // Fallback silencioso o alerta
                 return;
             }
 
             if (!data || data.length === 0) {
-                console.warn("No questions found for this mode.");
-                // Creamos una pregunta "dummy" para avisar al usuario visualmente
                 quizData = [{
-                    id: 999, 
-                    question_text: isSimulation 
-                        ? "No clinical cases found. Please add Item Sets to DB." 
-                        : "No standalone questions found.", 
-                    option_a: "N/A", option_b: "N/A", 
-                    correct_answer: "N/A", explanation: "Database empty for this mode."
+                    id: 0, 
+                    question_text: mode === 'search' ? `No questions found with word: "${searchTerm}"` : "No questions available.", 
+                    option_a: "N/A", option_b: "N/A", correct_answer: "N/A", explanation: ""
                 }];
             } else {
                 quizData = data;
-                console.log(`Loaded ${quizData.length} questions. Mode: ${isSimulation ? 'Simulation' : 'Practice'}`);
+                // Si no es Daily (que ya está mezclado por fecha), mezclamos simple
+                if (mode !== 'daily') {
+                    quizData.sort(() => Math.random() - 0.5);
+                }
             }
             
-            // Auto-iniciar la interfaz correcta
+            // Iniciar interfaz
             if (isSimulation) {
                 initSimQuiz();
             } else {
-                // IMPORTANTE: Si es práctica, debemos renderizar la primera pregunta manualmente aquí
-                // porque initSimQuiz() no se usa en este modo.
-                initPracticeQuiz();
+                // Para modo práctica, esperamos a que el usuario pulse el botón de cantidad
+                // EXCEPTO si es daily o search, que arrancan directo
+                if (mode === 'daily' || mode === 'search') {
+                    document.getElementById('prac-start-screen').classList.add('hidden');
+                    document.getElementById('prac-quiz-screen').classList.remove('hidden');
+                    renderPracticeQuestion();
+                }
             }
         }
 
         // ==========================================================
         // LÓGICA MODO PRÁCTICA
         // ==========================================================
-        function initPracticeQuiz() {
+        
+        // MODIFICACIÓN C: ACEPTAR CANTIDAD SELECCIONADA
+        function initPracticeQuiz(selectedCount) {
+            // Si viene un número, recortamos la data cargada a esa cantidad
+            if (selectedCount && quizData.length > selectedCount) {
+                quizData = quizData.slice(0, selectedCount);
+            }
+
             document.getElementById('prac-start-screen').classList.add('hidden');
             document.getElementById('prac-quiz-screen').classList.remove('hidden');
             renderPracticeQuestion();
@@ -498,28 +558,35 @@
             document.getElementById('prac-explanation').classList.remove('hidden');
         }
 
+        // MODIFICACIÓN D: REGISTRO DE ESTADÍSTICAS EN DB
         async function classifyPractice(status) {
             const q = quizData[currentIndex];
             
-            // Actualizar botones UI
+            // UI Update
             const btns = document.querySelectorAll('.prac-classify-btns .btn-classify');
             btns.forEach(b => b.classList.remove('active'));
             if(status==='learning') document.querySelector('.btn-hard').classList.add('active');
             if(status==='reviewing') document.querySelector('.btn-medium').classList.add('active');
             if(status==='mastered') document.querySelector('.btn-easy').classList.add('active');
 
-            // Guardar Stats Locales
             practiceStats[status === 'learning' ? 'hard' : (status === 'reviewing' ? 'medium' : 'easy')]++;
             
-            // Guardar en Supabase
+            // Registro completo en Base de Datos
             const { data: { session } } = await _supabase.auth.getSession();
             if (session) {
-                await _supabase.from('user_progress').insert([
-                    { user_id: session.user.id, question_id: q.id, status: status, quiz_mode: mode, timestamp: new Date() }
+                // Insertamos con el status. 
+                const { error } = await _supabase.from('user_progress').insert([
+                    { 
+                        user_id: session.user.id, 
+                        question_id: q.id, 
+                        status: status, 
+                        quiz_mode: mode, // 'daily', 'practice', 'search'
+                        timestamp: new Date() 
+                    }
                 ]);
+                if (error) console.error("Error saving progress:", error);
             }
 
-            // Habilitar botón Next
             document.getElementById('btn-prac-next').classList.remove('hidden');
             document.getElementById('prac-error-msg').classList.add('hidden');
         }
