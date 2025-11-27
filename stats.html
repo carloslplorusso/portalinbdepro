@@ -6,7 +6,6 @@
 <title>INBDE Pro - Statistics Lab</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-    /* --- 1. VARIABLES & BASE --- */
     :root {
         --accent: #facc15; 
         --accent-glow: rgba(250, 204, 21, 0.2);
@@ -35,7 +34,6 @@
         background: radial-gradient(circle at 50% 0%, #1a1830 0%, #000000 80%);
     }
 
-    /* --- 2. LAYOUT --- */
     .lab-container {
         width: 100%;
         max-width: 600px;
@@ -48,7 +46,6 @@
         scrollbar-color: var(--accent) #111;
     }
 
-    /* --- 3. HEADER --- */
     .header-area {
         text-align: center;
         margin-bottom: 20px;
@@ -58,7 +55,6 @@
     .lab-subtitle { color: var(--accent); font-weight: 600; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.9; }
     .user-badge { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; margin-top: 10px; display: inline-flex; }
 
-    /* --- 4. CARDS --- */
     .stats-grid {
         display: flex;
         flex-direction: column;
@@ -66,7 +62,6 @@
         width: 100%;
     }
 
-    /* Tarjeta Principal (Accuracy) */
     .card-promo-style {
         background: linear-gradient(180deg, rgba(30, 30, 35, 0.8) 0%, rgba(10, 10, 10, 0.9) 100%); 
         border: 1px solid var(--accent); border-radius: 16px; padding: 20px;
@@ -75,7 +70,6 @@
     .accuracy-display { font-size: 3.5rem; font-weight: 900; color: var(--accent); line-height: 1; text-shadow: 0 0 20px var(--accent-glow); }
     .card-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
 
-    /* Grid 2x2 (Contadores) */
     .grid-2x2 {
         display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
     }
@@ -86,7 +80,6 @@
     .hero-card .title { font-size: 1.5rem; font-weight: 800; color: #fff; margin: 0; }
     .hero-card .sub { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
 
-    /* --- 5. SEMÁFORO / CONFIDENCE CARD --- */
     .card-confidence {
         background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px;
         display: flex; flex-direction: column; align-items: center;
@@ -116,7 +109,6 @@
     .conf-label { font-size: 0.65rem; text-transform: uppercase; color: #888; margin-top: 2px; }
     .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
 
-    /* --- 6. CATEGORY LIST --- */
     .card-expandable {
         background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; margin-bottom: 20px;
     }
@@ -135,13 +127,11 @@
     .progress-track { width: 100%; height: 4px; background: #222; border-radius: 2px; }
     .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; }
 
-    /* --- 7. BUTTONS --- */
     .btn-start { 
         display: block; width: 100%; background: var(--accent); color: #000; font-weight: 900; padding: 15px; 
         border-radius: 12px; text-transform: uppercase; text-align: center; text-decoration: none; border: none; cursor: pointer;
         margin-top: auto;
     }
-    /* Estilo para el botón de regreso (div en lugar de a href) */
     .btn-back-link { 
         display: block; 
         text-align: center; 
@@ -149,8 +139,9 @@
         font-size: 0.8rem; 
         margin-top: 15px; 
         text-decoration: none; 
-        cursor: pointer; 
-        padding: 10px;
+        cursor: pointer;
+        padding: 15px; 
+        width: 100%;
     }
     .btn-back-link:hover { color: var(--accent); }
 
@@ -254,7 +245,7 @@
         }
 
         try {
-            // --- GESTIÓN DE SESIÓN ROBUSTA (FIX PARA MÓVIL) ---
+            // FIX: Forzar verificación de red para recuperar usuario en móvil
             const { data: { user }, error: userError } = await _supabase.auth.getUser();
 
             if (userError || !user) {
@@ -263,13 +254,11 @@
                 return;
             }
 
-            // Si llegamos aquí, tenemos sesión válida
             const email = user.email;
             if(document.getElementById('user-display')) {
                 document.getElementById('user-display').innerText = email.split('@')[0];
             }
 
-            // --- FETCH DE DATOS ---
             const { data: attempts, error: statsError } = await _supabase
                 .from('user_progress')
                 .select(`
@@ -285,7 +274,6 @@
                 return; 
             }
 
-            // --- CÁLCULOS MATEMÁTICOS ---
             let totalQuestions = 0;
             let totalCorrect = 0;
             let sumMastered = 0;   
@@ -317,17 +305,14 @@
                 });
             }
 
-            // Cálculos Finales
             const totalIncorrect = totalQuestions - totalCorrect;
             const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
 
-            // Convertir Mapa a Array
             const topicList = Object.keys(categoryMap).map(key => ({
                 name: key,
                 pct: Math.round((categoryMap[key].correct / categoryMap[key].total) * 100)
             }));
 
-            // --- ACTUALIZACIÓN DOM ---
             document.getElementById('total-quizzes').innerText = Object.keys(categoryMap).length; 
             document.getElementById('total-questions').innerText = totalQuestions;
             document.getElementById('total-correct').innerText = totalCorrect;
