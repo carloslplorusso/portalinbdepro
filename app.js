@@ -549,43 +549,134 @@ async function logout() {
     }
 }
 
-// --- LOGIC DE FECHA Y TIMER ---
-function initCountdown() {
-    const storedDate = localStorage.getItem('examDate');
-    if (storedDate) {
-        updateDaysLeft(storedDate);
+// --- LOGIC DE FECHA Y TIMER (CON SUPABASE) ---
+
+// 1. Inicializar al cargar la página
+async function initCountdown() {
+    const badge = document.getElementById('countdown-badge');
+    if (!badge) return;
+
+    // Verificar sesión
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (!session) {
+        badge.innerText = "Set Date";
+        return;
+    }
+
+    // Buscar fecha en Supabase
+    const { data, error } = await _supabase
+        .from('user_settings')
+        .select('exam_date')
+        .eq('user_id', session.user.id)
+        .single();
+
+    if (data && data.exam_date) {
+        updateDaysLeftUI(data.exam_date);
+        // Guardamos en input por si abre el modal
+        const dateInput = document.getElementById('exam-date-input');
+        if(dateInput) dateInput.value = data.exam_date;
     } else {
-        document.getElementById('date-setup-modal')?.classList.add('active');
+        badge.innerText = "📅 Set Exam Date";
     }
 }
 
-function saveExamDate() {
+// 2. Guardar fecha en Supabase
+async function saveExamDate() {
     const dateInput = document.getElementById('exam-date-input');
     const dateVal = dateInput?.value;
+    
     if (!dateVal) return alert("Please select a date.");
-    localStorage.setItem('examDate', dateVal);
-    document.getElementById('date-setup-modal')?.classList.remove('active');
-    updateDaysLeft(dateVal);
+
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (!session) return alert("Please log in to save dates.");
+
+    // Guardar en Base de Datos (Upsert: crea o actualiza)
+    const { error } = await _supabase
+        .from('user_settings')
+        .upsert({ 
+            user_id: session.user.id, 
+            exam_date: dateVal,
+            updated_at: new Date()
+        });
+
+    if (error) {
+        console.error('Error saving date:', error);
+        alert("Error saving date.");
+    } else {
+        updateDaysLeftUI(dateVal);
+        closeDateModal();
+    }
 }
 
-function updateDaysLeft(dateString) {
+// 3. Actualizar la interfaz (Cálculo de días)
+function updateDaysLeftUI(dateString) {
     const target = new Date(dateString);
     const today = new Date();
+    // Resetear horas para comparar solo fechas
+    today.setHours(0,0,0,0);
+    target.setHours(0,0,0,0);
+
     const diffTime = target - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    const display = diffDays > 0 ? `${diffDays} Days Left` : "Exam Day!";
-    const countdownValue = document.getElementById('countdown-value');
-    if (countdownValue) countdownValue.innerText = display;
+    
+    const badge = document.getElementById('countdown-badge');
+    if (badge) {
+        if (diffDays < 0) {
+            badge.innerHTML = `<span style="color:#ef4444">Exam Passed</span>`;
+        } else if (diffDays === 0) {
+            badge.innerHTML = `<span style="color:#facc15; animation: pulse 1s infinite;">IT'S TODAY!</span>`;
+        } else {
+            badge.innerText = `${diffDays} Days Left`;
+        }
+    }
 }
 
+// 4. Funciones del Modal
 function openDateModal() {
-    document.getElementById('date-setup-modal')?.classList.add('active');
+    const modal = document.getElementById('date-setup-modal');
+    if(modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+    }
+}
+
+function closeDateModal() {
+    const modal = document.getElementById('date-setup-modal');
+    if(modal) {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
 }
 
 function setPomodoroMode(mode) {
     pMode = mode;
     console.log(`Pomodoro mode set to: ${mode}`);
     resetPomo();
+}
+
+// --- FUNCIÓN PARA SALUDO DE USUARIO (SOLO NOMBRE) ---
+async function displayUserGreeting() {
+    const nameEl = document.getElementById('user-name-display');
+    if (!nameEl) return;
+
+    // Intentamos obtener la sesión
+    const { data: { session } } = await _supabase.auth.getSession();
+
+    if (session && session.user && session.user.email) {
+        // Extraemos el nombre antes del @
+        const userEmail = session.user.email;
+        const shortName = userEmail.split('@')[0];
+        
+        // Capitalizamos (primera letra mayúscula)
+        const formattedName = shortName.charAt(0).toUpperCase() + shortName.slice(1);
+
+        // Solo reemplazamos el texto dentro del SPAN, manteniendo el estilo
+        nameEl.innerText = formattedName;
+    } else {
+        nameEl.innerText = "Doctor"; // Valor por defecto si no hay login
+    }
 }
 
 
