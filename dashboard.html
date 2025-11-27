@@ -100,6 +100,14 @@
     }
     .header-countdown:hover { background: rgba(250, 204, 21, 0.2); transform: scale(1.05); }
 
+    .stat-badge {
+        background: rgba(250, 204, 21, 0.1); border: 1px solid rgba(250, 204, 21, 0.3); color: var(--accent);
+        padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px;
+        display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;
+    }
+    .stat-badge:hover { background: rgba(250, 204, 21, 0.2); transform: scale(1.05); }
+
+
     /* --- 4. LAYOUT COLUMNS --- */
     #dashboard-content { display: contents; }
     .col-side { display: flex; flex-direction: column; justify-content: space-between; padding-top: 40px; gap: 20px; opacity: 0.9; transition: opacity 0.3s; }
@@ -252,8 +260,8 @@
                 <span>Welcome, <span id="user-name-display" style="color:var(--accent); font-weight:700;">Doctor</span></span>
                 <button id="btn-logout-desktop" style="background:none; border:1px solid #ff6b6b; color:#ff6b6b; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center;">✕</button>
             </div>
-            <div class="header-countdown" id="countdown-badge">
-                <span id="countdown-value">-- Days Left</span> ⏱
+            <div class="stat-badge" id="countdown-badge" onclick="openDateModal()" style="cursor: pointer;">
+                📅 Set Exam Date
             </div>
         </div>
     </header>
@@ -394,14 +402,6 @@
         </div>
     </div>
 
-    <div id="date-setup-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h3>Set Exam Date</h3>
-            <input type="date" id="exam-date-input" style="width:100%; padding:10px; margin:10px 0; background:#000; color:#fff; border:1px solid #444;">
-            <button class="btn-start" id="btn-save-exam-date">Save</button>
-        </div>
-    </div>
-
     <div id="notes-modal" class="modal-overlay hidden">
         <div class="modal-content" style="display:flex; flex-direction:column; height: 80vh; max-height: 600px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -446,6 +446,22 @@
         </div>
     </div>
 
+</div>
+
+<div id="date-setup-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="text-align:center; max-width: 350px;">
+        <span class="close-btn" onclick="closeDateModal()">×</span>
+        <h3 style="color: white; margin-bottom: 10px;">When is your Exam?</h3>
+        <p style="color: #999; font-size: 0.9rem; margin-bottom: 20px;">Select your exam date to start the countdown.</p>
+        
+        <input type="date" id="exam-date-input" 
+               style="width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px; font-size: 1rem; margin-bottom: 20px; color-scheme: dark;">
+        
+        <button onclick="saveExamDate()" 
+                style="width: 100%; background: var(--accent); color: black; font-weight: bold; padding: 12px; border: none; border-radius: 8px; cursor: pointer;">
+            START COUNTDOWN
+        </button>
+    </div>
 </div>
 
 <script src="app.js"></script>
