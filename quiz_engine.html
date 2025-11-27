@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>INBDE Pro Engine</title>
+    <title>INBDE Pro Lab</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -69,765 +69,881 @@
         .btn-prac-next { background: #facc15; color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: 800; margin-top: 15px; cursor: pointer; font-size: 1.1rem; }
         .btn-prac-next:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(250, 204, 21, 0.3); }
 
-        /* Resultados Práctica */
-        .prac-results-container { background: #121214; border-radius: 20px; padding: 40px; box-shadow: 0 0 20px rgba(0,0,0,0.5); display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; max-width: 900px; width: 100%; }
-        .prac-chart-box { display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 20px; }
-        .pie-chart { width: 200px; height: 200px; border-radius: 50%; display: flex; justify-content: center; align-items: center; position: relative; margin-bottom: 20px; }
-        .pie-center { width: 70%; height: 70%; background: #121214; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #f4f4f5; }
-        .landscape-bar { display: flex; height: 50px; border-radius: 8px; overflow: hidden; width: 100%; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .ls-seg { display: flex; flex-direction: column; justify-content: center; align-items: center; color: #111; font-weight: bold; transition: width 1s ease-in-out; }
-        
-        @media (max-width: 768px) { .prac-results-container { grid-template-columns: 1fr; padding: 20px; } .prac-chart-box { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; margin-bottom: 20px; padding-right: 0; } }
-
-
         /* ================================================================= */
-        /* === ESTILOS MODO SIMULACIÓN (LIGHT / ITEMSETS) === */
+        /* === NUEVOS ESTILOS PERFORMANCE (Tipo Dashboard Oscuro) === */
         /* ================================================================= */
-        body.mode-simulation {
-            background-color: #f2f2f2;
-            color: #333;
-            display: block; /* Reset flex */
+        .perf-card {
+            background: #18181b; /* Fondo tarjeta oscura */
+            border-radius: 20px;
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 40px;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            align-items: start;
         }
-        
-        /* Layout Simulación */
-        .sim-screen { display: none; flex-direction: column; min-height: 100vh; }
-        .sim-screen.active { display: flex; }
-        
-        .sim-header { background: #235d88; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; font-size: 14px; }
-        .sim-footer { background: #235d88; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; margin-top: auto; flex-shrink: 0; z-index: 10; }
-        
-        .sim-content { padding: 30px 20px; width: 100%; max-width: 1300px; margin: 0 auto; box-sizing: border-box; display: flex; gap: 25px; flex-grow: 1; }
-        @media (max-width: 900px) { .sim-content { flex-direction: column; } }
-        
-        /* Panel Paciente */
-        .sim-patient-panel { background: white; border: 1px solid #ddd; border-radius: 4px; width: 320px; flex-shrink: 0; height: fit-content; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        @media (max-width: 900px) { .sim-patient-panel { width: 100%; } }
-        .sim-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .sim-table th { background: #e0e6ec; padding: 8px 10px; text-align: left; border-top: 1px solid #ddd; color: #333; font-weight: 600; }
-        .sim-table td { padding: 8px 10px; border-bottom: 1px solid #ddd; }
-        
-        /* Panel Pregunta */
-        .sim-question-area { flex-grow: 1; width: 100%; }
-        .sim-q-text { font-size: 16px; font-weight: 500; margin-bottom: 25px; line-height: 1.5; margin-top: 0; }
-        
-        .sim-option { background: white; border: 1px solid #ddd; padding: 12px 15px; margin-bottom: 12px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; position: relative; transition: background 0.2s; }
-        .sim-option:hover { background: #e6f0f5; border-color: #235d88; }
-        .sim-option.selected { background: #dceefb; border-color: #235d88; }
-        
-        /* Custom Radio Simulación */
-        .sim-option input { display: none; }
-        .sim-custom-radio { width: 16px; height: 16px; border: 1px solid #999; border-radius: 50%; margin-right: 15px; background: white; position: relative; }
-        .sim-option.selected .sim-custom-radio { background: #235d88; border-color: #235d88; }
-        .sim-option.selected .sim-custom-radio::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 6px; height: 6px; background: white; border-radius: 50%; }
 
-        /* Botones Simulación */
-        .btn-sim-nav { background: white; color: #235d88; border: none; padding: 10px 20px; font-weight: 700; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-size: 14px; transition: 0.3s; }
-        .btn-sim-nav:hover { background: #f2f2f2; }
-        .btn-sim-nav.mark.active { background: #ffc107; color: #333; border-color: #ffc107; }
-        
-        /* Review Screen */
-        .sim-review-table-container { width: 90%; max-width: 800px; margin: 30px auto; background: white; border: 1px solid #ddd; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .sim-review-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        .sim-review-table th { background: #e0e6ec; padding: 8px 10px; text-align: left; border-bottom: 1px solid #ddd; }
-        .sim-review-table td { padding: 8px 10px; border-bottom: 1px solid #eee; cursor: pointer; }
-        .sim-review-table tr:hover { background: #f9f9f9; }
+        @media (max-width: 768px) {
+            .perf-card { grid-template-columns: 1fr; gap: 20px; }
+        }
 
-        /* Performance Screen Simulation */
-        .sim-perf-container { max-width: 1000px; margin: 40px auto; background: #1c1c1c; color: #f0f0f0; border-radius: 20px; padding: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        @media (max-width: 768px) { .sim-perf-container { grid-template-columns: 1fr; } }
-    </style>
+        .perf-header { grid-column: 1 / -1; text-align: center; margin-bottom: 10px; }
+        .perf-title { font-size: 1.8rem; font-weight: 700; color: white; }
+
+        /* LADO IZQUIERDO: DONA */
+        .perf-left { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .donut-chart {
+            width: 180px; height: 180px; border-radius: 50%;
+            position: relative;
+            display: flex; justify-content: center; align-items: center;
+            margin-bottom: 20px;
+            /* El gradiente se inyectará con JS */
+        }
+        .donut-hole {
+            width: 140px; height: 140px; background: #18181b; border-radius: 50%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; z-index: 2;
+        }
+        .donut-val { font-size: 2.5rem; font-weight: 800; line-height: 1; }
+        .donut-label { font-size: 0.9rem; color: #a1a1aa; margin-top: 5px; }
+
+        .perf-stats-row { font-size: 1.5rem; font-weight: 800; display: flex; gap: 15px; }
+        .stat-green { color: #22c55e; }
+        .stat-red { color: #ef4444; }
+
+        /* LADO DERECHO: BARRAS Y TABLA */
+        .perf-right { display: flex; flex-direction: column; gap: 20px; }
+
+        /* Barra superior (Easy/Med/Hard o Correct/Incorrect) */
+        .perf-bar-container {
+            display: flex; width: 100%; height: 60px; border-radius: 12px; overflow: hidden; font-family: sans-serif;
+        }
+        .perf-seg {
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: #000; font-weight: bold;
+        }
+        .seg-val { font-size: 1.2rem; }
+        .seg-lbl { font-size: 0.65rem; text-transform: uppercase; opacity: 0.8; }
+
+        /* Colores Específicos */
+        .bg-green { background: #22c55e; color: #000; }
+        .bg-yellow { background: #facc15; color: #000; }
+        .bg-red { background: #ef4444; color: #fff; }
+
+        /* Tabla de Categorías */
+        .cat-box { background: #27272a; border-radius: 12px; padding: 20px; }
+        .cat-header-text { color: #a1a1aa; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; text-align: center; margin-bottom: 15px; letter-spacing: 1px; }
+        .cat-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid #3f3f46; color: white; font-weight: 600; font-size: 0.95rem;
+        }
+        .cat-row:last-child { border-bottom: none; }
+        .cat-scores { font-family: monospace; font-size: 1rem; }
+        .sc-good { color: #22c55e; }
+        .sc-bad { color: #ef4444; }
+        /* ================================================================= */
+        /* === FIN ESTILOS PERFORMANCE === */
+        /* ================================================================= */
+
+        /* ================================================================= */
+        /* === ESTILOS MODO SIMULACIÓN (LIGHT / ITEMSETS) === */
+        /* ================================================================= */
+        body.mode-simulation {
+            background-color: #f2f2f2;
+            color: #333;
+            display: block; /* Reset flex */
+        }
+        
+        /* Layout Simulación */
+        .sim-screen { display: none; flex-direction: column; min-height: 100vh; }
+        .sim-screen.active { display: flex; }
+        
+        .sim-header { background: #235d88; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; font-size: 14px; }
+        .sim-footer { background: #235d88; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; margin-top: auto; flex-shrink: 0; z-index: 10; }
+        
+        .sim-content { padding: 30px 20px; width: 100%; max-width: 1300px; margin: 0 auto; box-sizing: border-box; display: flex; gap: 25px; flex-grow: 1; }
+        @media (max-width: 900px) { .sim-content { flex-direction: column; } }
+        
+        /* Panel Paciente */
+        .sim-patient-panel { background: white; border: 1px solid #ddd; border-radius: 4px; width: 320px; flex-shrink: 0; height: fit-content; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        @media (max-width: 900px) { .sim-patient-panel { width: 100%; } }
+        .sim-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .sim-table th { background: #e0e6ec; padding: 8px 10px; text-align: left; border-top: 1px solid #ddd; color: #333; font-weight: 600; }
+        .sim-table td { padding: 8px 10px; border-bottom: 1px solid #ddd; }
+        
+        /* Panel Pregunta */
+        .sim-question-area { flex-grow: 1; width: 100%; }
+        .sim-q-text { font-size: 16px; font-weight: 500; margin-bottom: 25px; line-height: 1.5; margin-top: 0; }
+        
+        .sim-option { background: white; border: 1px solid #ddd; padding: 12px 15px; margin-bottom: 12px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; position: relative; transition: background 0.2s; }
+        .sim-option:hover { background: #e6f0f5; border-color: #235d88; }
+        .sim-option.selected { background: #dceefb; border-color: #235d88; }
+        
+        /* Custom Radio Simulación */
+        .sim-option input { display: none; }
+        .sim-custom-radio { width: 16px; height: 16px; border: 1px solid #999; border-radius: 50%; margin-right: 15px; background: white; position: relative; }
+        .sim-option.selected .sim-custom-radio { background: #235d88; border-color: #235d88; }
+        .sim-option.selected .sim-custom-radio::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 6px; height: 6px; background: white; border-radius: 50%; }
+
+        /* Botones Simulación */
+        .btn-sim-nav { background: white; color: #235d88; border: none; padding: 10px 20px; font-weight: 700; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-size: 14px; transition: 0.3s; }
+        .btn-sim-nav:hover { background: #f2f2f2; }
+        .btn-sim-nav.mark.active { background: #ffc107; color: #333; border-color: #ffc107; }
+        
+        /* Review Screen */
+        .sim-review-table-container { width: 90%; max-width: 800px; margin: 30px auto; background: white; border: 1px solid #ddd; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .sim-review-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .sim-review-table th { background: #e0e6ec; padding: 8px 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        .sim-review-table td { padding: 8px 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .sim-review-table tr:hover { background: #f9f9f9; }
+
+        /* Performance Screen Simulation */
+        .sim-perf-container { max-width: 1000px; margin: 40px auto; background: #1c1c1c; color: #f0f0f0; border-radius: 20px; padding: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        @media (max-width: 768px) { .sim-perf-container { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body>
 
-    <div id="root-practice" class="practice-wrapper hidden">
-        
-        <div id="prac-start-screen" class="fade-in">
-            <h1 class="prac-title">INBDE Pro Lab</h1>
-            <p class="prac-desc">Practice Mode: Select Intensity</p>
-            
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; max-width:400px; margin:0 auto;">
-                <button class="btn-prac-start" onclick="initPracticeQuiz(10)">10 Questions</button>
-                <button class="btn-prac-start" onclick="initPracticeQuiz(25)">25 Questions</button>
-                <button class="btn-prac-start" onclick="initPracticeQuiz(50)">50 Questions</button>
-                <button class="btn-prac-start" onclick="initPracticeQuiz(100)">100 Questions</button>
-            </div>
-        </div>
+    <div id="root-practice" class="practice-wrapper hidden">
+        
+        <div id="prac-start-screen" class="fade-in">
+            <h1 class="prac-title">INBDE Pro Lab</h1>
+            <p class="prac-desc">Practice Mode: Select Intensity</p>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; max-width:400px; margin:0 auto;">
+                <button class="btn-prac-start" onclick="initPracticeQuiz(10)">10 Questions</button>
+                <button class="btn-prac-start" onclick="initPracticeQuiz(25)">25 Questions</button>
+                <button class="btn-prac-start" onclick="initPracticeQuiz(50)">50 Questions</button>
+                <button class="btn-prac-start" onclick="initPracticeQuiz(100)">100 Questions</button>
+            </div>
+        </div>
 
-        <div id="prac-quiz-screen" class="prac-quiz-container hidden fade-in">
-            <div class="prac-header">
-                <span class="prac-brand">INBDE Pro Lab</span>
-                <span id="prac-progress" style="color:#71717a">1 / --</span>
-            </div>
-            
-            <div id="prac-question-area">
-                <p id="prac-q-text" class="prac-question-text">Loading...</p>
-                <div id="prac-options-list"></div>
-            </div>
+        <div id="prac-quiz-screen" class="prac-quiz-container hidden fade-in">
+            <div class="prac-header">
+                <span class="prac-brand">INBDE Pro Lab</span>
+                <span id="prac-progress" style="color:#71717a">1 / --</span>
+            </div>
+            
+            <div id="prac-question-area">
+                <p id="prac-q-text" class="prac-question-text">Loading...</p>
+                <div id="prac-options-list"></div>
+            </div>
 
-            <p id="prac-error-msg" class="hidden" style="color:#e53e3e; text-align:center; font-weight:bold;">Please classify the question to continue.</p>
+            <p id="prac-error-msg" class="hidden" style="color:#e53e3e; text-align:center; font-weight:bold;">Please classify the question to continue.</p>
 
-            <div id="prac-review-area" class="prac-review-area hidden">
-                <p style="color:#71717a; font-weight:600;">Self Assessment</p>
-                <div class="prac-classify-btns">
-                    <button class="btn-classify btn-hard" onclick="classifyPractice('learning')">Hard</button>
-                    <button class="btn-classify btn-medium" onclick="classifyPractice('reviewing')">Medium</button>
-                    <button class="btn-classify btn-easy" onclick="classifyPractice('mastered')">Easy</button>
-                </div>
-                <div id="prac-explanation" class="prac-explanation hidden"></div>
-                <button id="btn-prac-next" class="btn-prac-next hidden" onclick="nextPracticeQuestion()">NEXT QUESTION →</button>
-            </div>
-        </div>
+            <div id="prac-review-area" class="prac-review-area hidden">
+                <p style="color:#71717a; font-weight:600;">Self Assessment</p>
+                <div class="prac-classify-btns">
+                    <button class="btn-classify btn-hard" onclick="classifyPractice('learning')">Hard</button>
+                    <button class="btn-classify btn-medium" onclick="classifyPractice('reviewing')">Medium</button>
+                    <button class="btn-classify btn-easy" onclick="classifyPractice('mastered')">Easy</button>
+                </div>
+                <div id="prac-explanation" class="prac-explanation hidden"></div>
+                <button id="btn-prac-next" class="btn-prac-next hidden" onclick="nextPracticeQuestion()">NEXT QUESTION →</button>
+            </div>
+        </div>
 
-        <div id="prac-results-screen" class="prac-results-container hidden fade-in">
-            <div style="grid-column: 1/-1; text-align:center;">
-                <div style="font-size:2rem; font-weight:800; color:#facc15;">INBDE Pro Lab</div>
-                <div style="font-size:1.5rem; color:white; opacity:0.9; margin-bottom:20px;">Session Performance</div>
-            </div>
-            
-            <div class="prac-chart-box">
-                <div class="pie-chart" id="prac-final-chart">
-                    <div class="pie-center">
-                        <span id="prac-final-score" style="font-size:32px; font-weight:bold;">0%</span>
-                        <span style="font-size:12px; color:#71717a;">Accuracy</span>
-                    </div>
-                </div>
-                <div style="font-size:24px; font-weight:bold; color:white;">
-                    <span style="color:#38a169" id="prac-total-correct">0</span> / <span style="color:#e53e3e" id="prac-total-incorrect">0</span>
-                </div>
-            </div>
+                <div id="prac-results-screen" class="hidden fade-in" style="min-height:100vh; display:flex; justify-content:center; align-items:center;">
+            <div class="perf-card">
+                <div class="perf-header">
+                    <div class="perf-title">Performance</div>
+                </div>
 
-            <div>
-                <div class="landscape-bar">
-                    <div id="bar-easy" class="ls-seg" style="background-color: #38a169; width:0%;">
-                        <span style="font-size:16px;" id="count-easy">0</span><span style="font-size:9px; text-transform:uppercase;">Easy</span>
-                    </div>
-                    <div id="bar-medium" class="ls-seg" style="background-color: #ecc94b; width:0%;">
-                        <span style="font-size:16px;" id="count-medium">0</span><span style="font-size:9px; text-transform:uppercase;">Med</span>
-                    </div>
-                    <div id="bar-hard" class="ls-seg" style="background-color: #e53e3e; width:0%;">
-                        <span style="font-size:16px;" id="count-hard">0</span><span style="font-size:9px; text-transform:uppercase;">Hard</span>
-                    </div>
-                </div>
-                
-                <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:15px; margin-bottom:20px;">
-                    <div style="font-size:14px; font-weight:bold; color:#71717a; text-transform:uppercase; text-align:center; margin-bottom:10px;">Details</div>
-                    <ul id="prac-cat-list" style="list-style:none; padding:0; margin:0; color:#ddd; font-size:14px;"></ul>
-                </div>
+                <div class="perf-left">
+                    <div class="donut-chart" id="perf-donut">
+                        <div class="donut-hole">
+                            <span class="donut-val" id="perf-acc-val">0%</span>
+                            <span class="donut-label">Accuracy</span>
+                        </div>
+                    </div>
+                    <div class="perf-stats-row">
+                        <span class="stat-green" id="perf-total-correct">0</span> / 
+                        <span class="stat-red" id="perf-total-incorrect">0</span>
+                    </div>
+                    <button onclick="goToDashboard()" style="margin-top:30px; background:transparent; border:1px solid #555; color:white; padding:10px 30px; border-radius:8px; cursor:pointer;">EXIT</button>
+                </div>
 
-                <button class="btn-prac-start" style="width:100%; border-color:#facc15; color:#facc15; background:transparent;" onclick="goToDashboard()">GO TO DASHBOARD</button>
-            </div>
-        </div>
-    </div>
+                <div class="perf-right">
+                    
+                    <div class="perf-bar-container" id="perf-top-bar">
+                        </div>
 
+                    <div class="cat-box">
+                        <div class="cat-header-text">CATEGORIES PERFORMANCE</div>
+                        <div id="perf-cat-list">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+            <div id="root-simulation" class="hidden">
+        
+        <div id="sim-screen-quiz" class="sim-screen active">
+            <div class="sim-header">
+                <div class="header-left"><span id="sim-q-counter">Question 1 of --</span></div>
+                <div class="header-center" style="text-align:center;">
+                    <span style="display:block; font-weight:500;">INBDE Pro Lab</span>
+                    <span style="display:block; font-size:12px;">Simulation Mode</span>
+                </div>
+                <div class="header-right"><span id="sim-timer">Time: --:--</span></div>
+            </div>
 
-    <div id="root-simulation" class="hidden">
-        
-        <div id="sim-screen-quiz" class="sim-screen active">
-            <div class="sim-header">
-                <div class="header-left"><span id="sim-q-counter">Question 1 of --</span></div>
-                <div class="header-center" style="text-align:center;">
-                    <span style="display:block; font-weight:500;">INBDE Pro Lab</span>
-                    <span style="display:block; font-size:12px;">Simulation Mode</span>
-                </div>
-                <div class="header-right"><span id="sim-timer">Time: --:--</span></div>
-            </div>
+            <div class="sim-content">
+                <div class="sim-patient-panel">
+                    <table class="sim-table">
+                        <thead><tr><th>Patient</th></tr></thead>
+                        <tbody id="sim-pat-demo"><tr><td>Loading...</td></tr></tbody>
+                        <thead><tr><th>Chief Complaint</th></tr></thead>
+                        <tbody id="sim-pat-cc"><tr><td>...</td></tr></tbody>
+                        <thead><tr><th>Background / History</th></tr></thead>
+                        <tbody id="sim-pat-hist"><tr><td>...</td></tr></tbody>
+                        <thead><tr><th>Current Findings</th></tr></thead>
+                        <tbody id="sim-pat-find"><tr><td>...</td></tr></tbody>
+                    </table>
+                </div>
 
-            <div class="sim-content">
-                <div class="sim-patient-panel">
-                    <table class="sim-table">
-                        <thead><tr><th>Patient</th></tr></thead>
-                        <tbody id="sim-pat-demo"><tr><td>Loading...</td></tr></tbody>
-                        <thead><tr><th>Chief Complaint</th></tr></thead>
-                        <tbody id="sim-pat-cc"><tr><td>...</td></tr></tbody>
-                        <thead><tr><th>Background / History</th></tr></thead>
-                        <tbody id="sim-pat-hist"><tr><td>...</td></tr></tbody>
-                        <thead><tr><th>Current Findings</th></tr></thead>
-                        <tbody id="sim-pat-find"><tr><td>...</td></tr></tbody>
-                    </table>
-                </div>
+                <div class="sim-question-area">
+                    <p id="sim-q-text" class="sim-q-text">Loading Question...</p>
+                    <div id="sim-options-container"></div>
+                </div>
+            </div>
 
-                <div class="sim-question-area">
-                    <p id="sim-q-text" class="sim-q-text">Loading Question...</p>
-                    <div id="sim-options-container"></div>
-                </div>
-            </div>
+            <div class="sim-footer">
+                <button class="btn-sim-nav" onclick="nextSimQuestion()">NEXT</button>
+                <div style="display:flex; gap:15px;">
+                    <button id="btn-sim-mark" class="btn-sim-nav mark" onclick="toggleSimMark()">MARK</button>
+                    <button class="btn-sim-nav" onclick="goToSimReview()">REVIEW</button>
+                </div>
+            </div>
+        </div>
 
-            <div class="sim-footer">
-                <button class="btn-sim-nav" onclick="nextSimQuestion()">NEXT</button>
-                <div style="display:flex; gap:15px;">
-                    <button id="btn-sim-mark" class="btn-sim-nav mark" onclick="toggleSimMark()">MARK</button>
-                    <button class="btn-sim-nav" onclick="goToSimReview()">REVIEW</button>
-                </div>
-            </div>
-        </div>
+        <div id="sim-screen-review" class="sim-screen">
+            <div class="sim-header">
+                <div style="flex:1; text-align:center;">
+                    <span style="font-weight:500;">INBDE Pro Lab</span><br>
+                    <span style="font-size:12px;">Review Panel</span>
+                </div>
+                <div><span id="sim-timer-rev">Time: --:--</span></div>
+            </div>
+            
+            <div style="flex-grow:1; overflow-y:auto; padding:30px; display:flex; justify-content:center;">
+                <div class="sim-review-table-container">
+                    <table class="sim-review-table">
+                        <thead>
+                            <tr>
+                                <th style="padding-left:20px;">Question Name</th>
+                                <th style="text-align:center;">Marked</th>
+                                <th style="text-align:center;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sim-review-body">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
 
-        <div id="sim-screen-review" class="sim-screen">
-            <div class="sim-header">
-                <div style="flex:1; text-align:center;">
-                    <span style="font-weight:500;">INBDE Pro Lab</span><br>
-                    <span style="font-size:12px;">Review Panel</span>
-                </div>
-                <div><span id="sim-timer-rev">Time: --:--</span></div>
-            </div>
-            
-            <div style="flex-grow:1; overflow-y:auto; padding:30px; display:flex; justify-content:center;">
-                <div class="sim-review-table-container">
-                    <table class="sim-review-table">
-                        <thead>
-                            <tr>
-                                <th style="padding-left:20px;">Question Name</th>
-                                <th style="text-align:center;">Marked</th>
-                                <th style="text-align:center;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sim-review-body">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
+            <div class="sim-footer">
+                <div style="display:flex; gap:15px;">
+                    <button class="btn-sim-nav" style="background:transparent; color:white; border:1px solid white;" onclick="returnToSimQuiz()">BACK TO QUIZ</button>
+                </div>
+                <button class="btn-sim-nav" style="background:#174263; color:white; border:none;" onclick="finishSimExam()">END EXAM</button>
+            </div>
+        </div>
 
-            <div class="sim-footer">
-                <div style="display:flex; gap:15px;">
-                    <button class="btn-sim-nav" style="background:transparent; color:white; border:1px solid white;" onclick="returnToSimQuiz()">BACK TO QUIZ</button>
-                </div>
-                <button class="btn-sim-nav" style="background:#174263; color:white; border:none;" onclick="finishSimExam()">END EXAM</button>
-            </div>
-        </div>
+                <div id="sim-screen-perf" class="sim-screen" style="background:#000; justify-content:center; align-items:center; display:none;">
+            <div class="perf-card">
+                <div class="perf-header">
+                    <div class="perf-title">Simulation Results</div>
+                </div>
 
-        <div id="sim-screen-perf" class="sim-screen" style="background:#111; justify-content:center; align-items:center;">
-            <div class="sim-perf-container">
-                <div style="grid-column:1/-1; text-align:center; font-size:24px; font-weight:bold; margin-bottom:20px;">Performance Dashboard</div>
-                
-                <div style="display:flex; flex-direction:column; align-items:center;">
-                    <div class="pie-chart" id="sim-final-chart" style="background:conic-gradient(#28a745 0% 0%, #dc3545 0% 100%); width:220px; height:220px;">
-                        <div class="pie-center" style="background:#1c1c1c; color:white; width:65%; height:65%;">
-                            <span id="sim-final-acc" style="font-size:32px; font-weight:bold;">0%</span>
-                            <span style="font-size:12px;">Accuracy</span>
-                        </div>
-                    </div>
-                    <div style="font-size:24px; font-weight:bold; margin-top:20px;">
-                        <span style="color:#28a745" id="sim-count-correct">0</span> / <span style="color:#dc3545" id="sim-count-incorrect">0</span>
-                    </div>
-                </div>
+                <div class="perf-left">
+                    <div class="donut-chart" id="sim-perf-donut">
+                        <div class="donut-hole">
+                            <span class="donut-val" id="sim-perf-acc-val">0%</span>
+                        </div>
+                    </div>
+                    <div class="perf-stats-row">
+                        <span class="stat-green" id="sim-perf-total-correct">0</span> / 
+                        <span class="stat-red" id="sim-perf-total-incorrect">0</span>
+                    </div>
+                    <button onclick="goToDashboard()" style="margin-top:30px; background:transparent; border:1px solid #555; color:white; padding:10px 30px; border-radius:8px; cursor:pointer;">EXIT EXAM</button>
+                </div>
 
-                <div style="display:flex; flex-direction:column; justify-content:center;">
-                    <div class="landscape-bar" style="height:60px;">
-                        <div id="sim-bar-correct" style="background:#28a745; width:50%; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; font-weight:bold;">
-                            <span id="sim-val-correct">0</span>
-                            <span style="font-size:11px; opacity:0.8;">CORRECT</span>
-                        </div>
-                        <div id="sim-bar-incorrect" style="background:#dc3545; width:50%; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; font-weight:bold;">
-                            <span id="sim-val-incorrect">0</span>
-                            <span style="font-size:11px; opacity:0.8;">INCORRECT</span>
-                        </div>
-                    </div>
-                    
-                    <button class="btn-sim-nav" style="width:100%; margin-top:30px; text-align:center;" onclick="goToDashboard()">GO TO DASHBOARD</button>
-                </div>
-            </div>
-        </div>
+                <div class="perf-right">
+                    
+                    <div class="perf-bar-container" id="sim-perf-top-bar">
+                        </div>
 
-    </div>
+                    <div class="cat-box">
+                        <div class="cat-header-text">CATEGORIES PERFORMANCE</div>
+                        <div id="sim-perf-cat-list">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+            </div>
 
-    <script src="app.js"></script>
-    <script>
-        // ==========================================================
-        // CONFIGURACIÓN Y ESTADO GLOBAL
-        // ==========================================================
-        const urlParams = new URLSearchParams(window.location.search);
-        const mode = urlParams.get('mode') || 'practice'; 
-        // Cambiado default de 10 a 100 para permitir selección en práctica
-        const count = parseInt(urlParams.get('count')) || 100;
-        
-        const isSimulation = (mode.includes('simulation') || mode === 'itemsets');
+    <script src="app.js"></script>
+    <script>
+        // ==========================================================
+        // CONFIGURACIÓN Y ESTADO GLOBAL
+        // ==========================================================
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode') || 'practice'; 
+        
+        // MODIFICACIÓN 1: Obtener count de forma condicional para manejar el modo standalone
+        const urlCountParam = urlParams.get('count');
+        const count = urlCountParam ? parseInt(urlCountParam) : null; 
+        
+        const isSimulation = (mode.includes('simulation') || mode === 'itemsets');
 
-        let quizData = [];
-        let currentIndex = 0;
-        let userAnswers = {}; // { qId: selectedOptionIndexOrString }
-        
-        // Estado Práctica
-        let practiceStats = { easy: 0, medium: 0, hard: 0 };
-        
-        // Estado Simulación
-        let markedQuestions = new Set();
-        let simTimerInterval;
-        let simTotalTime = 0; 
+        let quizData = [];
+        let currentIndex = 0;
+        let userAnswers = {}; // { qId: selectedOptionIndexOrString }
+        
+        // Estado Práctica
+        let practiceStats = { easy: 0, medium: 0, hard: 0 };
+        
+        // Estado Simulación
+        let markedQuestions = new Set();
+        let simTimerInterval;
+        let simTotalTime = 0; 
 
-        // Variable para almacenar el término de búsqueda si existe
-        const searchTerm = urlParams.get('term');
+        // Variable para almacenar el término de búsqueda si existe
+        const searchTerm = urlParams.get('term');
 
-        // ==========================================================
-        // INICIALIZACIÓN
-        // ==========================================================
-        document.addEventListener('DOMContentLoaded', async () => {
-            const body = document.body;
-            
-            if (isSimulation) {
-                body.classList.add('mode-simulation');
-                document.getElementById('root-simulation').classList.remove('hidden');
-                // Timer setup (e.g. 90 seg por pregunta)
-                simTotalTime = count * 90; 
-                startSimTimer();
-            } else {
-                body.classList.add('mode-practice');
-                document.getElementById('root-practice').classList.remove('hidden');
-            }
+        // ==========================================================
+        // INICIALIZACIÓN
+        // ==========================================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            const body = document.body;
+            
+            if (isSimulation) {
+                body.classList.add('mode-simulation');
+                document.getElementById('root-simulation').classList.remove('hidden');
+                // Timer setup (e.g. 90 seg por pregunta)
+                simTotalTime = count * 90; 
+                startSimTimer();
+            } else {
+                body.classList.add('mode-practice');
+                document.getElementById('root-practice').classList.remove('hidden');
+            }
 
-            await fetchQuestions();
-        });
+            await fetchQuestions();
+        });
 
-        // MODIFICACIÓN B: FUNCIÓN FETCH REEMPLAZADA COMPLETA
-        async function fetchQuestions() {
-            if(typeof _supabase === 'undefined') {
-                alert("Database error: Supabase not found.");
-                return;
-            }
+        // MODIFICACIÓN B: FUNCIÓN FETCH REEMPLAZADA COMPLETA
+        async function fetchQuestions() {
+            if(typeof _supabase === 'undefined') {
+                alert("Database error: Supabase not found.");
+                return;
+            }
 
-            let data = [];
-            let error = null;
+            let data = [];
+            let error = null;
 
-            // --- LÓGICA 1: DAILY RUN (Aleatorio basado en fecha) ---
-            if (mode === 'daily') {
-                // 1. Traemos SOLO los IDs de todas las preguntas (es liviano)
-                const { data: allIds, error: idError } = await _supabase
-                    .from('questions_bank')
-                    .select('id');
-                
-                if (idError || !allIds) return;
+            // --- LÓGICA 1: DAILY RUN (Aleatorio basado en fecha) ---
+            if (mode === 'daily') {
+                // 1. Traemos SOLO los IDs de todas las preguntas (es liviano)
+                const { data: allIds, error: idError } = await _supabase
+                    .from('questions_bank')
+                    .select('id');
+                
+                if (idError || !allIds) return;
 
-                // 2. "Barajar" usando la fecha como semilla (Seed)
-                // Esto hace que el orden sea aleatorio pero FIJO por hoy.
-                const todaySeed = new Date().toDateString(); // Ej: "Wed Nov 26 2025"
-                const seededRandom = (str) => {
-                    let hash = 0;
-                    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-                    return function() {
-                        const x = Math.sin(hash++) * 10000;
-                        return x - Math.floor(x);
-                    };
-                };
-                
-                const rng = seededRandom(todaySeed);
-                const shuffled = allIds.sort(() => 0.5 - rng()); // Ordenar usando la semilla
-                
-                // 3. Tomar los primeros 10 IDs
-                const selectedIds = shuffled.slice(0, 10).map(x => x.id);
+                // 2. "Barajar" usando la fecha como semilla (Seed)
+                // Esto hace que el orden sea aleatorio pero FIJO por hoy.
+                const todaySeed = new Date().toDateString(); // Ej: "Wed Nov 26 2025"
+                const seededRandom = (str) => {
+                    let hash = 0;
+                    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+                    return function() {
+                        const x = Math.sin(hash++) * 10000;
+                        return x - Math.floor(x);
+                    };
+                };
+                
+                const rng = seededRandom(todaySeed);
+                const shuffled = allIds.sort(() => 0.5 - rng()); // Ordenar usando la semilla
+                
+                // 3. Tomar los primeros 10 IDs
+                const selectedIds = shuffled.slice(0, 10).map(x => x.id);
 
-                // 4. Traer las preguntas completas de esos IDs
-                const { data: dailyQuestions, error: qError } = await _supabase
-                    .from('questions_bank')
-                    .select('*, clinical_cases (*)')
-                    .in('id', selectedIds);
-                
-                data = dailyQuestions;
-                error = qError;
-            } 
-            
-            // --- LÓGICA 2: BUSCADOR (IA LAB) ---
-            else if (mode === 'search' && searchTerm) {
-                const { data: searchData, error: searchError } = await _supabase
-                    .from('questions_bank')
-                    .select('*, clinical_cases (*)')
-                    .ilike('question_text', `%${searchTerm}%`); // Busca que contenga la palabra
-                
-                data = searchData;
-                error = searchError;
-            }
+                // 4. Traer las preguntas completas de esos IDs
+                const { data: dailyQuestions, error: qError } = await _supabase
+                    .from('questions_bank')
+                    .select('*, clinical_cases (*)')
+                    .in('id', selectedIds);
+                
+                data = dailyQuestions;
+                error = qError;
+            } 
+            
+            // --- LÓGICA 2: BUSCADOR (IA LAB) ---
+            else if (mode === 'search' && searchTerm) {
+                const { data: searchData, error: searchError } = await _supabase
+                    .from('questions_bank')
+                    .select('*, clinical_cases (*)')
+                    .ilike('question_text', `%${searchTerm}%`); // Busca que contenga la palabra
+                
+                data = searchData;
+                error = searchError;
+            }
 
-            // --- LÓGICA 3: MODO NORMAL / SIMULACIÓN ---
-            else {
-                let query = _supabase.from('questions_bank').select('*, clinical_cases (*)');
+            // --- LÓGICA 3: MODO NORMAL / SIMULACIÓN ---
+            else {
+                let query = _supabase.from('questions_bank').select('*, clinical_cases (*)');
 
-                if (isSimulation) {
-                    query = query.not('case_id', 'is', null); // Solo casos clínicos
-                } else {
-                    query = query.is('case_id', null); // Solo preguntas sueltas
-                }
-                
-                // Si es práctica normal, traemos un lote grande por defecto (count=100)
-                query = query.limit(count);
-                
-                const response = await query;
-                data = response.data;
-                error = response.error;
-            }
+                if (isSimulation) {
+                    query = query.not('case_id', 'is', null); // Solo casos clínicos
+                } else {
+                    query = query.is('case_id', null); // Solo preguntas sueltas
+                }
+                
+                // IMPORTANTE: Si count es null (modo práctica manual), traemos un default (ej. 150) 
+                // para tenerlos en memoria, pero NO iniciamos el quiz todavía.
+                query = query.limit(count || 150);
+                
+                const response = await query;
+                data = response.data;
+                error = response.error;
+            }
 
-            // MANEJO DE RESULTADOS
-            if (error) {
-                console.error("Error fetching data:", error);
-                return;
-            }
+            // MANEJO DE RESULTADOS
+            if (error) {
+                console.error("Error fetching data:", error);
+                return;
+            }
 
-            if (!data || data.length === 0) {
-                quizData = [{
-                    id: 0, 
-                    question_text: mode === 'search' ? `No questions found with word: "${searchTerm}"` : "No questions available.", 
-                    option_a: "N/A", option_b: "N/A", correct_answer: "N/A", explanation: ""
-                }];
-            } else {
-                quizData = data;
-                // Si no es Daily (que ya está mezclado por fecha), mezclamos simple
-                if (mode !== 'daily') {
-                    quizData.sort(() => Math.random() - 0.5);
-                }
-            }
-            
-            // Iniciar interfaz
-            if (isSimulation) {
-                initSimQuiz();
-            } else {
-                // Para modo práctica, esperamos a que el usuario pulse el botón de cantidad
-                // EXCEPTO si es daily o search, que arrancan directo
-                if (mode === 'daily' || mode === 'search') {
-                    document.getElementById('prac-start-screen').classList.add('hidden');
-                    document.getElementById('prac-quiz-screen').classList.remove('hidden');
-                    renderPracticeQuestion();
-                }
-            }
-        }
+            if (!data || data.length === 0) {
+                quizData = [{
+                    id: 0, 
+                    question_text: mode === 'search' ? `No questions found with word: "${searchTerm}"` : "No questions available.", 
+                    option_a: "N/A", option_b: "N/A", correct_answer: "N/A", explanation: ""
+                }];
+            } else {
+                quizData = data;
+                // Si no es Daily (que ya está mezclado por fecha), mezclamos simple
+                if (mode !== 'daily') {
+                    quizData.sort(() => Math.random() - 0.5);
+                }
+            }
+            
+            // Iniciar interfaz
+            if (isSimulation) {
+                initSimQuiz();
+            } else {
+                // CORRECCIÓN PARA PROBLEMA #5 (Lógica de inicio condicional)
+                // Solo iniciamos renderPracticeQuestion si el modo es 'daily' o 'search' 
+                // O si ya venía un count fijo en la URL (ej. desde un link directo).
+                // Si es 'standalone' puro, esperamos en la pantalla de los 4 botones.
+                if (mode === 'daily' || mode === 'search' || (mode === 'standalone' && count !== null)) {
+                    // Si ya tenemos count, ocultamos la pantalla de inicio y arrancamos
+                    document.getElementById('prac-start-screen').classList.add('hidden');
+                    document.getElementById('prac-quiz-screen').classList.remove('hidden');
+                    renderPracticeQuestion();
+                } else {
+                    // Dejamos que se vea el prac-start-screen (los 4 botones)
+                    document.getElementById('prac-start-screen').classList.remove('hidden');
+                }
+            }
+        }
 
-        // ==========================================================
-        // LÓGICA MODO PRÁCTICA
-        // ==========================================================
-        
-        // MODIFICACIÓN C: ACEPTAR CANTIDAD SELECCIONADA
-        function initPracticeQuiz(selectedCount) {
-            // Si viene un número, recortamos la data cargada a esa cantidad
-            if (selectedCount && quizData.length > selectedCount) {
-                quizData = quizData.slice(0, selectedCount);
-            }
+        // ==========================================================
+        // LÓGICA MODO PRÁCTICA
+        // ==========================================================
+        
+        // MODIFICACIÓN C: ACEPTAR CANTIDAD SELECCIONADA
+        function initPracticeQuiz(selectedCount) {
+            // Si viene un número, recortamos la data cargada a esa cantidad
+            if (selectedCount && quizData.length > selectedCount) {
+                quizData = quizData.slice(0, selectedCount);
+            }
 
-            document.getElementById('prac-start-screen').classList.add('hidden');
-            document.getElementById('prac-quiz-screen').classList.remove('hidden');
-            renderPracticeQuestion();
-        }
+            document.getElementById('prac-start-screen').classList.add('hidden');
+            document.getElementById('prac-quiz-screen').classList.remove('hidden');
+            renderPracticeQuestion();
+        }
 
-        function renderPracticeQuestion() {
-            const q = quizData[currentIndex];
-            document.getElementById('prac-progress').innerText = `${currentIndex + 1} / ${quizData.length}`;
-            document.getElementById('prac-q-text').innerText = q.question_text;
-            
-            // Reset UI
-            document.getElementById('prac-review-area').classList.add('hidden');
-            document.getElementById('prac-error-msg').classList.add('hidden');
-            const optsContainer = document.getElementById('prac-options-list');
-            optsContainer.innerHTML = '';
+        function renderPracticeQuestion() {
+            const q = quizData[currentIndex];
+            document.getElementById('prac-progress').innerText = `${currentIndex + 1} / ${quizData.length}`;
+            document.getElementById('prac-q-text').innerText = q.question_text;
+            
+            // Reset UI
+            document.getElementById('prac-review-area').classList.add('hidden');
+            document.getElementById('prac-error-msg').classList.add('hidden');
+            // MODIFICACIÓN 2.1: Ocultar botón Next al inicio
+            document.getElementById('btn-prac-next').classList.add('hidden');
+            const optsContainer = document.getElementById('prac-options-list');
+            optsContainer.innerHTML = '';
 
-            const options = [q.option_a, q.option_b, q.option_c, q.option_d];
-            
-            options.forEach((optText, idx) => {
-                if(!optText) return;
-                const letter = String.fromCharCode(65 + idx); // A, B, C, D
-                
-                const div = document.createElement('div');
-                div.className = 'prac-option';
-                div.id = `prac-opt-${idx}`;
-                div.innerHTML = `<div class="prac-radio"></div><span style="font-size:1.1rem; font-weight:500;">${optText}</span>`;
-                div.onclick = () => handlePracticeOptionClick(idx, letter, q);
-                optsContainer.appendChild(div);
-            });
-        }
+            const options = [q.option_a, q.option_b, q.option_c, q.option_d];
+            
+            options.forEach((optText, idx) => {
+                if(!optText) return;
+                const letter = String.fromCharCode(65 + idx); // A, B, C, D
+                
+                const div = document.createElement('div');
+                div.className = 'prac-option';
+                div.id = `prac-opt-${idx}`;
+                div.innerHTML = `<div class="prac-radio"></div><span style="font-size:1.1rem; font-weight:500;">${optText}</span>`;
+                div.onclick = () => handlePracticeOptionClick(idx, letter, q);
+                optsContainer.appendChild(div);
+            });
+        }
 
-        function handlePracticeOptionClick(idx, letter, q) {
-            if(userAnswers[q.id]) return; // Ya respondido
+        function handlePracticeOptionClick(idx, letter, q) {
+            if(userAnswers[q.id]) return; // Ya respondido
 
-            userAnswers[q.id] = letter;
-            
-            // Marcar visualmente
-            const selectedDiv = document.getElementById(`prac-opt-${idx}`);
-            selectedDiv.classList.add('selected');
-            
-            // Revelar respuestas
-            const allOpts = document.getElementById('prac-options-list').children;
-            
-            Array.from(allOpts).forEach((div, i) => {
-                div.classList.add('answered'); // Bloquear clicks
-                const currentOptText = [q.option_a, q.option_b, q.option_c, q.option_d][i];
-                const currentLetter = String.fromCharCode(65+i);
+            userAnswers[q.id] = letter;
+            
+            // Marcar visualmente
+            const selectedDiv = document.getElementById(`prac-opt-${idx}`);
+            selectedDiv.classList.add('selected');
+            
+            // Revelar respuestas
+            const allOpts = document.getElementById('prac-options-list').children;
+            
+            Array.from(allOpts).forEach((div, i) => {
+                div.classList.add('answered'); // Bloquear clicks
+                const currentOptText = [q.option_a, q.option_b, q.option_c, q.option_d][i];
+                const currentLetter = String.fromCharCode(65+i);
 
-                // Lógica flexible de comparación (Texto o Letra)
-                const isCorrect = (currentOptText === q.correct_answer) || (currentLetter === q.correct_answer);
-                
-                if(isCorrect) div.classList.add('correct');
-                else if(i === idx) div.classList.add('incorrect');
-            });
+                // Lógica flexible de comparación (Texto o Letra)
+                const isCorrect = (currentOptText === q.correct_answer) || (currentLetter === q.correct_answer);
+                
+                if(isCorrect) div.classList.add('correct');
+                else if(i === idx) div.classList.add('incorrect');
+            });
 
-            // Mostrar revisión
-            document.getElementById('prac-review-area').classList.remove('hidden');
-            document.getElementById('prac-explanation').innerHTML = q.explanation ? `<strong>Explanation:</strong><br>${q.explanation}` : "No explanation provided.";
-            document.getElementById('prac-explanation').classList.remove('hidden');
-        }
+            // Mostrar revisión
+            document.getElementById('prac-review-area').classList.remove('hidden');
+            document.getElementById('prac-explanation').innerHTML = q.explanation ? `<strong>Explanation:</strong><br>${q.explanation}` : "No explanation provided.";
+            document.getElementById('prac-explanation').classList.remove('hidden');
+        }
 
-        // MODIFICACIÓN D: REGISTRO DE ESTADÍSTICAS EN DB
-        async function classifyPractice(status) {
-            const q = quizData[currentIndex];
-            
-            // UI Update
-            const btns = document.querySelectorAll('.prac-classify-btns .btn-classify');
-            btns.forEach(b => b.classList.remove('active'));
-            if(status==='learning') document.querySelector('.btn-hard').classList.add('active');
-            if(status==='reviewing') document.querySelector('.btn-medium').classList.add('active');
-            if(status==='mastered') document.querySelector('.btn-easy').classList.add('active');
+        // MODIFICACIÓN D: REGISTRO DE ESTADÍSTICAS EN DB
+        async function classifyPractice(status) {
+            const q = quizData[currentIndex];
+            
+            // UI Update
+            const btns = document.querySelectorAll('.prac-classify-btns .btn-classify');
+            btns.forEach(b => b.classList.remove('active'));
+            if(status==='learning') document.querySelector('.btn-hard').classList.add('active');
+            if(status==='reviewing') document.querySelector('.btn-medium').classList.add('active');
+            if(status==='mastered') document.querySelector('.btn-easy').classList.add('active');
 
-            practiceStats[status === 'learning' ? 'hard' : (status === 'reviewing' ? 'medium' : 'easy')]++;
-            
-            // Registro completo en Base de Datos
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (session) {
-                // Insertamos con el status. 
-                const { error } = await _supabase.from('user_progress').insert([
-                    { 
-                        user_id: session.user.id, 
-                        question_id: q.id, 
-                        status: status, 
-                        quiz_mode: mode, // 'daily', 'practice', 'search'
-                        timestamp: new Date() 
-                    }
-                ]);
-                if (error) console.error("Error saving progress:", error);
-            }
+            practiceStats[status === 'learning' ? 'hard' : (status === 'reviewing' ? 'medium' : 'easy')]++;
+            
+            // Registro completo en Base de Datos
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                // Insertamos con el status. 
+                const { error } = await _supabase.from('user_progress').insert([
+                    { 
+                        user_id: session.user.id, 
+                        question_id: q.id, 
+                        status: status, 
+                        quiz_mode: mode, // 'daily', 'practice', 'search'
+                        timestamp: new Date() 
+                    }
+                ]);
+                if (error) console.error("Error saving progress:", error);
+            }
 
-            document.getElementById('btn-prac-next').classList.remove('hidden');
-            document.getElementById('prac-error-msg').classList.add('hidden');
-        }
+            // MODIFICACIÓN 2.2: Habilitar botón Next
+            document.getElementById('btn-prac-next').classList.remove('hidden');
+            document.getElementById('prac-error-msg').classList.add('hidden');
+        }
 
-        function nextPracticeQuestion() {
-            if (currentIndex < quizData.length - 1) {
-                currentIndex++;
-                renderPracticeQuestion();
-            } else {
-                finishPracticeQuiz();
-            }
-        }
+        function nextPracticeQuestion() {
+            if (currentIndex < quizData.length - 1) {
+                currentIndex++;
+                renderPracticeQuestion();
+            } else {
+                finishPracticeQuiz();
+            }
+        }
 
-        function finishPracticeQuiz() {
-            document.getElementById('prac-quiz-screen').classList.add('hidden');
-            document.getElementById('prac-results-screen').classList.remove('hidden');
-            
-            // Calcular Score
-            let correctCount = 0;
-            quizData.forEach(q => {
-                const userAns = userAnswers[q.id];
-                const optTexts = [q.option_a, q.option_b, q.option_c, q.option_d];
-                // Intentar encontrar si la respuesta del usuario coincide con la correcta
-                // El usuario guarda Letra (A,B,C,D). Correct_Answer puede ser Texto o Letra.
-                let isCorrect = false;
-                
-                if (userAns === q.correct_answer) isCorrect = true; // Letra == Letra
-                else {
-                    // Letra -> Texto == Texto?
-                    const ansText = optTexts[userAns.charCodeAt(0) - 65];
-                    if (ansText === q.correct_answer) isCorrect = true;
-                }
-                
-                if(isCorrect) correctCount++;
-            });
-            
-            const total = quizData.length;
-            const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
-            
-            document.getElementById('prac-final-score').innerText = `${accuracy}%`;
-            document.getElementById('prac-total-correct').innerText = correctCount;
-            document.getElementById('prac-total-incorrect').innerText = total - correctCount;
+        // REEMPLAZO COMPLETO DE finishPracticeQuiz
+        function finishPracticeQuiz() {
+            document.getElementById('prac-quiz-screen').classList.add('hidden');
+            // Para mostrarlo usamos display flex (configurado en el style inline del HTML o CSS)
+            const resScreen = document.getElementById('prac-results-screen');
+            resScreen.classList.remove('hidden');
 
-            // Barras
-            const totalStatus = practiceStats.easy + practiceStats.medium + practiceStats.hard;
-            const safeTotal = totalStatus || 1;
-            const pEasy = (practiceStats.easy / safeTotal) * 100;
-            const pMed = (practiceStats.medium / safeTotal) * 100;
-            const pHard = (practiceStats.hard / safeTotal) * 100;
+            // 1. CÁLCULOS BÁSICOS
+            let correctCount = 0;
+            // Mapa para categorías { "Pathology": {correct: 0, total: 0}, ... }
+            let catMap = {}; 
 
-            document.getElementById('bar-easy').style.width = `${pEasy}%`;
-            document.getElementById('count-easy').innerText = practiceStats.easy;
-            document.getElementById('bar-medium').style.width = `${pMed}%`;
-            document.getElementById('count-medium').innerText = practiceStats.medium;
-            document.getElementById('bar-hard').style.width = `${pHard}%`;
-            document.getElementById('count-hard').innerText = practiceStats.hard;
+            quizData.forEach(q => {
+                // Calcular si es correcta
+                const userAns = userAnswers[q.id];
+                let isCorrect = false;
+                if(userAns) {
+                     const optTexts = [q.option_a, q.option_b, q.option_c, q.option_d];
+                     if (userAns === q.correct_answer) isCorrect = true; 
+                     else if (optTexts[userAns.charCodeAt(0) - 65] === q.correct_answer) isCorrect = true;
+                }
+                if(isCorrect) correctCount++;
 
-            // Pie Chart CSS
-            const endEasy = pEasy;
-            const endMed = pEasy + pMed;
-            document.getElementById('prac-final-chart').style.background = `conic-gradient(
-                #38a169 0% ${endEasy}%,
-                #ecc94b ${endEasy}% ${endMed}%,
-                #e53e3e ${endMed}% 100%
-            )`;
-        }
+                // Categorías (Asumiendo que tu DB tiene columna 'subject' o 'category')
+                const cat = q.subject || "General"; 
+                if(!catMap[cat]) catMap[cat] = { correct:0, total:0 };
+                catMap[cat].total++;
+                if(isCorrect) catMap[cat].correct++;
+            });
 
-        // ==========================================================
-        // LÓGICA MODO SIMULACIÓN
-        // ==========================================================
-        function startSimTimer() {
-            simTimerInterval = setInterval(() => {
-                simTotalTime--;
-                const h = Math.floor(simTotalTime / 3600);
-                const m = Math.floor((simTotalTime % 3600) / 60);
-                const s = simTotalTime % 60;
-                
-                let timeStr = "";
-                if(h > 0) timeStr += h.toString().padStart(2,'0') + ":";
-                timeStr += m.toString().padStart(2,'0') + ":" + s.toString().padStart(2,'0');
-                
-                const el1 = document.getElementById('sim-timer');
-                const el2 = document.getElementById('sim-timer-rev');
-                if(el1) el1.innerText = `Time: ${timeStr}`;
-                if(el2) el2.innerText = `Time: ${timeStr}`;
+            const total = quizData.length;
+            const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+            const incorrectCount = total - correctCount;
 
-                if (simTotalTime <= 0) finishSimExam();
-            }, 1000);
-        }
+            // 2. LLENAR DATOS GENERALES
+            document.getElementById('perf-acc-val').innerText = `${accuracy}%`;
+            document.getElementById('perf-total-correct').innerText = correctCount;
+            document.getElementById('perf-total-incorrect').innerText = incorrectCount;
 
-        function initSimQuiz() {
-            renderSimQuestion();
-            document.getElementById('sim-q-counter').innerText = `Question 1 of ${quizData.length}`;
-        }
+            // 3. GRÁFICO DONA (Verde vs Rojo)
+            const deg = Math.round((accuracy / 100) * 360);
+            document.getElementById('perf-donut').style.background = 
+                `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
 
-        function renderSimQuestion() {
-            const q = quizData[currentIndex];
-            document.getElementById('sim-q-counter').innerText = `Question ${currentIndex + 1} of ${quizData.length}`;
-            document.getElementById('sim-q-text').innerText = q.question_text;
-            
-            // Lógica Paciente (Clinical Case)
-            // Supabase devuelve relation array o object.
-            let caseObj = null;
-            if (q.clinical_cases) {
-                caseObj = Array.isArray(q.clinical_cases) ? q.clinical_cases[0] : q.clinical_cases;
-            }
+            // 4. BARRA SUPERIOR (Muestra EASY/MED/HARD en Práctica)
+            // Usamos los contadores globales practiceStats que ya tenías
+            const totalRated = practiceStats.easy + practiceStats.medium + practiceStats.hard || 1;
+            const pEasy = (practiceStats.easy / totalRated) * 100;
+            const pMed = (practiceStats.medium / totalRated) * 100;
+            const pHard = (practiceStats.hard / totalRated) * 100;
 
-            // Datos Default
-            let pData = { patient: "N/A", cc: "Standalone Question", history: "-", findings: "-" };
+            const topBar = document.getElementById('perf-top-bar');
+            topBar.innerHTML = `
+                <div class="perf-seg bg-green" style="width:${pEasy}%">
+                    <span class="seg-val">${practiceStats.easy}</span><span class="seg-lbl">EASY</span>
+                </div>
+                <div class="perf-seg bg-yellow" style="width:${pMed}%">
+                    <span class="seg-val">${practiceStats.medium}</span><span class="seg-lbl">MEDIUM</span>
+                </div>
+                <div class="perf-seg bg-red" style="width:${pHard}%">
+                    <span class="seg-val">${practiceStats.hard}</span><span class="seg-lbl">HARD</span>
+                </div>
+            `;
 
-            if (caseObj && caseObj.patient_data) {
-                try {
-                    // El CSV muestra que es un JSON string, ej: "{\"cc\":\"...\"}"
-                    const parsed = typeof caseObj.patient_data === 'string' ? JSON.parse(caseObj.patient_data) : caseObj.patient_data;
-                    
-                    // Mapeo flexible de keys
-                    pData.patient = parsed.patient || parsed.age || "N/A";
-                    pData.cc = parsed.cc || parsed.complaint || "N/A";
-                    pData.history = parsed.history || "N/A";
-                    pData.findings = parsed.findings || "N/A";
-                } catch(e) {
-                    console.warn("JSON Parse Error in Clinical Case", e);
-                }
-            }
+            // 5. LISTA DE CATEGORÍAS
+            const catListEl = document.getElementById('perf-cat-list');
+            catListEl.innerHTML = '';
+            
+            // Si no hay categorías definidas, mostramos un fallback
+            if(Object.keys(catMap).length === 0) {
+                catListEl.innerHTML = '<div style="text-align:center; color:#555;">No category data</div>';
+            }
 
-            document.getElementById('sim-pat-demo').innerHTML = `<tr><td>${pData.patient}</td></tr>`;
-            document.getElementById('sim-pat-cc').innerHTML = `<tr><td>${pData.cc}</td></tr>`;
-            document.getElementById('sim-pat-hist').innerHTML = `<tr><td>${pData.history}</td></tr>`;
-            document.getElementById('sim-pat-find').innerHTML = `<tr><td>${pData.findings}</td></tr>`;
+            for (const [catName, data] of Object.entries(catMap)) {
+                catListEl.innerHTML += `
+                    <div class="cat-row">
+                        <span>${catName}</span>
+                        <div class="cat-scores">
+                            <span class="sc-good">${data.correct}</span> / <span class="sc-bad">${data.total - data.correct}</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
 
-            // Opciones
-            const optsContainer = document.getElementById('sim-options-container');
-            optsContainer.innerHTML = '';
-            const options = [q.option_a, q.option_b, q.option_c, q.option_d];
+        // ==========================================================
+        // LÓGICA MODO SIMULACIÓN
+        // ==========================================================
+        function startSimTimer() {
+            simTimerInterval = setInterval(() => {
+                simTotalTime--;
+                const h = Math.floor(simTotalTime / 3600);
+                const m = Math.floor((simTotalTime % 3600) / 60);
+                const s = simTotalTime % 60;
+                
+                let timeStr = "";
+                if(h > 0) timeStr += h.toString().padStart(2,'0') + ":";
+                timeStr += m.toString().padStart(2,'0') + ":" + s.toString().padStart(2,'0');
+                
+                const el1 = document.getElementById('sim-timer');
+                const el2 = document.getElementById('sim-timer-rev');
+                if(el1) el1.innerText = `Time: ${timeStr}`;
+                if(el2) el2.innerText = `Time: ${timeStr}`;
 
-            options.forEach((optText, idx) => {
-                if(!optText) return;
-                const div = document.createElement('div');
-                div.className = 'sim-option';
-                
-                // Si ya estaba seleccionada
-                if (userAnswers[q.id] === idx) div.classList.add('selected');
+                if (simTotalTime <= 0) finishSimExam();
+            }, 1000);
+        }
 
-                div.innerHTML = `<div class="sim-custom-radio"></div> ${optText}`;
-                div.onclick = () => {
-                    userAnswers[q.id] = idx; // Guardar index 0-3
-                    // Actualizar UI visual
-                    const all = optsContainer.querySelectorAll('.sim-option');
-                    all.forEach(el => el.classList.remove('selected'));
-                    div.classList.add('selected');
-                };
-                optsContainer.appendChild(div);
-            });
+        function initSimQuiz() {
+            renderSimQuestion();
+            document.getElementById('sim-q-counter').innerText = `Question 1 of ${quizData.length}`;
+        }
 
-            // Estado Botón Mark
-            const markBtn = document.getElementById('btn-sim-mark');
-            if (markedQuestions.has(currentIndex)) {
-                markBtn.classList.add('active');
-                markBtn.innerText = "UNMARK";
-            } else {
-                markBtn.classList.remove('active');
-                markBtn.innerText = "MARK";
-            }
-        }
+        function renderSimQuestion() {
+            const q = quizData[currentIndex];
+            document.getElementById('sim-q-counter').innerText = `Question ${currentIndex + 1} of ${quizData.length}`;
+            document.getElementById('sim-q-text').innerText = q.question_text;
+            
+            // Lógica Paciente (Clinical Case)
+            // Supabase devuelve relation array o object.
+            let caseObj = null;
+            if (q.clinical_cases) {
+                caseObj = Array.isArray(q.clinical_cases) ? q.clinical_cases[0] : q.clinical_cases;
+            }
 
-        function nextSimQuestion() {
-            if (currentIndex < quizData.length - 1) {
-                currentIndex++;
-                renderSimQuestion();
-            } else {
-                goToSimReview();
-            }
-        }
+            // Datos Default
+            let pData = { patient: "N/A", cc: "Standalone Question", history: "-", findings: "-" };
 
-        function toggleSimMark() {
-            const btn = document.getElementById('btn-sim-mark');
-            if(markedQuestions.has(currentIndex)) {
-                markedQuestions.delete(currentIndex);
-                btn.classList.remove('active');
-                btn.innerText = "MARK";
-            } else {
-                markedQuestions.add(currentIndex);
-                btn.classList.add('active');
-                btn.innerText = "UNMARK";
-            }
-        }
+            if (caseObj && caseObj.patient_data) {
+                try {
+                    // El CSV muestra que es un JSON string, ej: "{\"cc\":\"...\"}"
+                    const parsed = typeof caseObj.patient_data === 'string' ? JSON.parse(caseObj.patient_data) : caseObj.patient_data;
+                    
+                    // Mapeo flexible de keys
+                    pData.patient = parsed.patient || parsed.age || "N/A";
+                    pData.cc = parsed.cc || parsed.complaint || "N/A";
+                    pData.history = parsed.history || "N/A";
+                    pData.findings = parsed.findings || "N/A";
+                } catch(e) {
+                    console.warn("JSON Parse Error in Clinical Case", e);
+                }
+            }
 
-        function goToSimReview() {
-            document.getElementById('sim-screen-quiz').classList.remove('active');
-            document.getElementById('sim-screen-review').classList.add('active');
-            
-            const tbody = document.getElementById('sim-review-body');
-            tbody.innerHTML = '';
-            
-            quizData.forEach((q, idx) => {
-                const isMarked = markedQuestions.has(idx);
-                const isAnswered = (userAnswers[q.id] !== undefined);
-                
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="padding-left:20px;">Question ${idx+1}</td>
-                    <td style="text-align:center; color:#235d88; font-weight:bold;">${isMarked ? '&#10003;' : ''}</td>
-                    <td style="text-align:center;">${isAnswered ? 'Yes' : 'No'}</td>
-                `;
-                tr.onclick = () => {
-                    currentIndex = idx;
-                    returnToSimQuiz();
-                };
-                tbody.appendChild(tr);
-            });
-        }
+            document.getElementById('sim-pat-demo').innerHTML = `<tr><td>${pData.patient}</td></tr>`;
+            document.getElementById('sim-pat-cc').innerHTML = `<tr><td>${pData.cc}</td></tr>`;
+            document.getElementById('sim-pat-hist').innerHTML = `<tr><td>${pData.history}</td></tr>`;
+            document.getElementById('sim-pat-find').innerHTML = `<tr><td>${pData.findings}</td></tr>`;
 
-        function returnToSimQuiz() {
-            document.getElementById('sim-screen-review').classList.remove('active');
-            document.getElementById('sim-screen-quiz').classList.add('active');
-            renderSimQuestion();
-        }
+            // Opciones
+            const optsContainer = document.getElementById('sim-options-container');
+            optsContainer.innerHTML = '';
+            const options = [q.option_a, q.option_b, q.option_c, q.option_d];
 
+            options.forEach((optText, idx) => {
+                if(!optText) return;
+                const div = document.createElement('div');
+                div.className = 'sim-option';
+                
+                // Si ya estaba seleccionada
+                if (userAnswers[q.id] === idx) div.classList.add('selected');
+
+                div.innerHTML = `<div class="sim-custom-radio"></div> ${optText}`;
+                div.onclick = () => {
+                    userAnswers[q.id] = idx; // Guardar index 0-3
+                    // Actualizar UI visual
+                    const all = optsContainer.querySelectorAll('.sim-option');
+                    all.forEach(el => el.classList.remove('selected'));
+                    div.classList.add('selected');
+                };
+                optsContainer.appendChild(div);
+            });
+
+            // Estado Botón Mark
+            const markBtn = document.getElementById('btn-sim-mark');
+            if (markedQuestions.has(currentIndex)) {
+                markBtn.classList.add('active');
+                markBtn.innerText = "UNMARK";
+            } else {
+                markBtn.classList.remove('active');
+                markBtn.innerText = "MARK";
+            }
+        }
+
+        function nextSimQuestion() {
+            if (currentIndex < quizData.length - 1) {
+                currentIndex++;
+                renderSimQuestion();
+            } else {
+                goToSimReview();
+            }
+        }
+
+        function toggleSimMark() {
+            const btn = document.getElementById('btn-sim-mark');
+            if(markedQuestions.has(currentIndex)) {
+                markedQuestions.delete(currentIndex);
+                btn.classList.remove('active');
+                btn.innerText = "MARK";
+            } else {
+                markedQuestions.add(currentIndex);
+                btn.classList.add('active');
+                btn.innerText = "UNMARK";
+            }
+        }
+
+        function goToSimReview() {
+            document.getElementById('sim-screen-quiz').classList.remove('active');
+            document.getElementById('sim-screen-review').classList.add('active');
+            
+            const tbody = document.getElementById('sim-review-body');
+            tbody.innerHTML = '';
+            
+            quizData.forEach((q, idx) => {
+                const isMarked = markedQuestions.has(idx);
+                const isAnswered = (userAnswers[q.id] !== undefined);
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="padding-left:20px;">Question ${idx+1}</td>
+                    <td style="text-align:center; color:#235d88; font-weight:bold;">${isMarked ? '&#10003;' : ''}</td>
+                    <td style="text-align:center;">${isAnswered ? 'Yes' : 'No'}</td>
+                `;
+                tr.onclick = () => {
+                    currentIndex = idx;
+                    returnToSimQuiz();
+                };
+                tbody.appendChild(tr);
+            });
+        }
+
+        function returnToSimQuiz() {
+            document.getElementById('sim-screen-review').classList.remove('active');
+            document.getElementById('sim-screen-quiz').classList.add('active');
+            renderSimQuestion();
+        }
+
+        // REEMPLAZO COMPLETO DE finishSimExam
         async function finishSimExam() {
             clearInterval(simTimerInterval);
-            document.getElementById('sim-screen-review').classList.remove('active');
-            document.getElementById('sim-screen-perf').classList.add('active');
-            document.getElementById('sim-screen-perf').style.display = 'flex'; // Forzar flex
 
+            // Cambio de vistas: Ocultar Review, Mostrar Performance
+            document.getElementById('sim-screen-review').classList.remove('active');
+            const perfScreen = document.getElementById('sim-screen-perf');
+            perfScreen.classList.add('active'); 
+            perfScreen.style.display = 'flex'; // Forzar flex para centrar
+
+            // 1. CÁLCULOS Y GUARDADO
             let correctCount = 0;
+            let catMap = {}; // Mapa para categorías
             const { data: { session } } = await _supabase.auth.getSession();
             const updates = [];
 
             quizData.forEach(q => {
                 const userIdx = userAnswers[q.id];
-                // Si no respondió, cuenta como incorrecta
-                if (userIdx === undefined) return;
-
-                const selectedText = [q.option_a, q.option_b, q.option_c, q.option_d][userIdx];
-                const selectedLetter = String.fromCharCode(65 + userIdx);
-
-                const isCorrect = (selectedText === q.correct_answer) || (selectedLetter === q.correct_answer);
+                
+                // Determinar si es correcta
+                let isCorrect = false;
+                if (userIdx !== undefined) {
+                    const selectedText = [q.option_a, q.option_b, q.option_c, q.option_d][userIdx];
+                    const selectedLetter = String.fromCharCode(65 + userIdx);
+                    if ((selectedText === q.correct_answer) || (selectedLetter === q.correct_answer)) {
+                        isCorrect = true;
+                    }
+                }
 
                 if (isCorrect) correctCount++;
+
+                // Agrupar por Categoría
+                const cat = q.subject || "General";
+                if(!catMap[cat]) catMap[cat] = { correct:0, total:0 };
+                catMap[cat].total++;
+                if(isCorrect) catMap[cat].correct++;
                 
-                if (session) {
+                // Preparar guardado en DB (solo si hay sesión y respuesta)
+                if (session && userIdx !== undefined) {
                     updates.push({
                         user_id: session.user.id,
                         question_id: q.id,
@@ -838,41 +954,83 @@
                 }
             });
             
-            // Guardar progreso masivo
+            // Guardar progreso masivo en DB
             if(updates.length > 0 && session) {
                 await _supabase.from('user_progress').insert(updates);
             }
 
+            // 2. ACTUALIZAR INTERFAZ (UI)
             const total = quizData.length;
-            const score = total > 0 ? Math.round((correctCount / total) * 100) : 0;
-            
-            document.getElementById('sim-final-acc').innerText = score + '%';
-            document.getElementById('sim-count-correct').innerText = correctCount;
-            document.getElementById('sim-count-incorrect').innerText = total - correctCount;
-            document.getElementById('sim-val-correct').innerText = correctCount;
-            document.getElementById('sim-val-incorrect').innerText = total - correctCount;
+            const incorrectCount = total - correctCount;
+            const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
 
+            // Llenar datos numéricos
+            document.getElementById('sim-perf-acc-val').innerText = accuracy + '%';
+            document.getElementById('sim-perf-total-correct').innerText = correctCount;
+            document.getElementById('sim-perf-total-incorrect').innerText = incorrectCount;
+            
+            // 3. GRÁFICO DONA
+            const deg = Math.round((accuracy / 100) * 360);
+            document.getElementById('sim-perf-donut').style.background = 
+                `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
+
+            // 4. BARRA SUPERIOR (CORRECT vs INCORRECT)
             const pCorrect = total > 0 ? (correctCount / total) * 100 : 0;
+            // Usamos 100 - pCorrect para el ancho del segmento incorrecto
             
-            document.getElementById('sim-bar-correct').style.width = `${pCorrect}%`;
-            document.getElementById('sim-bar-incorrect').style.width = `${100 - pCorrect}%`;
+            const topBar = document.getElementById('sim-perf-top-bar');
+            // Solo mostramos segmentos si tienen valor > 0 para que no quede texto aplastado
+            let barHTML = '';
             
-            document.getElementById('sim-final-chart').style.background = `conic-gradient(
-                #28a745 0% ${pCorrect}%,
-                #dc3545 ${pCorrect}% 100%
-            )`;
-        }
+            if (correctCount > 0) {
+                barHTML += `
+                    <div class="perf-seg bg-green" style="width:${pCorrect}%">
+                        <span class="seg-val">${correctCount}</span>
+                        <span class="seg-lbl">CORRECT</span>
+                    </div>`;
+            }
+            if (incorrectCount > 0) {
+                barHTML += `
+                    <div class="perf-seg bg-red" style="width:${100 - pCorrect}%"> <span class="seg-val">${incorrectCount}</span>
+                        <span class="seg-lbl">INCORRECT</span>
+                    </div>`;
+            }
+            // Si no respondió nada (0/0), mostrar barra vacía o mensaje
+            if (total === 0) barHTML = '<div style="width:100%; text-align:center; color:#555;">No questions</div>';
 
-        // ==========================================================
-        // UTILIDADES GENERALES
-        // ==========================================================
-        function goToDashboard() {
-            if (window.innerWidth <= 768) {
-                window.location.href = 'mobile.html';
-            } else {
-                window.location.href = 'dashboard.html';
+            topBar.innerHTML = barHTML;
+
+
+            // 5. LISTA DE CATEGORÍAS
+            const catListEl = document.getElementById('sim-perf-cat-list');
+            catListEl.innerHTML = '';
+            
+            if(Object.keys(catMap).length === 0) {
+                catListEl.innerHTML = '<div style="text-align:center; color:#555; padding:10px;">No category data</div>';
+            }
+
+            for (const [catName, data] of Object.entries(catMap)) {
+                catListEl.innerHTML += `
+                    <div class="cat-row">
+                        <span>${catName}</span>
+                        <div class="cat-scores">
+                            <span class="sc-good">${data.correct}</span> / <span class="sc-bad">${data.total - data.correct}</span>
+                        </div>
+                    </div>
+                `;
             }
         }
-    </script>
+
+        // ==========================================================
+        // UTILIDADES GENERALES
+        // ==========================================================
+        function goToDashboard() {
+            if (window.innerWidth <= 768) {
+                window.location.href = 'mobile.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
+        }
+    </script>
 </body>
 </html>
