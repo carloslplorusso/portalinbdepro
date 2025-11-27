@@ -318,7 +318,6 @@
         <div id="prac-quiz-screen" class="prac-quiz-container hidden fade-in">
             <div class="prac-header">
                 <span style="font-weight:800; color:#fff;">INBDE Pro Lab</span>
-                <span id="prac-progress" style="color:#71717a">1 / --</span>
             </div>
             
             <div id="prac-question-area">
@@ -657,8 +656,7 @@
         }
 
         function renderPracticeQuestion() {
-            const q = quizData[currentIndex];
-            document.getElementById('prac-progress').innerText = `${currentIndex + 1} / ${quizData.length}`;
+            const q = quizData[currentIndex]          
             document.getElementById('prac-q-text').innerText = q.question_text;
             
             document.getElementById('prac-review-area').classList.add('hidden');
