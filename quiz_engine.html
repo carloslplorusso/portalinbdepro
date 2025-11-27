@@ -513,6 +513,10 @@
                 return;
             }
 
+            // CORRECCIÓN PARA MÓVIL: Esperar sesión antes de llamar RPC
+            // Si no esperamos, la DB piensa que es anon y devuelve 0s si hay RLS
+            await _supabase.auth.getUser(); 
+
             // Llamada a la función SQL (RPC) get_category_progress
             const { data, error } = await _supabase.rpc('get_category_progress');
 
