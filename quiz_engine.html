@@ -30,40 +30,89 @@
 
         .practice-wrapper { width: 100%; max-width: 900px; padding: 20px; }
 
-        /* --- PANTALLA INICIO PRÁCTICA (BOTONES CUADRADOS) --- */
+        /* --- PANTALLA INICIO PRÁCTICA (MODIFICADO: CATEGORÍAS) --- */
         #prac-start-screen { 
             display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; 
         }
         .prac-title { font-size: 2.5rem; font-weight: 800; color: #facc15; text-shadow: 0 0 10px rgba(250, 204, 21, 0.2); margin-bottom: 10px; text-align: center; }
-        .prac-desc { font-size: 1.1rem; color: #71717a; margin-bottom: 40px; text-align: center; }
+        .prac-desc { font-size: 1.1rem; color: #71717a; margin-bottom: 30px; text-align: center; }
         
-        /* Grid centrada para botones cuadrados */
-        .prac-grid-buttons {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
+        /* Contenedor de lista de categorías */
+        .cat-selection-container {
             width: 100%;
-            max-width: 320px; /* Controla el ancho total del bloque de botones */
-        }
-        
-        .btn-prac-start { 
-            background: #121214; 
-            border: 2px solid #333; 
-            color: #f4f4f5; 
-            border-radius: 16px; 
-            font-weight: 800; 
-            cursor: pointer; 
-            transition: all 0.3s; 
-            aspect-ratio: 1 / 1; /* CUADRADO PERFECTO */
+            max-width: 500px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
+            gap: 15px;
+            max-height: 55vh; /* Scroll si hay muchas categorías */
+            overflow-y: auto;
+            margin-bottom: 25px;
+            padding-right: 5px;
         }
-        .btn-prac-start span { font-size: 0.8rem; font-weight: 400; color: #71717a; margin-top: 5px; }
-        .btn-prac-start:hover { background: #252528; border-color: #facc15; color: #facc15; transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        .btn-prac-start:hover span { color: #facc15; }
+
+        /* Botón de Categoría Individual */
+        .btn-cat-select {
+            position: relative;
+            background: #18181b;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #f4f4f5;
+        }
+        .btn-cat-select:hover { border-color: #facc15; background: #252528; }
+        .btn-cat-select.selected { border-color: #facc15; box-shadow: 0 0 0 1px #facc15; }
+
+        /* Barra de Progreso (Fondo Verde) */
+        .cat-progress-bg {
+            position: absolute;
+            top: 0; left: 0; bottom: 0;
+            background: rgba(34, 197, 94, 0.2); /* Verde semitransparente */
+            z-index: 0;
+            transition: width 0.5s ease;
+            pointer-events: none;
+        }
+
+        /* Contenido del botón (Texto) */
+        .cat-content-wrapper {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-weight: 600;
+        }
+        .cat-stats { font-size: 0.85rem; color: #a1a1aa; font-family: monospace; }
+
+        /* Botón Start Practice Grande */
+        .btn-start-custom {
+            background: #facc15;
+            color: #000;
+            font-weight: 800;
+            padding: 16px;
+            border-radius: 12px;
+            border: none;
+            width: 100%;
+            max-width: 500px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            opacity: 0.5; 
+            pointer-events: none; /* Desactivado hasta elegir */
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .btn-start-custom.ready {
+            opacity: 1;
+            pointer-events: all;
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
+        }
+        .btn-start-custom:hover { transform: translateY(-2px); }
 
         /* --- PANTALLA QUIZ PRÁCTICA --- */
         .prac-quiz-container { background: #121214; border: 1px solid #27272a; border-radius: 14px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 20px; }
@@ -77,7 +126,7 @@
         .prac-radio { width: 18px; height: 18px; border: 2px solid #71717a; border-radius: 50%; margin-right: 15px; flex-shrink: 0; margin-top: 2px; }
         .prac-option.selected .prac-radio { background: #facc15; border-color: #facc15; }
 
-        /* --- REVIEW AREA (BOTONES RECTANGULARES PEQUEÑOS) --- */
+        /* --- REVIEW AREA & BOTONES --- */
         .prac-review-area { border-top: 1px solid #27272a; padding-top: 20px; text-align: center; }
         .prac-classify-btns { 
             display: flex; 
@@ -104,6 +153,26 @@
         
         .prac-explanation { background: rgba(255,255,255,0.05); border-left: 4px solid #facc15; padding: 15px; margin-top: 15px; text-align: left; line-height: 1.5; color: #ddd; border-radius: 4px; font-size: 0.95rem; }
         .btn-prac-next { background: #facc15; color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: 800; margin-top: 15px; cursor: pointer; text-transform: uppercase; }
+
+        /* NUEVO: Botón End Session (Rojo) */
+        .btn-end-session {
+            background: transparent;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            margin-top: 15px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .btn-end-session:hover {
+            background: #ef4444;
+            color: white;
+        }
 
         /* ================================================================= */
         /* === ESTILOS PERFORMANCE (Resultados) === */
@@ -234,15 +303,16 @@
     <div id="root-practice" class="practice-wrapper hidden">
         
         <div id="prac-start-screen" class="fade-in">
-            <h1 class="prac-title">INBDE Pro Lab</h1>
-            <p class="prac-desc">Select number of questions</p>
+            <h1 class="prac-title">Select Categories</h1>
+            <p class="prac-desc">Choose one or more subjects to practice</p>
             
-            <div class="prac-grid-buttons">
-                <button class="btn-prac-start" onclick="initPracticeQuiz(10)">10 <span>Questions</span></button>
-                <button class="btn-prac-start" onclick="initPracticeQuiz(25)">25 <span>Questions</span></button>
-                <button class="btn-prac-start" onclick="initPracticeQuiz(50)">50 <span>Questions</span></button>
-                <button class="btn-prac-start" onclick="initPracticeQuiz(100)">100 <span>Questions</span></button>
+            <div id="category-list-container" class="cat-selection-container">
+                <p style="color:#666; text-align:center; margin-top:20px;">Loading categories...</p>
             </div>
+
+            <button id="btn-start-selected" class="btn-start-custom" onclick="startSelectedPractice()">
+                Start Practice
+            </button>
         </div>
 
         <div id="prac-quiz-screen" class="prac-quiz-container hidden fade-in">
@@ -268,6 +338,8 @@
                 <div id="prac-explanation" class="prac-explanation hidden"></div>
                 <button id="btn-prac-next" class="btn-prac-next hidden" onclick="nextPracticeQuestion()">Next Question →</button>
             </div>
+
+            <button id="btn-end-session" class="btn-end-session" onclick="finishPracticeQuiz()">End Session</button>
         </div>
 
         <div id="prac-results-screen" class="hidden fade-in" style="min-height:100vh; display:flex; align-items:center;">
@@ -406,6 +478,9 @@
         let simTimerInterval;
         let simTotalTime = 0; 
         const searchTerm = urlParams.get('term');
+        
+        // --- VARIABLE GLOBAL NUEVA: CATEGORÍAS SELECCIONADAS ---
+        let selectedCategories = new Set();
 
         document.addEventListener('DOMContentLoaded', async () => {
             const body = document.body;
@@ -416,13 +491,120 @@
                 document.getElementById('root-simulation').classList.remove('hidden');
                 simTotalTime = count ? count * 90 : 50 * 90; // Default 50 preguntas si no hay count
                 startSimTimer();
+                await fetchQuestions(); // Simulación carga preguntas directo
             } else {
                 body.classList.add('mode-practice');
                 document.getElementById('root-practice').classList.remove('hidden');
+                
+                // CAMBIO: Si es modo normal (Standalone) sin count, mostramos categorías
+                if (mode === 'daily' || mode === 'search' || (mode === 'standalone' && count !== null)) {
+                    await fetchQuestions();
+                } else {
+                    // Cargar lista de categorías en lugar de preguntas directamente
+                    await loadCategories();
+                }
+            }
+        });
+
+        // --- NUEVAS FUNCIONES PARA SELECCIÓN DE CATEGORÍAS ---
+
+        async function loadCategories() {
+            if(typeof _supabase === 'undefined') {
+                document.getElementById('category-list-container').innerHTML = '<p style="color:red">Error: Supabase not found.</p>';
+                return;
             }
 
-            await fetchQuestions();
-        });
+            // Llamada a la función SQL (RPC) get_category_progress
+            const { data, error } = await _supabase.rpc('get_category_progress');
+
+            const container = document.getElementById('category-list-container');
+            container.innerHTML = '';
+
+            if (error) {
+                console.error(error);
+                container.innerHTML = '<p style="color:red">Error loading categories. Check SQL Function.</p>';
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p style="color:#666">No categories found.</p>';
+                return;
+            }
+
+            data.forEach(cat => {
+                const total = cat.total_questions || 0;
+                const answered = cat.answered_questions || 0;
+                const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
+
+                const btn = document.createElement('div');
+                btn.className = 'btn-cat-select';
+                btn.onclick = () => toggleCategorySelection(btn, cat.category);
+                btn.innerHTML = `
+                    <div class="cat-progress-bg" style="width: ${pct}%"></div>
+                    <div class="cat-content-wrapper">
+                        <span>${cat.category}</span>
+                        <span class="cat-stats">${answered}/${total} (${pct}%)</span>
+                    </div>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function toggleCategorySelection(element, categoryName) {
+            element.classList.toggle('selected');
+            if (selectedCategories.has(categoryName)) {
+                selectedCategories.delete(categoryName);
+            } else {
+                selectedCategories.add(categoryName);
+            }
+
+            // Activar botón Start si hay al menos 1 seleccionado
+            const startBtn = document.getElementById('btn-start-selected');
+            if (selectedCategories.size > 0) {
+                startBtn.classList.add('ready');
+                startBtn.innerText = `Start Practice (${selectedCategories.size})`;
+            } else {
+                startBtn.classList.remove('ready');
+                startBtn.innerText = 'Start Practice';
+            }
+        }
+
+        async function startSelectedPractice() {
+            if (selectedCategories.size === 0) return;
+            
+            const btn = document.getElementById('btn-start-selected');
+            btn.innerText = "Loading...";
+
+            const catsArray = Array.from(selectedCategories);
+            
+            // Consulta filtrando por categorías seleccionadas y solo Standalone (case_id es null)
+            const { data, error } = await _supabase
+                .from('questions_bank')
+                .select('*, clinical_cases (*)')
+                .in('category', catsArray)
+                .is('case_id', null); 
+
+            if (error) {
+                alert("Error fetching questions.");
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                alert("No questions available for selected categories.");
+                window.location.reload();
+                return;
+            }
+
+            // Preparar y mostrar Quiz
+            quizData = data.sort(() => Math.random() - 0.5);
+            currentIndex = 0;
+            
+            document.getElementById('prac-start-screen').classList.add('hidden');
+            document.getElementById('prac-quiz-screen').classList.remove('hidden');
+            renderPracticeQuestion();
+        }
+        // --- FIN NUEVAS FUNCIONES ---
+
 
         async function fetchQuestions() {
             if(typeof _supabase === 'undefined') { alert("Database error: Supabase not found."); return; }
@@ -461,26 +643,17 @@
             if (isSimulation) {
                 initSimQuiz();
             } else {
-                // Si es standalone y ya tenemos count, iniciar. Si no, mostrar selector.
-                if (mode === 'daily' || mode === 'search' || (mode === 'standalone' && count !== null)) {
-                    document.getElementById('prac-start-screen').classList.add('hidden');
-                    document.getElementById('prac-quiz-screen').classList.remove('hidden');
-                    renderPracticeQuestion();
-                } else {
-                    document.getElementById('prac-start-screen').classList.remove('hidden');
-                }
+                // Si llegamos aquí es porque venimos de daily/search o count directo
+                document.getElementById('prac-start-screen').classList.add('hidden');
+                document.getElementById('prac-quiz-screen').classList.remove('hidden');
+                renderPracticeQuestion();
             }
         }
 
         // --- FUNCIONES MODO PRÁCTICA ---
 
         function initPracticeQuiz(selectedCount) {
-            if (selectedCount && quizData.length > selectedCount) {
-                quizData = quizData.slice(0, selectedCount);
-            }
-            document.getElementById('prac-start-screen').classList.add('hidden');
-            document.getElementById('prac-quiz-screen').classList.remove('hidden');
-            renderPracticeQuestion();
+           // Fallback obsoleto, reemplazado por startSelectedPractice
         }
 
         function renderPracticeQuestion() {
@@ -598,20 +771,18 @@
 
             // Pie Chart (EASY(Green), MED(Yellow), HARD(Red)) - Usamos los colores del Performance Practice
             const deg = Math.round((acc / 100) * 360);
-            document.getElementById('prac-perf-pie').style.background = 
-                `conic-gradient(#28a745 0deg ${deg}deg, #dc3545 ${deg}deg 360deg)`; 
-                // NOTA: El archivo de referencia performance_practice usa un gradiente de 3 colores basado en easy/med/hard
-                // Si prefieres eso, calculamos porcentajes de difficulty:
-                const totDif = practiceStats.easy + practiceStats.medium + practiceStats.hard || 1;
-                const pEasy = (practiceStats.easy / totDif) * 360;
-                const pMed = (practiceStats.medium / totDif) * 360;
-                
-                // Sobrescribimos con el estilo 3 colores
-                document.getElementById('prac-perf-pie').style.background = `conic-gradient(
-                    #28a745 0deg ${pEasy}deg, 
-                    #ffc107 ${pEasy}deg ${pEasy + pMed}deg, 
-                    #dc3545 ${pEasy + pMed}deg 360deg
-                )`;
+            
+            // Calculamos porcentajes de difficulty:
+            const totDif = practiceStats.easy + practiceStats.medium + practiceStats.hard || 1;
+            const pEasy = (practiceStats.easy / totDif) * 360;
+            const pMed = (practiceStats.medium / totDif) * 360;
+            
+            // Sobrescribimos con el estilo 3 colores
+            document.getElementById('prac-perf-pie').style.background = `conic-gradient(
+                #28a745 0deg ${pEasy}deg, 
+                #ffc107 ${pEasy}deg ${pEasy + pMed}deg, 
+                #dc3545 ${pEasy + pMed}deg 360deg
+            )`;
 
 
             // Landscape Bar (Easy, Medium, Hard)
