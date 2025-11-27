@@ -633,7 +633,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-back-pomodoro')?.addEventListener('click', goBackToDashboard);
     document.getElementById('btn-back-learn-mobile')?.addEventListener('click', goBackToDashboard);
     document.getElementById('btn-back-simulation-mobile')?.addEventListener('click', goBackToDashboard);
-    document.getElementById('btn-start-quiz-selection')?.addEventListener('click', openQuizSettings);
+    
+    // MODIFICACIÓN APLICADA AQUÍ: Redirección directa para saltar el modal de settings
+    document.getElementById('btn-start-quiz-selection')?.addEventListener('click', () => {
+        // Vamos directo al engine en modo standalone. 
+        // No enviamos 'count' para que el engine muestre la pantalla de selección de 4 botones.
+        window.location.href = `quiz_engine.html?mode=standalone`; 
+    });
+    
     document.getElementById('btn-back-selection')?.addEventListener('click', goBackToLearning);
     document.getElementById('btn-back-selection-mobile-cancel')?.addEventListener('click', goBackToDashboard); // Mobile cancel button 
 
