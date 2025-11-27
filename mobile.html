@@ -3,315 +3,392 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>INBDE Pro Lab</title>
+<title>INBDE Pro - Statistics Lab</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+    /* --- 1. VARIABLES & BASE --- */
     :root {
         --accent: #facc15; 
-        --bg-dark: #000000;
-        --card-bg: #0a0a0a;
+        --accent-glow: rgba(250, 204, 21, 0.2);
+        --bg-dark: #050505;
+        --card-bg: #121214;
+        --card-bg-hero: #1c1c20;
+        --card-border: #27272a;
         --text-main: #ffffff;
-        --text-muted: #9ca3af;
-        --max-app-width: 480px; /* Ancho máximo estándar de una App móvil */
+        --text-muted: #a1a1aa;
+        --success: #22c55e; 
+        --danger: #ef4444; 
     }
-    
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
     body {
         margin: 0;
-        padding: 0;
-        font-family: 'Inter', sans-serif;
-        background-color: #111; /* Fondo externo oscuro */
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background-color: #000;
         color: var(--text-main);
-        overflow-x: hidden;
-        /* Centrar la app en pantallas grandes */
-        display: flex;
-        justify-content: center;
-        min-height: 100vh;
-    }
-
-    /* --- MARCO DE LA APP (Simula el móvil en pantallas grandes) --- */
-    .mobile-frame {
-        width: 100%;
-        max-width: var(--max-app-width);
-        background-color: var(--bg-dark);
-        min-height: 100vh;
-        position: relative;
-        padding-bottom: 90px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.5); /* Sombra sutil a los lados */
-    }
-
-    /* --- Clases de Utilidad --- */
-    .hidden { display: none !important; }
-    .fade-in { animation: fadeIn 0.4s ease forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* HEADER */
-    .app-header {
-        padding: 40px 25px 10px 25px;
-        background: transparent;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .header-titles { display: flex; flex-direction: column; gap: 2px; }
-    .welcome-text { font-size: 0.8rem; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-    .brand-text { font-weight: 900; font-size: 1.6rem; color: white; letter-spacing: -0.5px; }
-    
-    .user-avatar { 
-        width: 42px; height: 42px; 
-        border-radius: 50%; 
-        background: #1a1a1a; 
-        border: 1px solid var(--accent); 
-        display: flex; align-items: center; justify-content: center; 
-        font-size: 1.2rem;
-        cursor: pointer;
-    }
-
-    /* CONTENEDOR PRINCIPAL */
-    .app-container {
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* GRID SYSTEM 2x2 BLINDADO */
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr; /* Siempre 2 columnas 50% / 50% */
-        gap: 15px; 
-        margin-top: 10px;
-    }
-
-    /* TARJETAS CUADRADAS */
-    .square-card {
-        border: 2px solid var(--accent);
-        border-radius: 22px;
-        background: var(--card-bg);
-        cursor: pointer;
-        aspect-ratio: 1 / 1; /* Forzar cuadrado perfecto siempre */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 10px; /* Padding reducido para pantallas pequeñas */
-        text-align: center;
-        position: relative;
-        transition: transform 0.1s;
-    }
-    .square-card:active { transform: scale(0.96); background-color: #111; }
-
-    /* CONTENIDO RESPONSIVO DENTRO DE TARJETAS */
-    .square-card .icon { 
-        /* El tamaño del icono se ajusta sutilmente según el ancho de pantalla (vw) */
-        font-size: clamp(2rem, 8vw, 2.8rem); 
-        margin-bottom: 10px; 
-        filter: drop-shadow(0 0 5px rgba(255,255,255,0.1));
-    }
-    
-    .square-card .label { 
-        /* Texto fluido: mínimo 0.8rem, ideal 4vw, máximo 1.1rem */
-        font-size: clamp(0.8rem, 4.5vw, 1.1rem); 
-        font-weight: 800; 
-        color: white; 
-        text-transform: uppercase;
-        letter-spacing: 0.5px; 
-        line-height: 1.1;
-    }
-    
-    .square-card .sub { 
-        font-size: clamp(0.6rem, 2.5vw, 0.75rem);
-        color: var(--text-muted); 
-        margin-top: 4px; 
-        font-weight: 500;
-        white-space: nowrap; /* Evitar que el subtítulo se rompa en dos líneas */
+        height: 100dvh;
         overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
-    }
-
-    /* BOTTOM NAV FIJO Y CENTRADO */
-    .bottom-nav {
-        position: fixed; 
-        bottom: 0; 
-        height: 75px;
-        width: 100%;
-        max-width: var(--max-app-width); /* No exceder el ancho del frame */
-        background: black; 
-        border-top: 1px solid #222;
-        display: flex; 
-        justify-content: space-around; 
+        display: flex;
+        justify-content: center;
         align-items: center;
-        z-index: 100; 
-        padding-bottom: 15px;
-        /* Truco para centrar elemento fixed dentro de un layout centrado */
-        left: 50%;
-        transform: translateX(-50%);
+        background: radial-gradient(circle at 50% 0%, #1a1830 0%, #000000 80%);
     }
-    .nav-item { color: #555; font-size: 0.65rem; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; cursor: pointer; }
-    .nav-item.active { color: white; }
-    .nav-icon { font-size: 1.4rem; }
 
-    /* ESTILOS INTERNOS (Vistas secundarias) */
-    .learning-cards-row { display: flex; flex-direction: column; gap: 15px; width: 100%; }
-    .learning-card { background: #111; border: 1px solid #333; border-radius: 16px; padding: 20px; text-align: center; color: white; margin-bottom:10px; cursor: pointer;}
-    .btn-back-small { background: transparent; border: 1px solid #333; color: #888; padding: 12px; border-radius: 12px; margin-top: 10px; width: 100%; font-weight: 600; cursor: pointer; }
-    #dynamic-cat-list { color: white; }
-    
-    /* Estilos de Selección */
-    .subject-item { padding: 15px; border-bottom: 1px solid #222; display:flex; align-items:center; cursor: pointer;}
-    .subject-item.active { background: #111; color: var(--accent); font-weight: bold; }
-    .custom-checkbox { width: 18px; height: 18px; border: 2px solid #444; margin-right: 15px; border-radius: 4px; }
-    .subject-item.active .custom-checkbox { background: var(--accent); border-color: var(--accent); }
+    /* --- 2. LAYOUT --- */
+    .lab-container {
+        width: 100%;
+        max-width: 600px;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--accent) #111;
+    }
 
-    /* MODALES */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-    .modal-overlay.active { opacity: 1; pointer-events: auto; }
-    .modal-content { background: #121212; border: 1px solid #333; padding: 30px; border-radius: 20px; width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-    .close-btn { float: right; cursor: pointer; font-size: 1.5rem; color: #666; }
+    /* --- 3. HEADER --- */
+    .header-area {
+        text-align: center;
+        margin-bottom: 20px;
+        flex-shrink: 0;
+    }
+    .lab-title { font-size: 1.8rem; font-weight: 900; text-transform: uppercase; margin: 0; color: #fff; }
+    .lab-subtitle { color: var(--accent); font-weight: 600; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.9; }
+    .user-badge { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; margin-top: 10px; display: inline-flex; }
+
+    /* --- 4. CARDS --- */
+    .stats-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+    }
+
+    /* Tarjeta Principal (Accuracy) */
+    .card-promo-style {
+        background: linear-gradient(180deg, rgba(30, 30, 35, 0.8) 0%, rgba(10, 10, 10, 0.9) 100%); 
+        border: 1px solid var(--accent); border-radius: 16px; padding: 20px;
+        text-align: center; position: relative; overflow: hidden;
+    }
+    .accuracy-display { font-size: 3.5rem; font-weight: 900; color: var(--accent); line-height: 1; text-shadow: 0 0 20px var(--accent-glow); }
+    .card-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+
+    /* Grid 2x2 (Contadores) */
+    .grid-2x2 {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .hero-card { 
+        background: var(--card-bg-hero); border: 1px solid var(--card-border); border-radius: 14px; padding: 15px; 
+        text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .hero-card .title { font-size: 1.5rem; font-weight: 800; color: #fff; margin: 0; }
+    .hero-card .sub { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
+
+    /* --- 5. SEMÁFORO / CONFIDENCE CARD --- */
+    .card-confidence {
+        background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px;
+        display: flex; flex-direction: column; align-items: center;
+    }
+    .confidence-header { width: 100%; text-align: left; margin-bottom: 15px; font-weight: 700; color: #fff; text-transform: uppercase; font-size: 0.9rem; border-bottom: 1px solid #333; padding-bottom: 10px; }
     
-    /* Botones de Modal */
-    .btn-start { display: block; width: 100%; background: var(--accent); color: #000; font-weight: 900; font-size: 0.85rem; padding: 12px 0; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; text-align: center; border: none; cursor: pointer; transition: transform 0.1s; }
-    
-    /* Input AI */
-    .ai-input-area { width:100%; background:#000; border:1px solid #333; color:white; padding:15px; border-radius:12px; margin-top:10px; font-size:1rem; min-height:80px; resize:none;}
-    .ai-input-area:focus { outline: none; border-color: var(--accent); }
+    .pie-chart {
+        width: 140px; height: 140px; border-radius: 50%; margin: 10px auto; position: relative;
+        background: conic-gradient(#333 0% 100%);
+        box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        transition: background 1s ease;
+    }
+    .pie-chart::after {
+        content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 100px; height: 100px; background: var(--card-bg); border-radius: 50%;
+    }
+    .pie-center-text {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        z-index: 2; text-align: center;
+    }
+    .pie-val { font-size: 1.5rem; font-weight: 900; color: #fff; }
+    .pie-label { font-size: 0.6rem; color: #888; text-transform: uppercase; }
+
+    .confidence-stats { display: flex; justify-content: space-around; width: 100%; margin-top: 15px; }
+    .conf-item { text-align: center; }
+    .conf-val { font-weight: 800; font-size: 1.1rem; }
+    .conf-label { font-size: 0.65rem; text-transform: uppercase; color: #888; margin-top: 2px; }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+
+    /* --- 6. CATEGORY LIST --- */
+    .card-expandable {
+        background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; margin-bottom: 20px;
+    }
+    .expandable-header {
+        padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+    }
+    .expandable-header h3 { margin: 0; font-size: 0.9rem; color: #fff; text-transform: uppercase; }
+    .topic-list-container {
+        display: none; padding: 0 20px 20px 20px; border-top: 1px solid var(--card-border);
+    }
+    .card-expandable.open .topic-list-container { display: block; animation: slideDown 0.3s ease; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .topic-item { padding: 10px 0; border-bottom: 1px solid #222; }
+    .topic-row { display: flex; justify-content: space-between; font-size: 0.85rem; color: #ddd; margin-bottom: 5px; }
+    .progress-track { width: 100%; height: 4px; background: #222; border-radius: 2px; }
+    .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+
+    /* --- 7. BUTTONS --- */
+    .btn-start { 
+        display: block; width: 100%; background: var(--accent); color: #000; font-weight: 900; padding: 15px; 
+        border-radius: 12px; text-transform: uppercase; text-align: center; text-decoration: none; border: none; cursor: pointer;
+        margin-top: auto;
+    }
+    /* Estilo corregido para el botón de regreso (div en lugar de a href) */
+    .btn-back-link { 
+        display: block; 
+        text-align: center; 
+        color: #666; 
+        font-size: 0.8rem; 
+        margin-top: 15px; 
+        text-decoration: none; 
+        cursor: pointer;
+        padding: 10px;
+    }
+    .btn-back-link:hover { color: var(--accent); }
+
 </style>
 </head>
-<body>
+<body onload="loadStats()">
 
-    <div class="mobile-frame">
+<div class="lab-container">
+    
+    <div class="header-area">
+        <h1 class="lab-title">Performance Hub</h1>
+        <div class="lab-subtitle">INBDE Pro Lab</div>
+        <div class="user-badge" id="user-display">Loading...</div>
+    </div>
 
-        <header class="app-header">
-            <div class="header-titles">
-                <div class="welcome-text">
-    Welcome, <span id="user-name-display" style="color:var(--accent); font-weight:700;">Doctor</span>
+    <div class="stats-grid">
+        
+        <div class="card-promo-style">
+            <div class="card-label">Global Accuracy</div>
+            <div id="accuracy-pct" class="accuracy-display">0%</div>
+            <div class="card-label">Cumulative Score</div>
+        </div>
+
+        <div class="grid-2x2">
+            <div class="hero-card">
+                <div class="title" id="total-quizzes">0</div>
+                <div class="sub">Categories</div>
+            </div>
+            <div class="hero-card">
+                <div class="title" id="total-questions">0</div>
+                <div class="sub">Questions</div>
+            </div>
+            <div class="hero-card" style="border-bottom: 2px solid var(--success);">
+                <div class="title" id="total-correct" style="color:var(--success)">0</div>
+                <div class="sub">Correct</div>
+            </div>
+            <div class="hero-card" style="border-bottom: 2px solid var(--danger);">
+                <div class="title" id="total-incorrect" style="color:var(--danger)">0</div>
+                <div class="sub">Incorrect</div>
+            </div>
+        </div>
+
+        <div class="card-confidence">
+            <div class="confidence-header">Performance</div>
+            
+            <div class="pie-chart" id="traffic-pie-chart">
+                <div class="pie-center-text">
+                    <div class="pie-val" id="total-mastered-display">0</div>
+                    <div class="pie-label">Average</div>
+                </div>
+            </div>
+
+            <div class="confidence-stats">
+                <div class="conf-item">
+                    <div class="conf-val" style="color:var(--danger)" id="count-learning">0</div>
+                    <div class="conf-label"><span class="dot" style="background:var(--danger)"></span>Hard</div>
+                </div>
+                <div class="conf-item">
+                    <div class="conf-val" style="color:var(--accent)" id="count-reviewing">0</div>
+                    <div class="conf-label"><span class="dot" style="background:var(--accent)"></span>Medium</div>
+                </div>
+                <div class="conf-item">
+                    <div class="conf-val" style="color:var(--success)" id="count-mastered">0</div>
+                    <div class="conf-label"><span class="dot" style="background:var(--success)"></span>Easy</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-expandable" id="topics-card" onclick="this.classList.toggle('open')">
+            <div class="expandable-header">
+                <h3>Categories</h3>
+                <span>▼</span>
+            </div>
+            <div class="topic-list-container" id="topic-list-content">
+                <div style="text-align:center; padding:10px; color:#666;">Loading...</div>
+            </div>
+        </div>
+
+        <a href="quiz_engine.html?mode=standalone" class="btn-start">Start New Quiz</a>
+        
+        <div onclick="goBack()" class="btn-back-link">← Back to Dashboard</div>
+
+    </div>
 </div>
-                <div class="brand-text">Doctor <span style="color:var(--accent);">Pro</span></div>
-            </div>
-            <div class="user-avatar" id="btn-logout-mobile-avatar">👨‍⚕️</div>
-        </header>
 
-        <div id="dashboard-content" class="app-container fade-in">
-            <div class="dashboard-grid">
-                <div class="square-card" id="card-mobile-study">
-                    <div class="icon">🧪</div>
-                    <div class="label">Study</div>
-                    <div class="sub">Deep Dive</div>
+<script src="app.js"></script>
+<script>
+    function goBack() {
+        if (window.matchMedia("(max-width: 768px)").matches) {
+            window.location.href = 'mobile.html';
+        } else {
+            window.location.href = 'dashboard.html';
+        }
+    }
+
+    async function loadStats() {
+        // Verificar si Supabase cargó
+        if (typeof _supabase === 'undefined') {
+            setTimeout(loadStats, 100); 
+            return;
+        }
+
+        try {
+            // --- GESTIÓN DE SESIÓN ROBUSTA (FIX PARA MÓVIL) ---
+            // Esperamos explícitamente a getUser() para asegurar que el token está listo
+            // getSession a veces devuelve caché rápido, getUser valida.
+            const { data: { user }, error: userError } = await _supabase.auth.getUser();
+
+            if (userError || !user) {
+                console.warn("No session found. Redirecting...");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Si llegamos aquí, tenemos sesión válida
+            const email = user.email;
+            if(document.getElementById('user-display')) {
+                document.getElementById('user-display').innerText = email.split('@')[0];
+            }
+
+            // --- FETCH DE DATOS ---
+            const { data: attempts, error: statsError } = await _supabase
+                .from('user_progress')
+                .select(`
+                    status,
+                    questions_bank!inner (
+                        category
+                    )
+                `)
+                .eq('user_id', user.id);
+
+            if (statsError) {
+                console.error("Error fetching stats:", statsError);
+                return; 
+            }
+
+            // --- CÁLCULOS MATEMÁTICOS ---
+            let totalQuestions = 0;
+            let totalCorrect = 0;
+            let sumMastered = 0;   
+            let sumReviewing = 0;  
+            let sumLearning = 0;   
+            
+            const categoryMap = {};
+
+            if (attempts && attempts.length > 0) {
+                attempts.forEach(row => {
+                    if (row.questions_bank && row.questions_bank.category) {
+                        const cat = row.questions_bank.category;
+                        const status = row.status;
+                        const isCorrect = (status === 'mastered');
+
+                        totalQuestions++;
+                        if (isCorrect) totalCorrect++;
+
+                        if (status === 'mastered') sumMastered++;
+                        else if (status === 'reviewing') sumReviewing++;
+                        else if (status === 'learning') sumLearning++;
+
+                        if (!categoryMap[cat]) {
+                            categoryMap[cat] = { total: 0, correct: 0 };
+                        }
+                        categoryMap[cat].total++;
+                        if (isCorrect) categoryMap[cat].correct++;
+                    }
+                });
+            }
+
+            // Cálculos Finales
+            const totalIncorrect = totalQuestions - totalCorrect;
+            const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+
+            // Convertir Mapa a Array
+            const topicList = Object.keys(categoryMap).map(key => ({
+                name: key,
+                pct: Math.round((categoryMap[key].correct / categoryMap[key].total) * 100)
+            }));
+
+            // --- ACTUALIZACIÓN DOM ---
+            document.getElementById('total-quizzes').innerText = Object.keys(categoryMap).length; 
+            document.getElementById('total-questions').innerText = totalQuestions;
+            document.getElementById('total-correct').innerText = totalCorrect;
+            document.getElementById('total-incorrect').innerText = totalIncorrect;
+            
+            const accEl = document.getElementById('accuracy-pct');
+            accEl.innerText = accuracy + "%";
+            accEl.style.color = accuracy < 71 ? "var(--danger)" : "var(--success)";
+
+            document.getElementById('count-mastered').innerText = sumMastered;
+            document.getElementById('count-reviewing').innerText = sumReviewing;
+            document.getElementById('count-learning').innerText = sumLearning;
+            document.getElementById('total-mastered-display').innerText = sumMastered;
+
+            const totalTraffic = sumMastered + sumReviewing + sumLearning;
+            if (totalTraffic > 0) {
+                const pctRed = (sumLearning / totalTraffic) * 100;
+                const pctYellow = (sumReviewing / totalTraffic) * 100;
+                const pieEl = document.getElementById('traffic-pie-chart');
+                pieEl.style.background = `conic-gradient(
+                    var(--danger) 0% ${pctRed}%, 
+                    var(--accent) ${pctRed}% ${pctRed + pctYellow}%, 
+                    var(--success) ${pctRed + pctYellow}% 100%
+                )`;
+            } else {
+                document.getElementById('traffic-pie-chart').style.background = "#222";
+            }
+
+            renderTopics(topicList);
+
+        } catch (e) {
+            console.error("Critical error loading stats:", e);
+        }
+    }
+
+    function renderTopics(list) {
+        const container = document.getElementById('topic-list-content');
+        if (list.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:10px; color:#666;">No data yet.</div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        list.sort((a,b) => b.pct - a.pct).forEach(topic => {
+            const color = "var(--success)"; 
+            
+            container.innerHTML += `
+                <div class="topic-item">
+                    <div class="topic-row">
+                        <span>${topic.name}</span>
+                        <span style="color:${color}; font-weight:bold;">${topic.pct}%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" style="width:${topic.pct}%; background:${color};"></div>
+                    </div>
                 </div>
-                <div class="square-card" id="card-mobile-simulate">
-                    <div class="icon">⚡</div>
-                    <div class="label">Simulate</div>
-                    <div class="sub">Exam Mode</div>
-                </div>
-                <div class="square-card" id="card-mobile-daily">
-                    <div class="icon">🔥</div>
-                    <div class="label">Daily Run</div>
-                    <div class="sub">10-Q Sprint</div> 
-                </div>
-                <div class="square-card" id="card-mobile-ia">
-                    <div class="icon">🤖</div>
-                    <div class="label">IA Lab</div>
-                    <div class="sub">Smart Search</div>
-                </div>
-            </div>
-        </div>
-
-        <div id="learning-view" class="app-container hidden">
-            <h2 style="color:white; margin:0 0 20px 0;">Study Mode</h2>
-            <div class="learning-cards-row">
-                <div class="learning-card" id="btn-learn-standalone"><h3>🧠 Stand Alone</h3></div>
-                <div class="learning-card" id="btn-learn-itemsets"><h3>🔗 Item Sets</h3></div>
-            </div>
-            <button class="btn-back-small" id="btn-back-learn-mobile">Back Home</button>
-        </div>
-
-        <div id="simulation-view" class="app-container hidden">
-            <h2 style="color:white; margin:0 0 20px 0;">Simulation Lab</h2>
-            <div class="learning-cards-row">
-                <div class="learning-card" id="btn-sim-customize-mobile"><h3>🛠️ Customize</h3></div>
-                <div class="learning-card" id="btn-sim-start-mobile"><h3>▶️ Standard Exam</h3></div>
-            </div>
-            <button class="btn-back-small" id="btn-back-simulation-mobile">Back Home</button>
-        </div>
-
-        <div id="selection-view" class="app-container hidden">
-            <h2 id="selection-mode-title" style="color:white;">Topics</h2>
-            <div id="dynamic-cat-list" style="margin-bottom:20px;"></div> 
-            
-            <button class="square-card" style="width:100%; aspect-ratio:auto; height:60px; flex-direction:row; margin-top:10px; border-radius:12px;" id="btn-start-quiz-selection">
-                <span style="font-weight:bold; color:white;">NEXT STEP →</span>
-            </button>
-            <button class="btn-back-small" id="btn-back-selection-mobile-cancel">Cancel</button>
-        </div
-        >
-        <nav class="bottom-nav">
-            <a class="nav-item active" id="nav-home-mobile">
-                <span class="nav-icon">🏠</span><span>Home</span>
-            </a>
-            
-            <div class="nav-item" onclick="window.location.href='stats.html'">
-                <span class="nav-icon">📊</span><span>Stats</span>
-            </div>
-            
-            <a class="nav-item" id="nav-notes-mobile">
-                <span class="nav-icon">📝</span><span>Notes</span>
-            </a>
-            <a class="nav-item" id="nav-profile-mobile">
-                <span class="nav-icon">⚙️</span><span>Profile</span>
-            </a>
-        </nav>
-
-    </div> 
-
-    <div id="quiz-settings-modal" class="modal-overlay hidden">
-        <div class="modal-content" style="text-align:center;">
-            <span class="close-btn" id="btn-close-quiz-settings">×</span>
-            <h3>Quiz Settings</h3>
-            <p style="color:#aaa; margin-bottom:10px;">Select number of questions:</p>
-            <select id="quiz-count" style="width:100%; padding:15px; margin:10px 0 25px 0; background:#000; color:#fff; border:1px solid var(--accent); border-radius:8px; font-size:1.1rem;">
-                <option value="10">10 Questions</option>
-                <option value="20">20 Questions</option>
-                <option value="30">30 Questions</option>
-                <option value="50">50 Questions</option>
-            </select>
-            <button class="btn-start" id="btn-start-quiz-confirm">START NOW</button>
-        </div>
-    </div>
-
-    <div id="notes-modal" class="modal-overlay hidden">
-        <div class="modal-content" style="background:#121214; border:1px solid #333; padding:20px; width:90%; max-width:500px; height:80vh; border-radius:20px; display:flex; flex-direction:column; box-shadow:0 0 20px rgba(0,0,0,0.8);">
-            
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; color:white;">
-                <h3 style="margin:0; font-weight:800; font-size:1.2rem;">My Quick Notes</h3>
-                <span id="btn-close-notes-modal" style="cursor:pointer; font-size:1.8rem; color:#666;">&times;</span>
-            </div>
-
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input id="new-note-input" type="text" placeholder="Type a note..." style="flex:1; background:#000; border:1px solid #444; color:white; padding:12px; border-radius:10px; outline:none;">
-                <button id="btn-save-note" style="background:var(--accent); color:black; border:none; border-radius:10px; padding:0 15px; font-weight:bold; cursor:pointer;">SAVE</button>
-            </div>
-
-            <div id="notes-list-container" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:5px;">
-                Loading notes...
-            </div>
-        </div>
-    </div>
-
-    <div id="ai-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h3 style="margin:0; font-weight:800; display:flex; gap:8px;">🤖 <span id="ai-modal-title">AI Lab</span></h3>
-                <span class="close-btn" id="btn-close-ai-modal">×</span>
-            </div>
-            <p style="color:#888; font-size:0.9rem;" id="ai-modal-desc">Type a keyword or question.</p>
-            
-            <textarea id="ai-input" class="ai-input-area" placeholder="E.g. Ameloblastoma treatment..."></textarea>
-            
-            <button class="btn-start" id="btn-ai-submit-mobile" style="margin-top:15px;">SEARCH WITH AI</button>
-            
-            <div id="ai-output" style="margin-top:15px; color:#ccc; max-height:200px; overflow-y:auto;"></div>
-        </div>
-    </div>
-
-    <script src="app.js"></script>
+            `;
+        });
+    }
+</script>
 </body>
 </html>
