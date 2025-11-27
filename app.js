@@ -8,12 +8,13 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- FUNCIONES Y VARIABLES GLOBALES ---
 
-// 1. VARIABLE GLOBAL PARA EL MODO (NUEVO)
+// 1. VARIABLE GLOBAL PARA EL MODO
 let currentSelectionMode = 'practice';
 
-// 2. FUNCIÓN PARA EL DAILY RUN
+// 2. FUNCIÓN PARA EL DAILY RUN (MODIFICADO)
 function startDailyRun() {
     console.log("Starting Daily Run...");
+    // Redirige al modo 'daily' con 10 preguntas fijas
     window.location.href = 'quiz_engine.html?mode=daily&count=10';
 }
 
@@ -280,9 +281,9 @@ function goBackToLearning() { switchView('learning-view'); }
 function goBackToPomodoro() { switchView('pomodoro-view'); }
 
 
-// --- SELECTION VIEW LOGIC (MODIFICADO) ---
+// --- SELECTION VIEW LOGIC ---
 function openSelectionView(mode) {
-    // 1. Guardamos el modo seleccionado ('standalone', 'itemsets', 'simulation') [NUEVO]
+    // 1. Guardamos el modo seleccionado ('standalone', 'itemsets', 'simulation')
     currentSelectionMode = mode;
 
     const titleEl = document.getElementById('selection-mode-title');
@@ -330,7 +331,7 @@ function closeQuizSettings() {
     }
 }
 
-// 5. START QUIZ (MODIFICADO)
+// 5. START QUIZ
 function startQuiz() {
     const count = document.getElementById('quiz-count').value;
     // Ahora usa la variable global para enviar el modo correcto
@@ -381,7 +382,7 @@ async function saveNote() {
         return;
     }
     
-    // --- LÓGICA DE PERSISTENCIA MIGRADA A SUPABASE (USANDO 'content') ---
+    // --- LÓGICA DE PERSISTENCIA MIGRADA A SUPABASE ---
     const { error } = await _supabase
         .from('user_notes')
         .insert({ user_id: userId, content: text });
@@ -407,7 +408,7 @@ async function loadNotes() {
         return;
     }
     
-    // --- LÓGICA DE CARGA MIGRADA DE LOCALSTORAGE A SUPABASE (USANDO 'content') ---
+    // --- LÓGICA DE CARGA MIGRADA DE LOCALSTORAGE A SUPABASE ---
     const { data: notes, error } = await _supabase
         .from('user_notes')
         .select('content, created_at')
@@ -434,7 +435,7 @@ async function loadNotes() {
 }
 
 
-// --- IA LAB LOGIC ---
+// --- IA LAB LOGIC (MODIFICADO) ---
 function openAIModal(mode) {
     const modal = document.getElementById('ai-modal');
     if(modal) {
@@ -452,25 +453,32 @@ function closeAIModal() {
     }
 }
 
-async function callGemini() {
+// NUEVA FUNCIÓN CALLGEMINI (Buscador y redirección directa)
+function callGemini() {
     const inputEl = document.getElementById('ai-input');
     const outputEl = document.getElementById('ai-output');
     
-    if(!inputEl || !inputEl.value.trim()) return;
+    if(!inputEl) return;
+
+    const query = inputEl.value.trim();
+
+    // Validación: Solo una palabra y no estar vacío
+    if (!query) {
+        alert("Please enter a keyword.");
+        return;
+    }
+    if (query.includes(" ")) {
+        alert("Please enter only ONE keyword (e.g. 'Ameloblastoma').");
+        return;
+    }
     
     outputEl.style.display = 'block';
-    outputEl.innerHTML = '<div style="color:var(--accent);">🤖 Thinking...</div>';
+    outputEl.innerHTML = '<div style="color:var(--accent);">🔍 Searching database...</div>';
 
+    // Redirigir directamente al quiz con el término de búsqueda
     setTimeout(() => {
-        outputEl.innerHTML = `
-            <strong>AI Result:</strong><br>
-            I found 3 relevant questions related to "<em>${inputEl.value}</em>".<br><br>
-            <button class="btn-start" id="btn-start-ai-quiz" style="padding:5px 10px; font-size:0.8rem;">Start Generated Quiz</button>
-        `;
-        // Adquirir el nuevo botón del DOM después de ser renderizado
-        document.getElementById('btn-start-ai-quiz')?.addEventListener('click', () => startQuizEngine('ai_generated'));
-
-    }, 1500);
+        window.location.href = `quiz_engine.html?mode=search&term=${encodeURIComponent(query)}`;
+    }, 1000);
 }
 
 
@@ -536,7 +544,7 @@ async function logout() {
     }
 }
 
-// --- LOGIC DE FECHA Y TIMER (MOVIDA DE MOCKUP.HTML) ---
+// --- LOGIC DE FECHA Y TIMER ---
 function initCountdown() {
     const storedDate = localStorage.getItem('examDate');
     if (storedDate) {
