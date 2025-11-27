@@ -10,13 +10,13 @@
     
     <style>
         /* ================================================================= */
-        /* === UTILIDADES GLOBALES === */
+        /* === UTILIDADES Y RESET === */
         /* ================================================================= */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; transition: background-color 0.3s; min-height: 100vh; }
         .hidden { display: none !important; }
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; transition: background-color 0.3s; }
 
         /* ================================================================= */
         /* === ESTILOS MODO PRÁCTICA (DARK / STANDALONE) === */
@@ -25,1012 +25,800 @@
             background-color: #050505;
             background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%);
             color: #f4f4f5;
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
             display: flex; justify-content: center; align-items: center;
         }
 
-        .practice-wrapper { width: 100%; max-width: 900px; padding: 15px; box-sizing: border-box; }
+        .practice-wrapper { width: 100%; max-width: 900px; padding: 20px; }
 
-        /* Pantalla Inicio Práctica */
-        #prac-start-screen { text-align: center; padding: 20px; }
-        .prac-title { font-size: 2.5rem; font-weight: 800; color: #facc15; text-shadow: 0 0 10px rgba(250, 204, 21, 0.2); margin-bottom: 20px; }
-        .prac-desc { font-size: 1.1rem; color: #71717a; margin-bottom: 40px; }
-        .btn-prac-start { background: #121214; border: 1px solid #71717a; color: #f4f4f5; padding: 15px 50px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.3s; width: 100%; max-width: 250px; }
-        .btn-prac-start:hover { background: #252528; border-color: #facc15; color: #facc15; transform: scale(1.05); }
+        /* --- PANTALLA INICIO PRÁCTICA (BOTONES CUADRADOS) --- */
+        #prac-start-screen { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; 
+        }
+        .prac-title { font-size: 2.5rem; font-weight: 800; color: #facc15; text-shadow: 0 0 10px rgba(250, 204, 21, 0.2); margin-bottom: 10px; text-align: center; }
+        .prac-desc { font-size: 1.1rem; color: #71717a; margin-bottom: 40px; text-align: center; }
+        
+        /* Grid centrada para botones cuadrados */
+        .prac-grid-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 320px; /* Controla el ancho total del bloque de botones */
+        }
+        
+        .btn-prac-start { 
+            background: #121214; 
+            border: 2px solid #333; 
+            color: #f4f4f5; 
+            border-radius: 16px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            aspect-ratio: 1 / 1; /* CUADRADO PERFECTO */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        .btn-prac-start span { font-size: 0.8rem; font-weight: 400; color: #71717a; margin-top: 5px; }
+        .btn-prac-start:hover { background: #252528; border-color: #facc15; color: #facc15; transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .btn-prac-start:hover span { color: #facc15; }
 
-        /* Pantalla Quiz Práctica */
+        /* --- PANTALLA QUIZ PRÁCTICA --- */
         .prac-quiz-container { background: #121214; border: 1px solid #27272a; border-radius: 14px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 20px; }
-        .prac-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .prac-brand { font-weight: 800; font-size: 1.1rem; color: #f4f4f5; letter-spacing: 0.5px; }
-        .prac-question-text { font-size: 1.4rem; font-weight: 600; color: #fff; line-height: 1.4; margin-bottom: 20px; }
+        .prac-header { display: flex; justify-content: space-between; align-items: center; }
+        .prac-question-text { font-size: 1.3rem; font-weight: 600; color: #fff; line-height: 1.5; margin-bottom: 20px; }
         
-        .prac-option { display: flex; align-items: center; background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 15px 20px; cursor: pointer; transition: 0.2s; margin-bottom: 10px; }
+        .prac-option { display: flex; align-items: flex-start; background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 15px; cursor: pointer; transition: 0.2s; margin-bottom: 10px; }
         .prac-option:hover:not(.answered) { border-color: #facc15; background: #23232a; }
-        
-        /* Estados de respuesta */
         .prac-option.correct { background: rgba(56, 161, 105, 0.15); border-color: #38a169; }
         .prac-option.incorrect { background: rgba(229, 62, 62, 0.15); border-color: #e53e3e; }
-        
-        .prac-radio { width: 18px; height: 18px; border: 2px solid #71717a; border-radius: 50%; margin-right: 15px; position: relative; flex-shrink: 0; transition: all 0.2s; }
-        .prac-option.selected .prac-radio { border-color: #facc15; }
-        .prac-option.selected .prac-radio::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; background: #facc15; border-radius: 50%; }
+        .prac-radio { width: 18px; height: 18px; border: 2px solid #71717a; border-radius: 50%; margin-right: 15px; flex-shrink: 0; margin-top: 2px; }
+        .prac-option.selected .prac-radio { background: #facc15; border-color: #facc15; }
 
-        /* Review Area Práctica */
+        /* --- REVIEW AREA (BOTONES RECTANGULARES PEQUEÑOS) --- */
         .prac-review-area { border-top: 1px solid #27272a; padding-top: 20px; text-align: center; }
-        .prac-classify-btns { display: flex; gap: 10px; margin: 15px 0; }
-        .btn-classify { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; color: #fff; opacity: 0.6; transition: 0.2s; }
-        .btn-classify:hover, .btn-classify.active { opacity: 1; transform: scale(1.03); border: 2px solid white; }
-        .btn-hard { background: #e53e3e; } 
-        .btn-medium { background: #ecc94b; color: #000; } 
-        .btn-easy { background: #38a169; }
+        .prac-classify-btns { 
+            display: flex; 
+            justify-content: center; 
+            gap: 15px; 
+            margin: 20px 0; 
+        }
+        .btn-classify { 
+            padding: 10px 25px; /* Rectangular pequeño */
+            border: none; 
+            border-radius: 6px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            color: #fff; 
+            opacity: 0.4; 
+            transition: 0.2s; 
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        .btn-classify:hover, .btn-classify.active { opacity: 1; transform: scale(1.05); box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .btn-hard { background: #ef4444; } 
+        .btn-medium { background: #facc15; color: #000; } 
+        .btn-easy { background: #22c55e; }
         
-        .prac-explanation { background: rgba(255,255,255,0.05); border-left: 4px solid #facc15; padding: 15px; margin-top: 15px; text-align: left; line-height: 1.5; color: #ddd; border-radius: 4px; }
-        .btn-prac-next { background: #facc15; color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: 800; margin-top: 15px; cursor: pointer; font-size: 1.1rem; }
-        .btn-prac-next:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(250, 204, 21, 0.3); }
+        .prac-explanation { background: rgba(255,255,255,0.05); border-left: 4px solid #facc15; padding: 15px; margin-top: 15px; text-align: left; line-height: 1.5; color: #ddd; border-radius: 4px; font-size: 0.95rem; }
+        .btn-prac-next { background: #facc15; color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: 800; margin-top: 15px; cursor: pointer; text-transform: uppercase; }
 
         /* ================================================================= */
-        /* === NUEVOS ESTILOS PERFORMANCE (Tipo Dashboard Oscuro) === */
+        /* === ESTILOS PERFORMANCE (Resultados) === */
         /* ================================================================= */
-        .perf-card {
-            background: #18181b; /* Fondo tarjeta oscura */
+        /* Contenedor general de resultados */
+        .perf-container {
+            width: 100%; max-width: 1000px;
+            background-color: #1c1c1c;
             border-radius: 20px;
-            padding: 30px;
             display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 40px;
-            width: 100%;
-            max-width: 900px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            align-items: start;
+            grid-template-columns: 1fr; /* Mobile first */
+            gap: 20px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            margin: 20px auto;
         }
 
-        @media (max-width: 768px) {
-            .perf-card { grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 768px) {
+            .perf-container {
+                grid-template-columns: 1fr 1fr; 
+                grid-template-rows: auto 1fr;
+                padding: 40px;
+                align-items: start;
+            }
         }
 
-        .perf-header { grid-column: 1 / -1; text-align: center; margin-bottom: 10px; }
-        .perf-title { font-size: 1.8rem; font-weight: 700; color: white; }
+        .perf-title {
+            font-size: 32px; font-weight: bold; text-align: center;
+            color: #f0f0f0; margin-bottom: 30px; grid-column: 1 / -1;
+        }
 
-        /* LADO IZQUIERDO: DONA */
-        .perf-left { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .donut-chart {
-            width: 180px; height: 180px; border-radius: 50%;
-            position: relative;
+        /* Chart Section */
+        .chart-section { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; }
+        
+        .pie-chart {
+            width: 220px; height: 220px; border-radius: 50%; position: relative;
             display: flex; justify-content: center; align-items: center;
-            margin-bottom: 20px;
-            /* El gradiente se inyectará con JS */
+            margin-bottom: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            /* Gradiente se inyecta vía JS */
         }
-        .donut-hole {
-            width: 140px; height: 140px; background: #18181b; border-radius: 50%;
+        .pie-center {
+            width: 65%; height: 65%; background-color: #1c1c1c; border-radius: 50%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: white; z-index: 2;
+            color: #f0f0f0;
         }
-        .donut-val { font-size: 2.5rem; font-weight: 800; line-height: 1; }
-        .donut-label { font-size: 0.9rem; color: #a1a1aa; margin-top: 5px; }
+        .acc-text { font-size: 32px; font-weight: bold; }
+        .acc-label { font-size: 14px; color: #aaa; }
+        
+        .data-row { font-size: 24px; font-weight: bold; margin-top: 10px; color: white;}
+        .col-green { color: #28a745; }
+        .col-red { color: #dc3545; }
 
-        .perf-stats-row { font-size: 1.5rem; font-weight: 800; display: flex; gap: 15px; }
-        .stat-green { color: #22c55e; }
-        .stat-red { color: #ef4444; }
-
-        /* LADO DERECHO: BARRAS Y TABLA */
-        .perf-right { display: flex; flex-direction: column; gap: 20px; }
-
-        /* Barra superior (Easy/Med/Hard o Correct/Incorrect) */
-        .perf-bar-container {
-            display: flex; width: 100%; height: 60px; border-radius: 12px; overflow: hidden; font-family: sans-serif;
+        /* Stats Section */
+        .stats-section { display: flex; flex-direction: column; gap: 20px; }
+        
+        .landscape-bar {
+            display: flex; height: 60px; border-radius: 8px; overflow: hidden; width: 100%;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-        .perf-seg {
+        .landscape-seg {
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: #000; font-weight: bold;
+            font-weight: bold; color: #111; line-height: 1.2;
         }
-        .seg-val { font-size: 1.2rem; }
-        .seg-lbl { font-size: 0.65rem; text-transform: uppercase; opacity: 0.8; }
+        .landscape-seg.seg-text-white { color: #fff; } /* Para el rojo en practice */
 
         /* Colores Específicos */
-        .bg-green { background: #22c55e; color: #000; }
-        .bg-yellow { background: #facc15; color: #000; }
-        .bg-red { background: #ef4444; color: #fff; }
+        .bg-easy { background: #28a745; }
+        .bg-med { background: #ffc107; }
+        .bg-hard { background: #dc3545; }
 
-        /* Tabla de Categorías */
-        .cat-box { background: #27272a; border-radius: 12px; padding: 20px; }
-        .cat-header-text { color: #a1a1aa; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; text-align: center; margin-bottom: 15px; letter-spacing: 1px; }
-        .cat-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 0; border-bottom: 1px solid #3f3f46; color: white; font-weight: 600; font-size: 0.95rem;
+        .cat-list-box {
+            background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px;
         }
-        .cat-row:last-child { border-bottom: none; }
-        .cat-scores { font-family: monospace; font-size: 1rem; }
-        .sc-good { color: #22c55e; }
-        .sc-bad { color: #ef4444; }
+        .cat-item {
+            display: flex; justify-content: space-between; padding: 12px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1); color: #f0f0f0; font-size: 15px;
+        }
+        .cat-item:last-child { border-bottom: none; }
+        .cat-scores { font-family: monospace; }
+
+
         /* ================================================================= */
-        /* === FIN ESTILOS PERFORMANCE === */
+        /* === ESTILOS MODO SIMULACIÓN (LIGHT / ITEMSETS) === */
         /* ================================================================= */
+        body.mode-simulation {
+            background-color: #f2f2f2; color: #333; display: block;
+        }
+        
+        /* Layout Simulación */
+        .sim-screen { display: none; flex-direction: column; min-height: 100vh; }
+        .sim-screen.active { display: flex; }
+        
+        .sim-header { background: #235d88; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; font-size: 14px; }
+        .sim-footer { background: #235d88; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; margin-top: auto; flex-shrink: 0; z-index: 10; }
+        
+        .sim-content { padding: 30px 20px; width: 100%; max-width: 1300px; margin: 0 auto; display: flex; gap: 25px; flex-grow: 1; }
+        @media (max-width: 900px) { .sim-content { flex-direction: column; } }
+        
+        .sim-patient-panel { background: white; border: 1px solid #ddd; border-radius: 4px; width: 320px; flex-shrink: 0; height: fit-content; }
+        @media (max-width: 900px) { .sim-patient-panel { width: 100%; } }
+        .sim-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .sim-table th { background: #e0e6ec; padding: 8px; text-align: left; border-top: 1px solid #ddd; }
+        .sim-table td { padding: 8px; border-bottom: 1px solid #ddd; }
+        
+        .sim-question-area { flex-grow: 1; width: 100%; }
+        .sim-q-text { font-size: 16px; font-weight: 500; margin-bottom: 25px; line-height: 1.5; }
+        
+        .sim-option { background: white; border: 1px solid #ddd; padding: 12px 15px; margin-bottom: 12px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; position: relative; }
+        .sim-option:hover { background: #e6f0f5; border-color: #235d88; }
+        .sim-option.selected { background: #dceefb; border-color: #235d88; }
+        .sim-radio { width: 16px; height: 16px; border: 1px solid #999; border-radius: 50%; margin-right: 15px; background: white; }
+        .sim-option.selected .sim-radio { background: #235d88; border-color: #235d88; }
 
-        /* ================================================================= */
-        /* === ESTILOS MODO SIMULACIÓN (LIGHT / ITEMSETS) === */
-        /* ================================================================= */
-        body.mode-simulation {
-            background-color: #f2f2f2;
-            color: #333;
-            display: block; /* Reset flex */
-        }
-        
-        /* Layout Simulación */
-        .sim-screen { display: none; flex-direction: column; min-height: 100vh; }
-        .sim-screen.active { display: flex; }
-        
-        .sim-header { background: #235d88; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; font-size: 14px; }
-        .sim-footer { background: #235d88; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; margin-top: auto; flex-shrink: 0; z-index: 10; }
-        
-        .sim-content { padding: 30px 20px; width: 100%; max-width: 1300px; margin: 0 auto; box-sizing: border-box; display: flex; gap: 25px; flex-grow: 1; }
-        @media (max-width: 900px) { .sim-content { flex-direction: column; } }
-        
-        /* Panel Paciente */
-        .sim-patient-panel { background: white; border: 1px solid #ddd; border-radius: 4px; width: 320px; flex-shrink: 0; height: fit-content; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        @media (max-width: 900px) { .sim-patient-panel { width: 100%; } }
-        .sim-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .sim-table th { background: #e0e6ec; padding: 8px 10px; text-align: left; border-top: 1px solid #ddd; color: #333; font-weight: 600; }
-        .sim-table td { padding: 8px 10px; border-bottom: 1px solid #ddd; }
-        
-        /* Panel Pregunta */
-        .sim-question-area { flex-grow: 1; width: 100%; }
-        .sim-q-text { font-size: 16px; font-weight: 500; margin-bottom: 25px; line-height: 1.5; margin-top: 0; }
-        
-        .sim-option { background: white; border: 1px solid #ddd; padding: 12px 15px; margin-bottom: 12px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; position: relative; transition: background 0.2s; }
-        .sim-option:hover { background: #e6f0f5; border-color: #235d88; }
-        .sim-option.selected { background: #dceefb; border-color: #235d88; }
-        
-        /* Custom Radio Simulación */
-        .sim-option input { display: none; }
-        .sim-custom-radio { width: 16px; height: 16px; border: 1px solid #999; border-radius: 50%; margin-right: 15px; background: white; position: relative; }
-        .sim-option.selected .sim-custom-radio { background: #235d88; border-color: #235d88; }
-        .sim-option.selected .sim-custom-radio::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 6px; height: 6px; background: white; border-radius: 50%; }
+        .btn-sim-nav { background: white; color: #235d88; border: none; padding: 10px 20px; font-weight: 700; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-size: 14px; }
+        .btn-sim-nav:hover { background: #f2f2f2; }
+        .btn-sim-nav.mark.active { background: #ffc107; color: #333; }
+        
+        /* Review Table */
+        .sim-review-table-container { width: 90%; max-width: 800px; margin: 30px auto; background: white; border: 1px solid #ddd; }
+        .sim-review-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .sim-review-table th { background: #e0e6ec; padding: 10px; text-align: left; }
+        .sim-review-table td { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
 
-        /* Botones Simulación */
-        .btn-sim-nav { background: white; color: #235d88; border: none; padding: 10px 20px; font-weight: 700; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-size: 14px; transition: 0.3s; }
-        .btn-sim-nav:hover { background: #f2f2f2; }
-        .btn-sim-nav.mark.active { background: #ffc107; color: #333; border-color: #ffc107; }
-        
-        /* Review Screen */
-        .sim-review-table-container { width: 90%; max-width: 800px; margin: 30px auto; background: white; border: 1px solid #ddd; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .sim-review-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        .sim-review-table th { background: #e0e6ec; padding: 8px 10px; text-align: left; border-bottom: 1px solid #ddd; }
-        .sim-review-table td { padding: 8px 10px; border-bottom: 1px solid #eee; cursor: pointer; }
-        .sim-review-table tr:hover { background: #f9f9f9; }
-
-        /* Performance Screen Simulation */
-        .sim-perf-container { max-width: 1000px; margin: 40px auto; background: #1c1c1c; color: #f0f0f0; border-radius: 20px; padding: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        @media (max-width: 768px) { .sim-perf-container { grid-template-columns: 1fr; } }
-    </style>
+    </style>
 </head>
 <body>
 
-    <div id="root-practice" class="practice-wrapper hidden">
-        
-        <div id="prac-start-screen" class="fade-in">
-            <h1 class="prac-title">INBDE Pro Lab</h1>
-            <p class="prac-desc">Practice Mode: Select Intensity</p>
-            
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; max-width:400px; margin:0 auto;">
-                <button class="btn-prac-start" onclick="initPracticeQuiz(10)">10 Questions</button>
-                <button class="btn-prac-start" onclick="initPracticeQuiz(25)">25 Questions</button>
-                <button class="btn-prac-start" onclick="initPracticeQuiz(50)">50 Questions</button>
-                <button class="btn-prac-start" onclick="initPracticeQuiz(100)">100 Questions</button>
-            </div>
-        </div>
-
-        <div id="prac-quiz-screen" class="prac-quiz-container hidden fade-in">
-            <div class="prac-header">
-                <span class="prac-brand">INBDE Pro Lab</span>
-                <span id="prac-progress" style="color:#71717a">1 / --</span>
-            </div>
-            
-            <div id="prac-question-area">
-                <p id="prac-q-text" class="prac-question-text">Loading...</p>
-                <div id="prac-options-list"></div>
-            </div>
-
-            <p id="prac-error-msg" class="hidden" style="color:#e53e3e; text-align:center; font-weight:bold;">Please classify the question to continue.</p>
-
-            <div id="prac-review-area" class="prac-review-area hidden">
-                <p style="color:#71717a; font-weight:600;">Self Assessment</p>
-                <div class="prac-classify-btns">
-                    <button class="btn-classify btn-hard" onclick="classifyPractice('learning')">Hard</button>
-                    <button class="btn-classify btn-medium" onclick="classifyPractice('reviewing')">Medium</button>
-                    <button class="btn-classify btn-easy" onclick="classifyPractice('mastered')">Easy</button>
-                </div>
-                <div id="prac-explanation" class="prac-explanation hidden"></div>
-                <button id="btn-prac-next" class="btn-prac-next hidden" onclick="nextPracticeQuestion()">NEXT QUESTION →</button>
-            </div>
-        </div>
-
-                <div id="prac-results-screen" class="hidden fade-in" style="min-height:100vh; display:flex; justify-content:center; align-items:center;">
-            <div class="perf-card">
-                <div class="perf-header">
-                    <div class="perf-title">Performance</div>
-                </div>
-
-                <div class="perf-left">
-                    <div class="donut-chart" id="perf-donut">
-                        <div class="donut-hole">
-                            <span class="donut-val" id="perf-acc-val">0%</span>
-                            <span class="donut-label">Accuracy</span>
-                        </div>
-                    </div>
-                    <div class="perf-stats-row">
-                        <span class="stat-green" id="perf-total-correct">0</span> / 
-                        <span class="stat-red" id="perf-total-incorrect">0</span>
-                    </div>
-                    <button onclick="goToDashboard()" style="margin-top:30px; background:transparent; border:1px solid #555; color:white; padding:10px 30px; border-radius:8px; cursor:pointer;">EXIT</button>
-                </div>
-
-                <div class="perf-right">
-                    
-                    <div class="perf-bar-container" id="perf-top-bar">
-                        </div>
-
-                    <div class="cat-box">
-                        <div class="cat-header-text">CATEGORIES PERFORMANCE</div>
-                        <div id="perf-cat-list">
-                            </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-            <div id="root-simulation" class="hidden">
-        
-        <div id="sim-screen-quiz" class="sim-screen active">
-            <div class="sim-header">
-                <div class="header-left"><span id="sim-q-counter">Question 1 of --</span></div>
-                <div class="header-center" style="text-align:center;">
-                    <span style="display:block; font-weight:500;">INBDE Pro Lab</span>
-                    <span style="display:block; font-size:12px;">Simulation Mode</span>
-                </div>
-                <div class="header-right"><span id="sim-timer">Time: --:--</span></div>
-            </div>
-
-            <div class="sim-content">
-                <div class="sim-patient-panel">
-                    <table class="sim-table">
-                        <thead><tr><th>Patient</th></tr></thead>
-                        <tbody id="sim-pat-demo"><tr><td>Loading...</td></tr></tbody>
-                        <thead><tr><th>Chief Complaint</th></tr></thead>
-                        <tbody id="sim-pat-cc"><tr><td>...</td></tr></tbody>
-                        <thead><tr><th>Background / History</th></tr></thead>
-                        <tbody id="sim-pat-hist"><tr><td>...</td></tr></tbody>
-                        <thead><tr><th>Current Findings</th></tr></thead>
-                        <tbody id="sim-pat-find"><tr><td>...</td></tr></tbody>
-                    </table>
-                </div>
-
-                <div class="sim-question-area">
-                    <p id="sim-q-text" class="sim-q-text">Loading Question...</p>
-                    <div id="sim-options-container"></div>
-                </div>
-            </div>
-
-            <div class="sim-footer">
-                <button class="btn-sim-nav" onclick="nextSimQuestion()">NEXT</button>
-                <div style="display:flex; gap:15px;">
-                    <button id="btn-sim-mark" class="btn-sim-nav mark" onclick="toggleSimMark()">MARK</button>
-                    <button class="btn-sim-nav" onclick="goToSimReview()">REVIEW</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="sim-screen-review" class="sim-screen">
-            <div class="sim-header">
-                <div style="flex:1; text-align:center;">
-                    <span style="font-weight:500;">INBDE Pro Lab</span><br>
-                    <span style="font-size:12px;">Review Panel</span>
-                </div>
-                <div><span id="sim-timer-rev">Time: --:--</span></div>
-            </div>
-            
-            <div style="flex-grow:1; overflow-y:auto; padding:30px; display:flex; justify-content:center;">
-                <div class="sim-review-table-container">
-                    <table class="sim-review-table">
-                        <thead>
-                            <tr>
-                                <th style="padding-left:20px;">Question Name</th>
-                                <th style="text-align:center;">Marked</th>
-                                <th style="text-align:center;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sim-review-body">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="sim-footer">
-                <div style="display:flex; gap:15px;">
-                    <button class="btn-sim-nav" style="background:transparent; color:white; border:1px solid white;" onclick="returnToSimQuiz()">BACK TO QUIZ</button>
-                </div>
-                <button class="btn-sim-nav" style="background:#174263; color:white; border:none;" onclick="finishSimExam()">END EXAM</button>
-            </div>
-        </div>
-
-                <div id="sim-screen-perf" class="sim-screen" style="background:#000; justify-content:center; align-items:center; display:none;">
-            <div class="perf-card">
-                <div class="perf-header">
-                    <div class="perf-title">Simulation Results</div>
-                </div>
-
-                <div class="perf-left">
-                    <div class="donut-chart" id="sim-perf-donut">
-                        <div class="donut-hole">
-                            <span class="donut-val" id="sim-perf-acc-val">0%</span>
-                        </div>
-                    </div>
-                    <div class="perf-stats-row">
-                        <span class="stat-green" id="sim-perf-total-correct">0</span> / 
-                        <span class="stat-red" id="sim-perf-total-incorrect">0</span>
-                    </div>
-                    <button onclick="goToDashboard()" style="margin-top:30px; background:transparent; border:1px solid #555; color:white; padding:10px 30px; border-radius:8px; cursor:pointer;">EXIT EXAM</button>
-                </div>
-
-                <div class="perf-right">
-                    
-                    <div class="perf-bar-container" id="sim-perf-top-bar">
-                        </div>
-
-                    <div class="cat-box">
-                        <div class="cat-header-text">CATEGORIES PERFORMANCE</div>
-                        <div id="sim-perf-cat-list">
-                            </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-            </div>
-
-    <script src="app.js"></script>
-    <script>
-        // ==========================================================
-        // CONFIGURACIÓN Y ESTADO GLOBAL
-        // ==========================================================
-        const urlParams = new URLSearchParams(window.location.search);
-        const mode = urlParams.get('mode') || 'practice'; 
-        
-        // MODIFICACIÓN 1: Obtener count de forma condicional para manejar el modo standalone
-        const urlCountParam = urlParams.get('count');
-        const count = urlCountParam ? parseInt(urlCountParam) : null; 
-        
-        const isSimulation = (mode.includes('simulation') || mode === 'itemsets');
-
-        let quizData = [];
-        let currentIndex = 0;
-        let userAnswers = {}; // { qId: selectedOptionIndexOrString }
-        
-        // Estado Práctica
-        let practiceStats = { easy: 0, medium: 0, hard: 0 };
-        
-        // Estado Simulación
-        let markedQuestions = new Set();
-        let simTimerInterval;
-        let simTotalTime = 0; 
-
-        // Variable para almacenar el término de búsqueda si existe
-        const searchTerm = urlParams.get('term');
-
-        // ==========================================================
-        // INICIALIZACIÓN
-        // ==========================================================
-        document.addEventListener('DOMContentLoaded', async () => {
-            const body = document.body;
-            
-            if (isSimulation) {
-                body.classList.add('mode-simulation');
-                document.getElementById('root-simulation').classList.remove('hidden');
-                // Timer setup (e.g. 90 seg por pregunta)
-                simTotalTime = count * 90; 
-                startSimTimer();
-            } else {
-                body.classList.add('mode-practice');
-                document.getElementById('root-practice').classList.remove('hidden');
-            }
-
-            await fetchQuestions();
-        });
-
-        // MODIFICACIÓN B: FUNCIÓN FETCH REEMPLAZADA COMPLETA
-        async function fetchQuestions() {
-            if(typeof _supabase === 'undefined') {
-                alert("Database error: Supabase not found.");
-                return;
-            }
-
-            let data = [];
-            let error = null;
-
-            // --- LÓGICA 1: DAILY RUN (Aleatorio basado en fecha) ---
-            if (mode === 'daily') {
-                // 1. Traemos SOLO los IDs de todas las preguntas (es liviano)
-                const { data: allIds, error: idError } = await _supabase
-                    .from('questions_bank')
-                    .select('id');
-                
-                if (idError || !allIds) return;
-
-                // 2. "Barajar" usando la fecha como semilla (Seed)
-                // Esto hace que el orden sea aleatorio pero FIJO por hoy.
-                const todaySeed = new Date().toDateString(); // Ej: "Wed Nov 26 2025"
-                const seededRandom = (str) => {
-                    let hash = 0;
-                    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-                    return function() {
-                        const x = Math.sin(hash++) * 10000;
-                        return x - Math.floor(x);
-                    };
-                };
-                
-                const rng = seededRandom(todaySeed);
-                const shuffled = allIds.sort(() => 0.5 - rng()); // Ordenar usando la semilla
-                
-                // 3. Tomar los primeros 10 IDs
-                const selectedIds = shuffled.slice(0, 10).map(x => x.id);
-
-                // 4. Traer las preguntas completas de esos IDs
-                const { data: dailyQuestions, error: qError } = await _supabase
-                    .from('questions_bank')
-                    .select('*, clinical_cases (*)')
-                    .in('id', selectedIds);
-                
-                data = dailyQuestions;
-                error = qError;
-            } 
-            
-            // --- LÓGICA 2: BUSCADOR (IA LAB) ---
-            else if (mode === 'search' && searchTerm) {
-                const { data: searchData, error: searchError } = await _supabase
-                    .from('questions_bank')
-                    .select('*, clinical_cases (*)')
-                    .ilike('question_text', `%${searchTerm}%`); // Busca que contenga la palabra
-                
-                data = searchData;
-                error = searchError;
-            }
-
-            // --- LÓGICA 3: MODO NORMAL / SIMULACIÓN ---
-            else {
-                let query = _supabase.from('questions_bank').select('*, clinical_cases (*)');
-
-                if (isSimulation) {
-                    query = query.not('case_id', 'is', null); // Solo casos clínicos
-                } else {
-                    query = query.is('case_id', null); // Solo preguntas sueltas
-                }
-                
-                // IMPORTANTE: Si count es null (modo práctica manual), traemos un default (ej. 150) 
-                // para tenerlos en memoria, pero NO iniciamos el quiz todavía.
-                query = query.limit(count || 150);
-                
-                const response = await query;
-                data = response.data;
-                error = response.error;
-            }
-
-            // MANEJO DE RESULTADOS
-            if (error) {
-                console.error("Error fetching data:", error);
-                return;
-            }
-
-            if (!data || data.length === 0) {
-                quizData = [{
-                    id: 0, 
-                    question_text: mode === 'search' ? `No questions found with word: "${searchTerm}"` : "No questions available.", 
-                    option_a: "N/A", option_b: "N/A", correct_answer: "N/A", explanation: ""
-                }];
-            } else {
-                quizData = data;
-                // Si no es Daily (que ya está mezclado por fecha), mezclamos simple
-                if (mode !== 'daily') {
-                    quizData.sort(() => Math.random() - 0.5);
-                }
-            }
-            
-            // Iniciar interfaz
-            if (isSimulation) {
-                initSimQuiz();
-            } else {
-                // CORRECCIÓN PARA PROBLEMA #5 (Lógica de inicio condicional)
-                // Solo iniciamos renderPracticeQuestion si el modo es 'daily' o 'search' 
-                // O si ya venía un count fijo en la URL (ej. desde un link directo).
-                // Si es 'standalone' puro, esperamos en la pantalla de los 4 botones.
-                if (mode === 'daily' || mode === 'search' || (mode === 'standalone' && count !== null)) {
-                    // Si ya tenemos count, ocultamos la pantalla de inicio y arrancamos
-                    document.getElementById('prac-start-screen').classList.add('hidden');
-                    document.getElementById('prac-quiz-screen').classList.remove('hidden');
-                    renderPracticeQuestion();
-                } else {
-                    // Dejamos que se vea el prac-start-screen (los 4 botones)
-                    document.getElementById('prac-start-screen').classList.remove('hidden');
-                }
-            }
-        }
-
-        // ==========================================================
-        // LÓGICA MODO PRÁCTICA
-        // ==========================================================
-        
-        // MODIFICACIÓN C: ACEPTAR CANTIDAD SELECCIONADA
-        function initPracticeQuiz(selectedCount) {
-            // Si viene un número, recortamos la data cargada a esa cantidad
-            if (selectedCount && quizData.length > selectedCount) {
-                quizData = quizData.slice(0, selectedCount);
-            }
-
-            document.getElementById('prac-start-screen').classList.add('hidden');
-            document.getElementById('prac-quiz-screen').classList.remove('hidden');
-            renderPracticeQuestion();
-        }
-
-        function renderPracticeQuestion() {
-            const q = quizData[currentIndex];
-            document.getElementById('prac-progress').innerText = `${currentIndex + 1} / ${quizData.length}`;
-            document.getElementById('prac-q-text').innerText = q.question_text;
-            
-            // Reset UI
-            document.getElementById('prac-review-area').classList.add('hidden');
-            document.getElementById('prac-error-msg').classList.add('hidden');
-            // MODIFICACIÓN 2.1: Ocultar botón Next al inicio
-            document.getElementById('btn-prac-next').classList.add('hidden');
-            const optsContainer = document.getElementById('prac-options-list');
-            optsContainer.innerHTML = '';
-
-            const options = [q.option_a, q.option_b, q.option_c, q.option_d];
-            
-            options.forEach((optText, idx) => {
-                if(!optText) return;
-                const letter = String.fromCharCode(65 + idx); // A, B, C, D
-                
-                const div = document.createElement('div');
-                div.className = 'prac-option';
-                div.id = `prac-opt-${idx}`;
-                div.innerHTML = `<div class="prac-radio"></div><span style="font-size:1.1rem; font-weight:500;">${optText}</span>`;
-                div.onclick = () => handlePracticeOptionClick(idx, letter, q);
-                optsContainer.appendChild(div);
-            });
-        }
-
-        function handlePracticeOptionClick(idx, letter, q) {
-            if(userAnswers[q.id]) return; // Ya respondido
-
-            userAnswers[q.id] = letter;
-            
-            // Marcar visualmente
-            const selectedDiv = document.getElementById(`prac-opt-${idx}`);
-            selectedDiv.classList.add('selected');
-            
-            // Revelar respuestas
-            const allOpts = document.getElementById('prac-options-list').children;
-            
-            Array.from(allOpts).forEach((div, i) => {
-                div.classList.add('answered'); // Bloquear clicks
-                const currentOptText = [q.option_a, q.option_b, q.option_c, q.option_d][i];
-                const currentLetter = String.fromCharCode(65+i);
-
-                // Lógica flexible de comparación (Texto o Letra)
-                const isCorrect = (currentOptText === q.correct_answer) || (currentLetter === q.correct_answer);
-                
-                if(isCorrect) div.classList.add('correct');
-                else if(i === idx) div.classList.add('incorrect');
-            });
-
-            // Mostrar revisión
-            document.getElementById('prac-review-area').classList.remove('hidden');
-            document.getElementById('prac-explanation').innerHTML = q.explanation ? `<strong>Explanation:</strong><br>${q.explanation}` : "No explanation provided.";
-            document.getElementById('prac-explanation').classList.remove('hidden');
-        }
-
-        // MODIFICACIÓN D: REGISTRO DE ESTADÍSTICAS EN DB
-        async function classifyPractice(status) {
-            const q = quizData[currentIndex];
-            
-            // UI Update
-            const btns = document.querySelectorAll('.prac-classify-btns .btn-classify');
-            btns.forEach(b => b.classList.remove('active'));
-            if(status==='learning') document.querySelector('.btn-hard').classList.add('active');
-            if(status==='reviewing') document.querySelector('.btn-medium').classList.add('active');
-            if(status==='mastered') document.querySelector('.btn-easy').classList.add('active');
-
-            practiceStats[status === 'learning' ? 'hard' : (status === 'reviewing' ? 'medium' : 'easy')]++;
-            
-            // Registro completo en Base de Datos
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (session) {
-                // Insertamos con el status. 
-                const { error } = await _supabase.from('user_progress').insert([
-                    { 
-                        user_id: session.user.id, 
-                        question_id: q.id, 
-                        status: status, 
-                        quiz_mode: mode, // 'daily', 'practice', 'search'
-                        timestamp: new Date() 
-                    }
-                ]);
-                if (error) console.error("Error saving progress:", error);
-            }
-
-            // MODIFICACIÓN 2.2: Habilitar botón Next
-            document.getElementById('btn-prac-next').classList.remove('hidden');
-            document.getElementById('prac-error-msg').classList.add('hidden');
-        }
-
-        function nextPracticeQuestion() {
-            if (currentIndex < quizData.length - 1) {
-                currentIndex++;
-                renderPracticeQuestion();
-            } else {
-                finishPracticeQuiz();
-            }
-        }
-
-        // REEMPLAZO COMPLETO DE finishPracticeQuiz
-        function finishPracticeQuiz() {
-            document.getElementById('prac-quiz-screen').classList.add('hidden');
-            // Para mostrarlo usamos display flex (configurado en el style inline del HTML o CSS)
-            const resScreen = document.getElementById('prac-results-screen');
-            resScreen.classList.remove('hidden');
-
-            // 1. CÁLCULOS BÁSICOS
-            let correctCount = 0;
-            // Mapa para categorías { "Pathology": {correct: 0, total: 0}, ... }
-            let catMap = {}; 
-
-            quizData.forEach(q => {
-                // Calcular si es correcta
-                const userAns = userAnswers[q.id];
-                let isCorrect = false;
-                if(userAns) {
-                     const optTexts = [q.option_a, q.option_b, q.option_c, q.option_d];
-                     if (userAns === q.correct_answer) isCorrect = true; 
-                     else if (optTexts[userAns.charCodeAt(0) - 65] === q.correct_answer) isCorrect = true;
-                }
-                if(isCorrect) correctCount++;
-
-                // Categorías (Asumiendo que tu DB tiene columna 'subject' o 'category')
-                const cat = q.subject || "General"; 
-                if(!catMap[cat]) catMap[cat] = { correct:0, total:0 };
-                catMap[cat].total++;
-                if(isCorrect) catMap[cat].correct++;
-            });
-
-            const total = quizData.length;
-            const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
-            const incorrectCount = total - correctCount;
-
-            // 2. LLENAR DATOS GENERALES
-            document.getElementById('perf-acc-val').innerText = `${accuracy}%`;
-            document.getElementById('perf-total-correct').innerText = correctCount;
-            document.getElementById('perf-total-incorrect').innerText = incorrectCount;
-
-            // 3. GRÁFICO DONA (Verde vs Rojo)
-            const deg = Math.round((accuracy / 100) * 360);
-            document.getElementById('perf-donut').style.background = 
-                `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
-
-            // 4. BARRA SUPERIOR (Muestra EASY/MED/HARD en Práctica)
-            // Usamos los contadores globales practiceStats que ya tenías
-            const totalRated = practiceStats.easy + practiceStats.medium + practiceStats.hard || 1;
-            const pEasy = (practiceStats.easy / totalRated) * 100;
-            const pMed = (practiceStats.medium / totalRated) * 100;
-            const pHard = (practiceStats.hard / totalRated) * 100;
-
-            const topBar = document.getElementById('perf-top-bar');
-            topBar.innerHTML = `
-                <div class="perf-seg bg-green" style="width:${pEasy}%">
-                    <span class="seg-val">${practiceStats.easy}</span><span class="seg-lbl">EASY</span>
-                </div>
-                <div class="perf-seg bg-yellow" style="width:${pMed}%">
-                    <span class="seg-val">${practiceStats.medium}</span><span class="seg-lbl">MEDIUM</span>
-                </div>
-                <div class="perf-seg bg-red" style="width:${pHard}%">
-                    <span class="seg-val">${practiceStats.hard}</span><span class="seg-lbl">HARD</span>
-                </div>
-            `;
-
-            // 5. LISTA DE CATEGORÍAS
-            const catListEl = document.getElementById('perf-cat-list');
-            catListEl.innerHTML = '';
-            
-            // Si no hay categorías definidas, mostramos un fallback
-            if(Object.keys(catMap).length === 0) {
-                catListEl.innerHTML = '<div style="text-align:center; color:#555;">No category data</div>';
-            }
-
-            for (const [catName, data] of Object.entries(catMap)) {
-                catListEl.innerHTML += `
-                    <div class="cat-row">
-                        <span>${catName}</span>
-                        <div class="cat-scores">
-                            <span class="sc-good">${data.correct}</span> / <span class="sc-bad">${data.total - data.correct}</span>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        // ==========================================================
-        // LÓGICA MODO SIMULACIÓN
-        // ==========================================================
-        function startSimTimer() {
-            simTimerInterval = setInterval(() => {
-                simTotalTime--;
-                const h = Math.floor(simTotalTime / 3600);
-                const m = Math.floor((simTotalTime % 3600) / 60);
-                const s = simTotalTime % 60;
-                
-                let timeStr = "";
-                if(h > 0) timeStr += h.toString().padStart(2,'0') + ":";
-                timeStr += m.toString().padStart(2,'0') + ":" + s.toString().padStart(2,'0');
-                
-                const el1 = document.getElementById('sim-timer');
-                const el2 = document.getElementById('sim-timer-rev');
-                if(el1) el1.innerText = `Time: ${timeStr}`;
-                if(el2) el2.innerText = `Time: ${timeStr}`;
-
-                if (simTotalTime <= 0) finishSimExam();
-            }, 1000);
-        }
-
-        function initSimQuiz() {
-            renderSimQuestion();
-            document.getElementById('sim-q-counter').innerText = `Question 1 of ${quizData.length}`;
-        }
-
-        function renderSimQuestion() {
-            const q = quizData[currentIndex];
-            document.getElementById('sim-q-counter').innerText = `Question ${currentIndex + 1} of ${quizData.length}`;
-            document.getElementById('sim-q-text').innerText = q.question_text;
-            
-            // Lógica Paciente (Clinical Case)
-            // Supabase devuelve relation array o object.
-            let caseObj = null;
-            if (q.clinical_cases) {
-                caseObj = Array.isArray(q.clinical_cases) ? q.clinical_cases[0] : q.clinical_cases;
-            }
-
-            // Datos Default
-            let pData = { patient: "N/A", cc: "Standalone Question", history: "-", findings: "-" };
-
-            if (caseObj && caseObj.patient_data) {
-                try {
-                    // El CSV muestra que es un JSON string, ej: "{\"cc\":\"...\"}"
-                    const parsed = typeof caseObj.patient_data === 'string' ? JSON.parse(caseObj.patient_data) : caseObj.patient_data;
-                    
-                    // Mapeo flexible de keys
-                    pData.patient = parsed.patient || parsed.age || "N/A";
-                    pData.cc = parsed.cc || parsed.complaint || "N/A";
-                    pData.history = parsed.history || "N/A";
-                    pData.findings = parsed.findings || "N/A";
-                } catch(e) {
-                    console.warn("JSON Parse Error in Clinical Case", e);
-                }
-            }
-
-            document.getElementById('sim-pat-demo').innerHTML = `<tr><td>${pData.patient}</td></tr>`;
-            document.getElementById('sim-pat-cc').innerHTML = `<tr><td>${pData.cc}</td></tr>`;
-            document.getElementById('sim-pat-hist').innerHTML = `<tr><td>${pData.history}</td></tr>`;
-            document.getElementById('sim-pat-find').innerHTML = `<tr><td>${pData.findings}</td></tr>`;
-
-            // Opciones
-            const optsContainer = document.getElementById('sim-options-container');
-            optsContainer.innerHTML = '';
-            const options = [q.option_a, q.option_b, q.option_c, q.option_d];
-
-            options.forEach((optText, idx) => {
-                if(!optText) return;
-                const div = document.createElement('div');
-                div.className = 'sim-option';
-                
-                // Si ya estaba seleccionada
-                if (userAnswers[q.id] === idx) div.classList.add('selected');
-
-                div.innerHTML = `<div class="sim-custom-radio"></div> ${optText}`;
-                div.onclick = () => {
-                    userAnswers[q.id] = idx; // Guardar index 0-3
-                    // Actualizar UI visual
-                    const all = optsContainer.querySelectorAll('.sim-option');
-                    all.forEach(el => el.classList.remove('selected'));
-                    div.classList.add('selected');
-                };
-                optsContainer.appendChild(div);
-            });
-
-            // Estado Botón Mark
-            const markBtn = document.getElementById('btn-sim-mark');
-            if (markedQuestions.has(currentIndex)) {
-                markBtn.classList.add('active');
-                markBtn.innerText = "UNMARK";
-            } else {
-                markBtn.classList.remove('active');
-                markBtn.innerText = "MARK";
-            }
-        }
-
-        function nextSimQuestion() {
-            if (currentIndex < quizData.length - 1) {
-                currentIndex++;
-                renderSimQuestion();
-            } else {
-                goToSimReview();
-            }
-        }
-
-        function toggleSimMark() {
-            const btn = document.getElementById('btn-sim-mark');
-            if(markedQuestions.has(currentIndex)) {
-                markedQuestions.delete(currentIndex);
-                btn.classList.remove('active');
-                btn.innerText = "MARK";
-            } else {
-                markedQuestions.add(currentIndex);
-                btn.classList.add('active');
-                btn.innerText = "UNMARK";
-            }
-        }
-
-        function goToSimReview() {
-            document.getElementById('sim-screen-quiz').classList.remove('active');
-            document.getElementById('sim-screen-review').classList.add('active');
-            
-            const tbody = document.getElementById('sim-review-body');
-            tbody.innerHTML = '';
-            
-            quizData.forEach((q, idx) => {
-                const isMarked = markedQuestions.has(idx);
-                const isAnswered = (userAnswers[q.id] !== undefined);
-                
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="padding-left:20px;">Question ${idx+1}</td>
-                    <td style="text-align:center; color:#235d88; font-weight:bold;">${isMarked ? '&#10003;' : ''}</td>
-                    <td style="text-align:center;">${isAnswered ? 'Yes' : 'No'}</td>
-                `;
-                tr.onclick = () => {
-                    currentIndex = idx;
-                    returnToSimQuiz();
-                };
-                tbody.appendChild(tr);
-            });
-        }
-
-        function returnToSimQuiz() {
-            document.getElementById('sim-screen-review').classList.remove('active');
-            document.getElementById('sim-screen-quiz').classList.add('active');
-            renderSimQuestion();
-        }
-
-        // REEMPLAZO COMPLETO DE finishSimExam
+    <div id="root-practice" class="practice-wrapper hidden">
+        
+        <div id="prac-start-screen" class="fade-in">
+            <h1 class="prac-title">INBDE Pro Lab</h1>
+            <p class="prac-desc">Select number of questions</p>
+            
+            <div class="prac-grid-buttons">
+                <button class="btn-prac-start" onclick="initPracticeQuiz(10)">10 <span>Questions</span></button>
+                <button class="btn-prac-start" onclick="initPracticeQuiz(25)">25 <span>Questions</span></button>
+                <button class="btn-prac-start" onclick="initPracticeQuiz(50)">50 <span>Questions</span></button>
+                <button class="btn-prac-start" onclick="initPracticeQuiz(100)">100 <span>Questions</span></button>
+            </div>
+        </div>
+
+        <div id="prac-quiz-screen" class="prac-quiz-container hidden fade-in">
+            <div class="prac-header">
+                <span style="font-weight:800; color:#fff;">INBDE Pro Lab</span>
+                <span id="prac-progress" style="color:#71717a">1 / --</span>
+            </div>
+            
+            <div id="prac-question-area">
+                <p id="prac-q-text" class="prac-question-text">Loading...</p>
+                <div id="prac-options-list"></div>
+            </div>
+
+            <p id="prac-error-msg" class="hidden" style="color:#ef4444; text-align:center; font-weight:bold;">Please classify the question.</p>
+
+            <div id="prac-review-area" class="prac-review-area hidden">
+                <p style="color:#71717a; font-weight:600; text-transform:uppercase; font-size:0.8rem;">Rate Difficulty</p>
+                <div class="prac-classify-btns">
+                    <button class="btn-classify btn-hard" onclick="classifyPractice('learning')">Hard</button>
+                    <button class="btn-classify btn-medium" onclick="classifyPractice('reviewing')">Medium</button>
+                    <button class="btn-classify btn-easy" onclick="classifyPractice('mastered')">Easy</button>
+                </div>
+                <div id="prac-explanation" class="prac-explanation hidden"></div>
+                <button id="btn-prac-next" class="btn-prac-next hidden" onclick="nextPracticeQuestion()">Next Question →</button>
+            </div>
+        </div>
+
+        <div id="prac-results-screen" class="hidden fade-in" style="min-height:100vh; display:flex; align-items:center;">
+            <div class="perf-container">
+                <div class="perf-title">Performance Report</div>
+
+                <div class="chart-section">
+                    <div class="pie-chart" id="prac-perf-pie">
+                        <div class="pie-center">
+                            <span class="acc-text" id="prac-acc-val">0%</span>
+                            <span class="acc-label">Accuracy</span>
+                        </div>
+                    </div>
+                    <div class="data-row">
+                        <span class="col-green" id="prac-correct-val">0</span> <span style="color:#555">/</span> <span class="col-red" id="prac-incorrect-val">0</span>
+                    </div>
+                    <button onclick="goToDashboard()" style="margin-top:30px; background:transparent; border:1px solid #555; color:white; padding:10px 30px; border-radius:8px; cursor:pointer;">EXIT TO DASHBOARD</button>
+                </div>
+
+                <div class="stats-section">
+                    <div class="landscape-bar" id="prac-landscape-bar">
+                        </div>
+                    <div class="cat-list-box">
+                        <div style="text-align:center; color:#aaa; font-weight:bold; margin-bottom:15px; font-size:14px;">CATEGORIES PERFORMANCE</div>
+                        <div id="prac-cat-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="root-simulation" class="hidden">
+        
+        <div id="sim-screen-quiz" class="sim-screen active">
+            <div class="sim-header">
+                <div class="header-left"><span id="sim-q-counter">Question 1</span></div>
+                <div class="header-center"><span>INBDE Pro Lab - Exam Mode</span></div>
+                <div class="header-right"><span id="sim-timer">Time: --:--</span></div>
+            </div>
+
+            <div class="sim-content">
+                <div class="sim-patient-panel">
+                    <table class="sim-table">
+                        <thead><tr><th>Patient Profile</th></tr></thead>
+                        <tbody id="sim-pat-demo"><tr><td>-</td></tr></tbody>
+                        <thead><tr><th>Chief Complaint</th></tr></thead>
+                        <tbody id="sim-pat-cc"><tr><td>-</td></tr></tbody>
+                        <thead><tr><th>History</th></tr></thead>
+                        <tbody id="sim-pat-hist"><tr><td>-</td></tr></tbody>
+                        <thead><tr><th>Findings</th></tr></thead>
+                        <tbody id="sim-pat-find"><tr><td>-</td></tr></tbody>
+                    </table>
+                </div>
+
+                <div class="sim-question-area">
+                    <p id="sim-q-text" class="sim-q-text">Loading...</p>
+                    <div id="sim-options-container"></div>
+                </div>
+            </div>
+
+            <div class="sim-footer">
+                <button class="btn-sim-nav" onclick="nextSimQuestion()">NEXT</button>
+                <div style="display:flex; gap:15px;">
+                    <button id="btn-sim-mark" class="btn-sim-nav mark" onclick="toggleSimMark()">MARK</button>
+                    <button class="btn-sim-nav" onclick="goToSimReview()">REVIEW</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="sim-screen-review" class="sim-screen">
+            <div class="sim-header">
+                <div style="flex:1; text-align:center;">Review Panel</div>
+                <div><span id="sim-timer-rev">Time: --:--</span></div>
+            </div>
+            
+            <div style="flex-grow:1; overflow-y:auto; padding:30px; display:flex; justify-content:center;">
+                <div class="sim-review-table-container">
+                    <table class="sim-review-table">
+                        <thead><tr><th>Question</th><th style="text-align:center;">Marked</th><th style="text-align:center;">Status</th></tr></thead>
+                        <tbody id="sim-review-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="sim-footer">
+                <button class="btn-sim-nav" style="background:transparent; color:white; border:1px solid white;" onclick="returnToSimQuiz()">BACK TO QUIZ</button>
+                <button class="btn-sim-nav" style="background:#174263; color:white; border:none;" onclick="finishSimExam()">END EXAM</button>
+            </div>
+        </div>
+
+        <div id="sim-screen-perf" class="sim-screen" style="background:#111; justify-content:center; align-items:center;">
+             <div class="perf-container" style="background:#1c1c1c;">
+                <div class="perf-title">Performance Report</div>
+
+                <div class="chart-section">
+                    <div class="pie-chart" id="sim-perf-pie">
+                        <div class="pie-center">
+                            <span class="acc-text" id="sim-acc-val">0%</span>
+                            <span class="acc-label">Accuracy</span>
+                        </div>
+                    </div>
+                    <div class="data-row">
+                        <span class="col-green" id="sim-correct-val">0</span> <span style="color:#555">/</span> <span class="col-red" id="sim-incorrect-val">0</span>
+                    </div>
+                    <button onclick="goToDashboard()" style="margin-top:30px; background:transparent; border:1px solid #555; color:white; padding:10px 30px; border-radius:8px; cursor:pointer;">EXIT EXAM</button>
+                </div>
+
+                <div class="stats-section">
+                    <div class="landscape-bar" id="sim-landscape-bar">
+                        </div>
+                    <div class="cat-list-box">
+                        <div style="text-align:center; color:#aaa; font-weight:bold; margin-bottom:15px; font-size:14px;">CATEGORIES PERFORMANCE</div>
+                        <div id="sim-cat-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode') || 'practice'; 
+        const urlCountParam = urlParams.get('count');
+        const count = urlCountParam ? parseInt(urlCountParam) : null; 
+        
+        // SOLUCIÓN PUNTOS 4 y 5: Activación de clases en body
+        const isSimulation = (mode.includes('simulation') || mode === 'itemsets');
+        
+        let quizData = [];
+        let currentIndex = 0;
+        let userAnswers = {}; 
+        let practiceStats = { easy: 0, medium: 0, hard: 0 };
+        let markedQuestions = new Set();
+        let simTimerInterval;
+        let simTotalTime = 0; 
+        const searchTerm = urlParams.get('term');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const body = document.body;
+            
+            // Lógica de Modos
+            if (isSimulation) {
+                body.classList.add('mode-simulation');
+                document.getElementById('root-simulation').classList.remove('hidden');
+                simTotalTime = count ? count * 90 : 50 * 90; // Default 50 preguntas si no hay count
+                startSimTimer();
+            } else {
+                body.classList.add('mode-practice');
+                document.getElementById('root-practice').classList.remove('hidden');
+            }
+
+            await fetchQuestions();
+        });
+
+        async function fetchQuestions() {
+            if(typeof _supabase === 'undefined') { alert("Database error: Supabase not found."); return; }
+
+            let data = [];
+            
+            if (mode === 'daily') {
+                // ... (Lógica Daily existente) ...
+                const { data: allIds } = await _supabase.from('questions_bank').select('id');
+                if(allIds) {
+                   const shuffled = allIds.sort(() => 0.5 - Math.random());
+                   const selectedIds = shuffled.slice(0, 10).map(x => x.id);
+                   const res = await _supabase.from('questions_bank').select('*, clinical_cases (*)').in('id', selectedIds);
+                   data = res.data;
+                }
+            } else if (mode === 'search' && searchTerm) {
+                 const res = await _supabase.from('questions_bank').select('*, clinical_cases (*)').ilike('question_text', `%${searchTerm}%`);
+                 data = res.data;
+            } else {
+                let query = _supabase.from('questions_bank').select('*, clinical_cases (*)');
+                if (isSimulation) query = query.not('case_id', 'is', null);
+                else query = query.is('case_id', null);
+                
+                query = query.limit(count || 150);
+                const res = await query;
+                data = res.data;
+            }
+
+            if (!data || data.length === 0) {
+                quizData = [{id:0, question_text: "No questions found.", option_a:"-", option_b:"-", correct_answer:"-", explanation:""}];
+            } else {
+                quizData = data;
+                if(mode !== 'daily') quizData.sort(() => Math.random() - 0.5);
+            }
+            
+            if (isSimulation) {
+                initSimQuiz();
+            } else {
+                // Si es standalone y ya tenemos count, iniciar. Si no, mostrar selector.
+                if (mode === 'daily' || mode === 'search' || (mode === 'standalone' && count !== null)) {
+                    document.getElementById('prac-start-screen').classList.add('hidden');
+                    document.getElementById('prac-quiz-screen').classList.remove('hidden');
+                    renderPracticeQuestion();
+                } else {
+                    document.getElementById('prac-start-screen').classList.remove('hidden');
+                }
+            }
+        }
+
+        // --- FUNCIONES MODO PRÁCTICA ---
+
+        function initPracticeQuiz(selectedCount) {
+            if (selectedCount && quizData.length > selectedCount) {
+                quizData = quizData.slice(0, selectedCount);
+            }
+            document.getElementById('prac-start-screen').classList.add('hidden');
+            document.getElementById('prac-quiz-screen').classList.remove('hidden');
+            renderPracticeQuestion();
+        }
+
+        function renderPracticeQuestion() {
+            const q = quizData[currentIndex];
+            document.getElementById('prac-progress').innerText = `${currentIndex + 1} / ${quizData.length}`;
+            document.getElementById('prac-q-text').innerText = q.question_text;
+            
+            document.getElementById('prac-review-area').classList.add('hidden');
+            document.getElementById('prac-error-msg').classList.add('hidden');
+            document.getElementById('btn-prac-next').classList.add('hidden');
+            
+            const optsContainer = document.getElementById('prac-options-list');
+            optsContainer.innerHTML = '';
+
+            [q.option_a, q.option_b, q.option_c, q.option_d].forEach((opt, idx) => {
+                if(!opt) return;
+                const letter = String.fromCharCode(65 + idx);
+                const div = document.createElement('div');
+                div.className = 'prac-option';
+                div.id = `prac-opt-${idx}`;
+                div.innerHTML = `<div class="prac-radio"></div><span>${opt}</span>`;
+                div.onclick = () => handlePracticeOptionClick(idx, letter, q);
+                optsContainer.appendChild(div);
+            });
+        }
+
+        function handlePracticeOptionClick(idx, letter, q) {
+            if(userAnswers[q.id]) return;
+            userAnswers[q.id] = letter;
+            
+            const selectedDiv = document.getElementById(`prac-opt-${idx}`);
+            selectedDiv.classList.add('selected');
+            
+            // Revelar
+            const allOpts = document.getElementById('prac-options-list').children;
+            Array.from(allOpts).forEach((div, i) => {
+                div.classList.add('answered');
+                const optText = [q.option_a, q.option_b, q.option_c, q.option_d][i];
+                const optLet = String.fromCharCode(65+i);
+                if (optText === q.correct_answer || optLet === q.correct_answer) div.classList.add('correct');
+                else if (i === idx) div.classList.add('incorrect');
+            });
+
+            document.getElementById('prac-review-area').classList.remove('hidden');
+            document.getElementById('prac-explanation').innerHTML = q.explanation ? `<strong>Explanation:</strong><br>${q.explanation}` : "No explanation.";
+            document.getElementById('prac-explanation').classList.remove('hidden');
+        }
+
+        async function classifyPractice(status) {
+            // Guardar Stats Locales
+            if(status==='learning') practiceStats.hard++;
+            if(status==='reviewing') practiceStats.medium++;
+            if(status==='mastered') practiceStats.easy++;
+            
+            // Guardar en DB
+            const q = quizData[currentIndex];
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                 await _supabase.from('user_progress').insert([{ 
+                     user_id: session.user.id, question_id: q.id, status: status, quiz_mode: mode, timestamp: new Date() 
+                 }]);
+            }
+
+            document.getElementById('btn-prac-next').classList.remove('hidden');
+            document.getElementById('prac-error-msg').classList.add('hidden');
+            
+            // Visual Feedback Buttons
+            const btns = document.querySelectorAll('.btn-classify');
+            btns.forEach(b => b.classList.remove('active'));
+            if(status==='learning') document.querySelector('.btn-hard').classList.add('active');
+            if(status==='reviewing') document.querySelector('.btn-medium').classList.add('active');
+            if(status==='mastered') document.querySelector('.btn-easy').classList.add('active');
+        }
+
+        function nextPracticeQuestion() {
+            if (currentIndex < quizData.length - 1) {
+                currentIndex++;
+                renderPracticeQuestion();
+            } else {
+                finishPracticeQuiz();
+            }
+        }
+
+        // --- RESULTADOS PRÁCTICA (Updated Layout) ---
+        function finishPracticeQuiz() {
+            document.getElementById('prac-quiz-screen').classList.add('hidden');
+            document.getElementById('prac-results-screen').classList.remove('hidden');
+
+            // Cálculos
+            let correct = 0;
+            let catMap = {};
+
+            quizData.forEach(q => {
+                const ans = userAnswers[q.id];
+                let isCorr = false;
+                if(ans) {
+                     const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
+                     if(ans === q.correct_answer || opts[ans.charCodeAt(0)-65] === q.correct_answer) isCorr = true;
+                }
+                if(isCorr) correct++;
+                
+                const cat = q.subject || "General";
+                if(!catMap[cat]) catMap[cat] = {c:0, t:0};
+                catMap[cat].t++;
+                if(isCorr) catMap[cat].c++;
+            });
+
+            const total = quizData.length;
+            const acc = total > 0 ? Math.round((correct/total)*100) : 0;
+
+            // DOM Updates
+            document.getElementById('prac-acc-val').innerText = acc + "%";
+            document.getElementById('prac-correct-val').innerText = correct;
+            document.getElementById('prac-incorrect-val').innerText = total - correct;
+
+            // Pie Chart (EASY(Green), MED(Yellow), HARD(Red)) - Usamos los colores del Performance Practice
+            const deg = Math.round((acc / 100) * 360);
+            document.getElementById('prac-perf-pie').style.background = 
+                `conic-gradient(#28a745 0deg ${deg}deg, #dc3545 ${deg}deg 360deg)`; 
+                // NOTA: El archivo de referencia performance_practice usa un gradiente de 3 colores basado en easy/med/hard
+                // Si prefieres eso, calculamos porcentajes de difficulty:
+                const totDif = practiceStats.easy + practiceStats.medium + practiceStats.hard || 1;
+                const pEasy = (practiceStats.easy / totDif) * 360;
+                const pMed = (practiceStats.medium / totDif) * 360;
+                
+                // Sobrescribimos con el estilo 3 colores
+                document.getElementById('prac-perf-pie').style.background = `conic-gradient(
+                    #28a745 0deg ${pEasy}deg, 
+                    #ffc107 ${pEasy}deg ${pEasy + pMed}deg, 
+                    #dc3545 ${pEasy + pMed}deg 360deg
+                )`;
+
+
+            // Landscape Bar (Easy, Medium, Hard)
+            const totRated = practiceStats.easy + practiceStats.medium + practiceStats.hard || 1;
+            const pctEasy = Math.round((practiceStats.easy/totRated)*100);
+            const pctMed = Math.round((practiceStats.medium/totRated)*100);
+            const pctHard = Math.round((practiceStats.hard/totRated)*100); // Lo que sobra es Hard visualmente
+
+            document.getElementById('prac-landscape-bar').innerHTML = `
+                <div class="landscape-seg bg-easy" style="width:${pctEasy}%">
+                    <span style="font-size:18px;">${practiceStats.easy}</span><span style="font-size:10px;">EASY</span>
+                </div>
+                <div class="landscape-seg bg-med" style="width:${pctMed}%">
+                    <span style="font-size:18px;">${practiceStats.medium}</span><span style="font-size:10px;">MED</span>
+                </div>
+                <div class="landscape-seg bg-hard seg-text-white" style="width:${100 - pctEasy - pctMed}%">
+                    <span style="font-size:18px;">${practiceStats.hard}</span><span style="font-size:10px;">HARD</span>
+                </div>
+            `;
+
+            // Categories
+            const catDiv = document.getElementById('prac-cat-list');
+            catDiv.innerHTML = '';
+            for(const [name, d] of Object.entries(catMap)) {
+                catDiv.innerHTML += `
+                    <div class="cat-item">
+                        <span>${name}</span>
+                        <span class="cat-scores">
+                            <span style="color:#28a745">${d.c}</span> / <span style="color:#dc3545">${d.t - d.c}</span>
+                        </span>
+                    </div>`;
+            }
+        }
+
+        // --- FUNCIONES MODO SIMULACIÓN ---
+        function startSimTimer() {
+            simTimerInterval = setInterval(() => {
+                simTotalTime--;
+                const h = Math.floor(simTotalTime/3600);
+                const m = Math.floor((simTotalTime%3600)/60);
+                const s = simTotalTime%60;
+                const tStr = `${h>0?h+':':''}${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                document.getElementById('sim-timer').innerText = `Time: ${tStr}`;
+                document.getElementById('sim-timer-rev').innerText = `Time: ${tStr}`;
+                if(simTotalTime <= 0) finishSimExam();
+            }, 1000);
+        }
+
+        function initSimQuiz() { renderSimQuestion(); }
+
+        function renderSimQuestion() {
+            const q = quizData[currentIndex];
+            document.getElementById('sim-q-counter').innerText = `Question ${currentIndex + 1} of ${quizData.length}`;
+            document.getElementById('sim-q-text').innerText = q.question_text;
+            
+            // Paciente data
+            let pData = {patient:"N/A", cc:"-", history:"-", findings:"-"};
+            if(q.clinical_cases) {
+                 const c = Array.isArray(q.clinical_cases) ? q.clinical_cases[0] : q.clinical_cases;
+                 if(c && c.patient_data) {
+                     try {
+                         const parsed = typeof c.patient_data === 'string' ? JSON.parse(c.patient_data) : c.patient_data;
+                         pData = {
+                             patient: parsed.patient || parsed.age || "N/A",
+                             cc: parsed.cc || parsed.complaint || "-",
+                             history: parsed.history || "-",
+                             findings: parsed.findings || "-"
+                         };
+                     } catch(e){}
+                 }
+            }
+            document.getElementById('sim-pat-demo').innerHTML = `<tr><td>${pData.patient}</td></tr>`;
+            document.getElementById('sim-pat-cc').innerHTML = `<tr><td>${pData.cc}</td></tr>`;
+            document.getElementById('sim-pat-hist').innerHTML = `<tr><td>${pData.history}</td></tr>`;
+            document.getElementById('sim-pat-find').innerHTML = `<tr><td>${pData.findings}</td></tr>`;
+
+            const container = document.getElementById('sim-options-container');
+            container.innerHTML = '';
+            [q.option_a, q.option_b, q.option_c, q.option_d].forEach((opt, idx) => {
+                if(!opt) return;
+                const div = document.createElement('div');
+                div.className = 'sim-option';
+                if(userAnswers[q.id] === idx) div.classList.add('selected');
+                div.innerHTML = `<div class="sim-radio"></div> ${opt}`;
+                div.onclick = () => {
+                    userAnswers[q.id] = idx;
+                    renderSimQuestion(); 
+                };
+                container.appendChild(div);
+            });
+
+            // Mark btn
+            const btnMark = document.getElementById('btn-sim-mark');
+            if(markedQuestions.has(currentIndex)) {
+                btnMark.classList.add('active'); btnMark.innerText = "UNMARK";
+            } else {
+                btnMark.classList.remove('active'); btnMark.innerText = "MARK";
+            }
+        }
+
+        function nextSimQuestion() {
+            if(currentIndex < quizData.length-1) { currentIndex++; renderSimQuestion(); }
+            else goToSimReview();
+        }
+
+        function toggleSimMark() {
+            if(markedQuestions.has(currentIndex)) markedQuestions.delete(currentIndex);
+            else markedQuestions.add(currentIndex);
+            renderSimQuestion();
+        }
+
+        function goToSimReview() {
+            document.getElementById('sim-screen-quiz').classList.remove('active');
+            document.getElementById('sim-screen-review').classList.add('active');
+            const body = document.getElementById('sim-review-body');
+            body.innerHTML = '';
+            quizData.forEach((q, i) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>Question ${i+1}</td>
+                    <td style="text-align:center; color:#235d88; font-weight:bold;">${markedQuestions.has(i)?'✓':''}</td>
+                    <td style="text-align:center;">${userAnswers[q.id] !== undefined ? 'Answered' : '-'}</td>
+                `;
+                tr.onclick = () => { currentIndex = i; returnToSimQuiz(); };
+                body.appendChild(tr);
+            });
+        }
+
+        function returnToSimQuiz() {
+            document.getElementById('sim-screen-review').classList.remove('active');
+            document.getElementById('sim-screen-quiz').classList.add('active');
+            renderSimQuestion();
+        }
+
         async function finishSimExam() {
             clearInterval(simTimerInterval);
-
-            // Cambio de vistas: Ocultar Review, Mostrar Performance
             document.getElementById('sim-screen-review').classList.remove('active');
-            const perfScreen = document.getElementById('sim-screen-perf');
-            perfScreen.classList.add('active'); 
-            perfScreen.style.display = 'flex'; // Forzar flex para centrar
+            document.getElementById('sim-screen-perf').style.display = 'flex'; // Activar flex para centrar
 
-            // 1. CÁLCULOS Y GUARDADO
-            let correctCount = 0;
-            let catMap = {}; // Mapa para categorías
+            let correct = 0;
+            let catMap = {};
             const { data: { session } } = await _supabase.auth.getSession();
             const updates = [];
 
             quizData.forEach(q => {
-                const userIdx = userAnswers[q.id];
-                
-                // Determinar si es correcta
-                let isCorrect = false;
-                if (userIdx !== undefined) {
-                    const selectedText = [q.option_a, q.option_b, q.option_c, q.option_d][userIdx];
-                    const selectedLetter = String.fromCharCode(65 + userIdx);
-                    if ((selectedText === q.correct_answer) || (selectedLetter === q.correct_answer)) {
-                        isCorrect = true;
-                    }
+                const idx = userAnswers[q.id];
+                let isCorr = false;
+                if(idx !== undefined) {
+                    const txt = [q.option_a, q.option_b, q.option_c, q.option_d][idx];
+                    const lettr = String.fromCharCode(65+idx);
+                    if(txt === q.correct_answer || lettr === q.correct_answer) isCorr = true;
                 }
-
-                if (isCorrect) correctCount++;
-
-                // Agrupar por Categoría
-                const cat = q.subject || "General";
-                if(!catMap[cat]) catMap[cat] = { correct:0, total:0 };
-                catMap[cat].total++;
-                if(isCorrect) catMap[cat].correct++;
+                if(isCorr) correct++;
                 
-                // Preparar guardado en DB (solo si hay sesión y respuesta)
-                if (session && userIdx !== undefined) {
+                const cat = q.subject || "General";
+                if(!catMap[cat]) catMap[cat] = {c:0, t:0};
+                catMap[cat].t++;
+                if(isCorr) catMap[cat].c++;
+
+                if(session && idx !== undefined) {
                     updates.push({
-                        user_id: session.user.id,
-                        question_id: q.id,
-                        status: isCorrect ? 'mastered' : 'learning',
-                        quiz_mode: mode,
-                        timestamp: new Date()
+                        user_id: session.user.id, question_id: q.id, status: isCorr?'mastered':'learning', quiz_mode:mode, timestamp: new Date()
                     });
                 }
             });
-            
-            // Guardar progreso masivo en DB
-            if(updates.length > 0 && session) {
-                await _supabase.from('user_progress').insert(updates);
-            }
 
-            // 2. ACTUALIZAR INTERFAZ (UI)
+            if(updates.length > 0 && session) await _supabase.from('user_progress').insert(updates);
+
             const total = quizData.length;
-            const incorrectCount = total - correctCount;
-            const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+            const acc = total>0 ? Math.round((correct/total)*100) : 0;
 
-            // Llenar datos numéricos
-            document.getElementById('sim-perf-acc-val').innerText = accuracy + '%';
-            document.getElementById('sim-perf-total-correct').innerText = correctCount;
-            document.getElementById('sim-perf-total-incorrect').innerText = incorrectCount;
-            
-            // 3. GRÁFICO DONA
-            const deg = Math.round((accuracy / 100) * 360);
-            document.getElementById('sim-perf-donut').style.background = 
-                `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
+            document.getElementById('sim-acc-val').innerText = acc+"%";
+            document.getElementById('sim-correct-val').innerText = correct;
+            document.getElementById('sim-incorrect-val').innerText = total - correct;
 
-            // 4. BARRA SUPERIOR (CORRECT vs INCORRECT)
-            const pCorrect = total > 0 ? (correctCount / total) * 100 : 0;
-            // Usamos 100 - pCorrect para el ancho del segmento incorrecto
-            
-            const topBar = document.getElementById('sim-perf-top-bar');
-            // Solo mostramos segmentos si tienen valor > 0 para que no quede texto aplastado
-            let barHTML = '';
-            
-            if (correctCount > 0) {
-                barHTML += `
-                    <div class="perf-seg bg-green" style="width:${pCorrect}%">
-                        <span class="seg-val">${correctCount}</span>
-                        <span class="seg-lbl">CORRECT</span>
+            // Pie Chart (Verde/Rojo)
+            const deg = Math.round((acc/100)*360);
+            document.getElementById('sim-perf-pie').style.background = `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
+
+            // Bar (Correct/Incorrect)
+            const pctCorr = Math.round((correct/total)*100);
+            document.getElementById('sim-landscape-bar').innerHTML = `
+                <div class="landscape-seg bg-easy" style="width:${pctCorr}%">
+                    <span style="font-size:18px;">${correct}</span><span style="font-size:10px;">CORRECT</span>
+                </div>
+                <div class="landscape-seg bg-hard seg-text-white" style="width:${100-pctCorr}%">
+                    <span style="font-size:18px;">${total-correct}</span><span style="font-size:10px;">INCORRECT</span>
+                </div>
+            `;
+
+            // Cats
+            const catDiv = document.getElementById('sim-cat-list');
+            catDiv.innerHTML = '';
+            for(const [name, d] of Object.entries(catMap)) {
+                catDiv.innerHTML += `
+                    <div class="cat-item">
+                        <span>${name}</span>
+                        <span class="cat-scores">
+                            <span style="color:#22c55e">${d.c}</span> / <span style="color:#ef4444">${d.t - d.c}</span>
+                        </span>
                     </div>`;
-            }
-            if (incorrectCount > 0) {
-                barHTML += `
-                    <div class="perf-seg bg-red" style="width:${100 - pCorrect}%"> <span class="seg-val">${incorrectCount}</span>
-                        <span class="seg-lbl">INCORRECT</span>
-                    </div>`;
-            }
-            // Si no respondió nada (0/0), mostrar barra vacía o mensaje
-            if (total === 0) barHTML = '<div style="width:100%; text-align:center; color:#555;">No questions</div>';
-
-            topBar.innerHTML = barHTML;
-
-
-            // 5. LISTA DE CATEGORÍAS
-            const catListEl = document.getElementById('sim-perf-cat-list');
-            catListEl.innerHTML = '';
-            
-            if(Object.keys(catMap).length === 0) {
-                catListEl.innerHTML = '<div style="text-align:center; color:#555; padding:10px;">No category data</div>';
-            }
-
-            for (const [catName, data] of Object.entries(catMap)) {
-                catListEl.innerHTML += `
-                    <div class="cat-row">
-                        <span>${catName}</span>
-                        <div class="cat-scores">
-                            <span class="sc-good">${data.correct}</span> / <span class="sc-bad">${data.total - data.correct}</span>
-                        </div>
-                    </div>
-                `;
             }
         }
 
-        // ==========================================================
-        // UTILIDADES GENERALES
-        // ==========================================================
-        function goToDashboard() {
-            if (window.innerWidth <= 768) {
-                window.location.href = 'mobile.html';
-            } else {
-                window.location.href = 'dashboard.html';
-            }
-        }
-    </script>
+        function goToDashboard() {
+            window.location.href = (window.innerWidth <= 768) ? 'mobile.html' : 'dashboard.html';
+        }
+    </script>
 </body>
 </html>
