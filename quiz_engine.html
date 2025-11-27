@@ -369,7 +369,7 @@
             await fetchQuestions();
         });
 
-        async function fetchQuestions() {
+       async function fetchQuestions() {
             // Nota: Se asume que app.js inicializa `_supabase` globalmente.
             if(typeof _supabase === 'undefined') {
                 console.error("_supabase not found. Ensure app.js is loaded correctly.");
@@ -377,30 +377,59 @@
                 return;
             }
 
-            // JOIN con clinical_cases
+            // 1. Preparamos la consulta base haciendo JOIN con clinical_cases
             let query = _supabase.from('questions_bank').select(`
                 *,
                 clinical_cases (*)
-            `).limit(count);
+            `);
+
+            // 2. FILTRADO INTELIGENTE SEGÚN EL MODO
+            if (isSimulation) {
+                // MODO SIMULACIÓN (Item Sets):
+                // Solo traemos preguntas que pertenezcan a un caso (case_id NO es nulo).
+                // Esto es vital para que cargue la info del paciente a la izquierda.
+                query = query.not('case_id', 'is', null);
+            } else {
+                // MODO PRÁCTICA (Standalone):
+                // Solo traemos preguntas sueltas (case_id ES nulo).
+                // Esto evita que salgan preguntas de casos clínicos complejos en el modo rápido.
+                query = query.is('case_id', null);
+            }
+
+            // 3. Aplicamos el límite de preguntas seleccionadas por el usuario
+            query = query.limit(count);
 
             const { data, error } = await query;
 
-            if (error || !data || data.length === 0) {
+            if (error) {
                 console.error("Error fetching data:", error);
-                // Fallback Mock data for testing if DB is empty
+                // Fallback silencioso o alerta
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                console.warn("No questions found for this mode.");
+                // Creamos una pregunta "dummy" para avisar al usuario visualmente
                 quizData = [{
                     id: 999, 
-                    question_text: "Mock Question: Database empty or error.", 
-                    option_a: "Option A", option_b: "Option B", 
-                    correct_answer: "Option A", explanation: "Mock explanation."
+                    question_text: isSimulation 
+                        ? "No clinical cases found. Please add Item Sets to DB." 
+                        : "No standalone questions found.", 
+                    option_a: "N/A", option_b: "N/A", 
+                    correct_answer: "N/A", explanation: "Database empty for this mode."
                 }];
             } else {
                 quizData = data;
+                console.log(`Loaded ${quizData.length} questions. Mode: ${isSimulation ? 'Simulation' : 'Practice'}`);
             }
             
-            // Auto-iniciar Simulación si aplica
+            // Auto-iniciar la interfaz correcta
             if (isSimulation) {
                 initSimQuiz();
+            } else {
+                // IMPORTANTE: Si es práctica, debemos renderizar la primera pregunta manualmente aquí
+                // porque initSimQuiz() no se usa en este modo.
+                initPracticeQuiz();
             }
         }
 
