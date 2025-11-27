@@ -594,6 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Inicialización de contadores
     renderMiniActivity();
     initCountdown(); 
+    displayUserGreeting(); // <--- AGREGADO AQUÍ
 
     // 2. DASHBOARD & GLOBAL NAVIGATION BINDINGS (Desktop)
     document.querySelector('.lab-title')?.addEventListener('click', goBackToDashboard);
