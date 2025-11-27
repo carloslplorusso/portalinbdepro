@@ -56,16 +56,6 @@
     .welcome-text { font-size: 0.8rem; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
     .brand-text { font-weight: 900; font-size: 1.6rem; color: white; letter-spacing: -0.5px; }
     
-    .user-avatar { 
-        width: 42px; height: 42px; 
-        border-radius: 50%; 
-        background: #1a1a1a; 
-        border: 1px solid var(--accent); 
-        display: flex; align-items: center; justify-content: center; 
-        font-size: 1.2rem;
-        cursor: pointer;
-    }
-
     /* CONTENEDOR PRINCIPAL */
     .app-container {
         padding: 20px;
@@ -188,11 +178,11 @@
         <header class="app-header">
             <div class="header-titles">
                 <div class="welcome-text">
-    Welcome, <span id="user-name-display" style="color:var(--accent); font-weight:700;">Doctor</span>
-</div>
+                    Welcome, <span id="user-name-display" style="color:var(--accent); font-weight:700;">Doctor</span>
+                </div>
                 <div class="brand-text">INBDE Pro <span style="color:var(--accent);">Lab</span></div>
             </div>
-        </header>
+            </header>
 
         <div id="dashboard-content" class="app-container fade-in">
             <div class="dashboard-grid">
@@ -346,50 +336,70 @@
             document.getElementById('dashboard-content').classList.add('fade-in');
         }
 
+        // Función robusta para cargar el nombre en el header
         async function initMobile() {
-            // Verificar si Supabase cargó
+            // Reintentar si _supabase no ha cargado
+            let attempts = 0;
+            while (typeof _supabase === 'undefined' && attempts < 10) {
+                await new Promise(r => setTimeout(r, 200));
+                attempts++;
+            }
+
             if (typeof _supabase !== 'undefined') {
-                // Usamos getUser para mayor fiabilidad en móvil
                 const { data: { user } } = await _supabase.auth.getUser();
                 if (user && user.email) {
-                    const name = user.email.split('@')[0];
-                    const formattedName = name.charAt(0).toUpperCase() + name.slice(1);
-                    const nameEl = document.getElementById('user-name-display');
-                    if(nameEl) nameEl.innerText = formattedName;
+                    updateName(user.email);
                 }
+
+                _supabase.auth.onAuthStateChange((event, session) => {
+                    if (session && session.user && session.user.email) {
+                        updateName(session.user.email);
+                    }
+                });
             }
+        }
+
+        function updateName(email) {
+            const name = email.split('@')[0];
+            const formattedName = name.charAt(0).toUpperCase() + name.slice(1);
+            const nameEl = document.getElementById('user-name-display');
+            if(nameEl) nameEl.innerText = formattedName;
         }
 
         // Cargar saludo al iniciar
         document.addEventListener('DOMContentLoaded', initMobile);
 
+        // Función de Perfil corregida para evitar "Loading..." infinito
         async function showProfile() {
             hideAllViews();
             document.getElementById('profile-view').classList.remove('hidden');
             document.getElementById('profile-view').classList.add('fade-in');
 
-            // Cargar datos
             if (typeof _supabase !== 'undefined') {
                 const { data: { user } } = await _supabase.auth.getUser();
+                
                 if(user) {
-                    // Email
+                    // Actualizar datos básicos (Nombre y Email)
                     document.getElementById('profile-email-val').innerText = user.email;
-                    // Nombre (parseado del email)
                     const name = user.email.split('@')[0];
                     document.getElementById('profile-name-val').innerText = name.charAt(0).toUpperCase() + name.slice(1);
                     
-                    // Fecha Examen
+                    // Consultar Fecha de Examen (Usando maybeSingle para evitar errores si no hay fila)
                     const { data: settings } = await _supabase
                         .from('user_settings')
                         .select('exam_date')
                         .eq('user_id', user.id)
-                        .single();
+                        .maybeSingle(); // CORRECCIÓN CLAVE
                     
                     if(settings && settings.exam_date) {
                         document.getElementById('profile-date-val').innerText = settings.exam_date;
                     } else {
                         document.getElementById('profile-date-val').innerText = "Not set";
                     }
+                } else {
+                    // Si no hay usuario (sesión perdida)
+                    document.getElementById('profile-name-val').innerText = "Guest";
+                    document.getElementById('profile-email-val').innerText = "Please login";
                 }
             }
         }
