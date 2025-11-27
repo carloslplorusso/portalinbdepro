@@ -250,7 +250,7 @@
         document.getElementById(`view-${viewName}`).classList.add('active');
     }
 
-    // --- 1. LOGIN CON EMAIL ---
+    // --- 1. LOGIN CON EMAIL (ACTIVADO) ---
     async function handleLogin() {
         const email = document.getElementById('login-email').value;
         const pass = document.getElementById('login-password').value;
@@ -261,15 +261,22 @@
         btn.innerText = 'Verifying...'; 
         btn.disabled = true;
         
-        const { data, error } = await _supabase.auth.signInWithPassword({ email, password: pass });
+        // Llamada a Supabase (definido en app.js)
+        const { data, error } = await _supabase.auth.signInWithPassword({ 
+            email: email, 
+            password: pass 
+        });
 
         if (error) {
+            console.error("Login Error:", error);
             showMsg('Invalid credentials. Please try again.', 'error');
             btn.innerText = 'Sign In'; 
             btn.disabled = false;
         } else {
-            // Éxito: onAuthStateChange manejará la redirección
-            btn.innerText = 'Success!';
+            // Login exitoso
+            btn.innerText = 'Success! Redirecting...';
+            // El observador onAuthStateChange (arriba en el script original) 
+            // se encargará de redirigir a dashboard.html automáticamente.
         }
     }
 
