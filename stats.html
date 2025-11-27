@@ -235,157 +235,21 @@
     }
 
     async function loadStats() {
+        // Verificar si Supabase cargó
         if (typeof _supabase === 'undefined') {
             setTimeout(loadStats, 100); 
             return;
         }
 
-        // --- GESTIÓN DE SESIÓN ---
-        let { data: { session } } = await _supabase.auth.getSession();
+        // --- GESTIÓN DE SESIÓN ROBUSTA (FIX PARA MÓVIL) ---
+        
+        // 1. Obtener sesión actual
+        let { data: { session }, error } = await _supabase.auth.getSession();
+
+        // 2. Si no hay sesión local, esperar y verificar estado con el servidor
         if (!session) {
-            const { data: { user }, error } = await _supabase.auth.getUser();
-            if (user) session = { user: user };
-        }
-        if (!session) {
-             window.location.href = 'index.html';
-             return;
-        }
-
-        const email = session.user.email;
-        if(document.getElementById('user-display')) {
-            document.getElementById('user-display').innerText = email.split('@')[0];
-        }
-
-        // --- NUEVA LÓGICA: FETCH DIRECTO CON JOIN A QUESTIONS_BANK ---
-        // Esto asegura que usamos la columna 'category' real, no una vista antigua.
-        const { data: attempts, error } = await _supabase
-            .from('user_progress')
-            .select(`
-                status,
-                questions_bank!inner (
-                    category
-                )
-            `)
-            .eq('user_id', session.user.id);
-
-        if (error) {
-            console.error("Error fetching stats:", error);
-            return; // O manejar error visualmente
-        }
-
-        // --- CÁLCULOS MATEMÁTICOS EN CLIENTE ---
-        let totalQuestions = 0;
-        let totalCorrect = 0;
-        
-        let sumMastered = 0;   
-        let sumReviewing = 0;  
-        let sumLearning = 0;   
-        
-        const categoryMap = {}; // { 'Patología': {total: 10, correct: 5}, ... }
-
-        if (attempts && attempts.length > 0) {
-            attempts.forEach(row => {
-                // Verificar integridad de datos
-                if (row.questions_bank && row.questions_bank.category) {
-                    const cat = row.questions_bank.category;
-                    const status = row.status;
-                    const isCorrect = (status === 'mastered'); // 'Mastered' cuenta como acierto para Accuracy
-
-                    // Globales
-                    totalQuestions++;
-                    if (isCorrect) totalCorrect++;
-
-                    if (status === 'mastered') sumMastered++;
-                    else if (status === 'reviewing') sumReviewing++;
-                    else if (status === 'learning') sumLearning++;
-
-                    // Por Categoría
-                    if (!categoryMap[cat]) {
-                        categoryMap[cat] = { total: 0, correct: 0 };
-                    }
-                    categoryMap[cat].total++;
-                    if (isCorrect) categoryMap[cat].correct++;
-                }
-            });
-        }
-
-        // Cálculos Finales
-        const totalIncorrect = totalQuestions - totalCorrect;
-        const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-
-        // Convertir Mapa a Array para renderizar
-        const topicList = Object.keys(categoryMap).map(key => ({
-            name: key,
-            pct: Math.round((categoryMap[key].correct / categoryMap[key].total) * 100)
-        }));
-
-        // --- ACTUALIZACIÓN DOM ---
-        
-        // 1. Contadores Globales
-        // Total de categorías únicas encontradas en el historial
-        document.getElementById('total-quizzes').innerText = Object.keys(categoryMap).length; 
-        document.getElementById('total-questions').innerText = totalQuestions;
-        document.getElementById('total-correct').innerText = totalCorrect;
-        document.getElementById('total-incorrect').innerText = totalIncorrect;
-        
-        // 2. Lógica Color Accuracy (Rojo < 71%, Verde >= 71%)
-        const accEl = document.getElementById('accuracy-pct');
-        accEl.innerText = accuracy + "%";
-        if (accuracy < 71) {
-            accEl.style.color = "var(--danger)";
-        } else {
-            accEl.style.color = "var(--success)";
-        }
-
-        // 3. Semáforo y Gráfico
-        document.getElementById('count-mastered').innerText = sumMastered;
-        document.getElementById('count-reviewing').innerText = sumReviewing;
-        document.getElementById('count-learning').innerText = sumLearning;
-        document.getElementById('total-mastered-display').innerText = sumMastered;
-
-        const totalTraffic = sumMastered + sumReviewing + sumLearning;
-        if (totalTraffic > 0) {
-            const pctRed = (sumLearning / totalTraffic) * 100;
-            const pctYellow = (sumReviewing / totalTraffic) * 100;
-            const pieEl = document.getElementById('traffic-pie-chart');
-            pieEl.style.background = `conic-gradient(
-                var(--danger) 0% ${pctRed}%, 
-                var(--accent) ${pctRed}% ${pctRed + pctYellow}%, 
-                var(--success) ${pctRed + pctYellow}% 100%
-            )`;
-        } else {
-             document.getElementById('traffic-pie-chart').style.background = "#222";
-        }
-
-        renderTopics(topicList);
-    }
-
-    function renderTopics(list) {
-        const container = document.getElementById('topic-list-content');
-        if (list.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:10px; color:#666;">No data yet.</div>';
-            return;
-        }
-        
-        container.innerHTML = '';
-        // Ordenar por porcentaje descendente
-        list.sort((a,b) => b.pct - a.pct).forEach(topic => {
-            // Siempre verde para la lista de categorías
-            const color = "var(--success)"; 
+            // Intentamos recuperar al usuario con una llamada de red explícita
+            const { data: { user }, error: userError } = await _supabase.auth.getUser();
             
-            container.innerHTML += `
-                <div class="topic-item">
-                    <div class="topic-row">
-                        <span>${topic.name}</span>
-                        <span style="color:${color}; font-weight:bold;">${topic.pct}%</span>
-                    </div>
-                    <div class="progress-track">
-                        <div class="progress-fill" style="width:${topic.pct}%; background:${color};"></div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-</script>
-</body>
-</html>
+            if (userError || !user) {
+                console.warn("No session found
