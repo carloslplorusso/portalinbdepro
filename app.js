@@ -1,3 +1,5 @@
+// app.js
+
 // --- CONFIGURACIÓN CENTRAL DE SUPABASE ---
 // La URL y la clave ANÓNIMA se definen una sola vez aquí
 const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
@@ -11,7 +13,7 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // 1. VARIABLE GLOBAL PARA EL MODO
 let currentSelectionMode = 'practice';
 
-// 2. FUNCIÓN PARA EL DAILY RUN (MODIFICADO)
+// 2. FUNCIÓN PARA EL DAILY RUN
 function startDailyRun() {
     console.log("Starting Daily Run...");
     // Redirige al modo 'daily' con 10 preguntas fijas
@@ -338,7 +340,10 @@ function startQuiz() {
     window.location.href = `quiz_engine.html?mode=${currentSelectionMode}&count=${count}`;
 }
 
+// MODIFICACIÓN SOLICITADA EN startQuizEngine
 function startQuizEngine(mode) {
+    // Si es simulación o itemsets, count puede ser 50 o fijo.
+    // Si es standalone, normalmente no se usa esta función directamente salvo para simulación.
     window.location.href = `quiz_engine.html?mode=${mode}&count=50`; 
 }
 
@@ -435,7 +440,7 @@ async function loadNotes() {
 }
 
 
-// --- IA LAB LOGIC (MODIFICADO) ---
+// --- IA LAB LOGIC ---
 function openAIModal(mode) {
     const modal = document.getElementById('ai-modal');
     if(modal) {
@@ -615,34 +620,47 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('nav-notes-mobile')?.addEventListener('click', openNotesModal);
     document.getElementById('nav-profile-mobile')?.addEventListener('click', logout);
     
-    // 5. LEARNING & SIMULATION VIEW BINDINGS
-    document.getElementById('btn-learn-standalone')?.addEventListener('click', () => openSelectionView('standalone'));
-    document.getElementById('btn-learn-itemsets')?.addEventListener('click', () => openSelectionView('itemsets'));
-    document.getElementById('btn-sim-customize')?.addEventListener('click', () => openSelectionView('simulation'));
-    document.getElementById('btn-sim-start')?.addEventListener('click', () => startQuizEngine('simulation_standard'));
+    // --- 5. LEARNING & SIMULATION VIEW BINDINGS (MODIFICADO) ---
     
-    document.getElementById('btn-sim-customize-mobile')?.addEventListener('click', () => openSelectionView('simulation'));
+    // BOTONES MODO SIMULACIÓN: Redirigen directo con 'startQuizEngine'
+    document.getElementById('btn-sim-start')?.addEventListener('click', () => startQuizEngine('simulation_standard'));
     document.getElementById('btn-sim-start-mobile')?.addEventListener('click', () => startQuizEngine('simulation_standard'));
+    
+    // CUSTOMIZE SIMULATION (Mantener comportamiento de abrir selección)
+    document.getElementById('btn-sim-customize')?.addEventListener('click', () => openSelectionView('simulation'));
+    document.getElementById('btn-sim-customize-mobile')?.addEventListener('click', () => openSelectionView('simulation'));
+
+    // ITEM SETS: Abre la vista de selección
+    document.getElementById('btn-learn-itemsets')?.addEventListener('click', () => openSelectionView('itemsets'));
+    
+    // STANDALONE PRACTICE: Redirige directo SIN 'count' (para activar la selección de botones en el engine)
+    document.getElementById('btn-learn-standalone')?.addEventListener('click', () => {
+         window.location.href = `quiz_engine.html?mode=standalone`; 
+    });
     
     document.getElementById('btn-pomo-session')?.addEventListener('click', openPomodoroSession);
 
 
-    // 6. BACK BUTTONS & MODAL NAVIGATION
+    // --- 6. BACK BUTTONS & MODAL NAVIGATION ---
     document.getElementById('btn-back-learning')?.addEventListener('click', goBackToDashboard);
     document.getElementById('btn-back-simulation')?.addEventListener('click', goBackToDashboard);
     document.getElementById('btn-back-pomodoro')?.addEventListener('click', goBackToDashboard);
     document.getElementById('btn-back-learn-mobile')?.addEventListener('click', goBackToDashboard);
     document.getElementById('btn-back-simulation-mobile')?.addEventListener('click', goBackToDashboard);
     
-    // MODIFICACIÓN APLICADA AQUÍ: Redirección directa para saltar el modal de settings
+    // BOTÓN DE INICIO EN LA VISTA DE SELECCIÓN (MODIFICADO)
+    // Verifica el modo actual para decidir si enviar count o ir a modo standalone
     document.getElementById('btn-start-quiz-selection')?.addEventListener('click', () => {
-        // Vamos directo al engine en modo standalone. 
-        // No enviamos 'count' para que el engine muestre la pantalla de selección de 4 botones.
-        window.location.href = `quiz_engine.html?mode=standalone`; 
+        if (currentSelectionMode === 'itemsets' || currentSelectionMode === 'simulation') {
+            window.location.href = `quiz_engine.html?mode=${currentSelectionMode}&count=50`; 
+        } else {
+            // Si es practice/standalone
+            window.location.href = `quiz_engine.html?mode=standalone`; 
+        }
     });
     
     document.getElementById('btn-back-selection')?.addEventListener('click', goBackToLearning);
-    document.getElementById('btn-back-selection-mobile-cancel')?.addEventListener('click', goBackToDashboard); // Mobile cancel button 
+    document.getElementById('btn-back-selection-mobile-cancel')?.addEventListener('click', goBackToDashboard); 
 
     // 7. MODAL ACTIONS (Settings & AI)
     document.getElementById('btn-start-quiz-confirm')?.addEventListener('click', startQuiz);
