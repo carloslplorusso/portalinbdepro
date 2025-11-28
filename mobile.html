@@ -231,12 +231,8 @@
 
             // 3. Card RANDOM RUN -> Ejecuta lógica directa
             document.getElementById('card-mobile-daily').onclick = () => {
-                // startRandomRun() está en app.js
-                if (typeof startRandomRun === 'function') {
-                    startRandomRun();
-                } else {
-                    window.location.href = 'quiz_engine.html?mode=random&count=10';
-                }
+                // Forzamos la redirección manual a la versión mobile
+                window.location.href = 'quiz_engine_mobile.html?mode=random&count=10';
             };
 
             // 4. Card IA LAB -> Abre Modal
@@ -255,8 +251,8 @@
 
             // Botón Item Sets (dentro de Study)
             document.getElementById('btn-learn-itemsets').onclick = () => {
-                // Item Sets va directo al quiz o selección
-                window.location.href = 'quiz_engine.html?mode=itemsets&count=20';
+                // Item Sets va directo al quiz mobile
+                window.location.href = 'quiz_engine_mobile.html?mode=itemsets&count=20';
             };
 
             // Botón Customize (dentro de Simulation)
@@ -266,7 +262,7 @@
 
             // Botón Standard Exam (dentro de Simulation)
             document.getElementById('btn-sim-start-mobile').onclick = () => {
-                 window.location.href = 'quiz_engine.html?mode=simulation';
+                 window.location.href = 'quiz_engine_mobile.html?mode=simulation';
             };
 
             // --- C. MODALES Y UTILIDADES ---
@@ -282,7 +278,7 @@
             document.getElementById('btn-ai-submit-mobile').onclick = () => {
                 const term = document.getElementById('ai-input').value.trim();
                 if(term) {
-                    window.location.href = `quiz_engine.html?mode=search&term=${encodeURIComponent(term)}`;
+                    window.location.href = `quiz_engine_mobile.html?mode=search&term=${encodeURIComponent(term)}`;
                 }
             };
 
@@ -297,7 +293,7 @@
             // Botón final START NOW (en modal settings)
             document.getElementById('btn-start-quiz-confirm').onclick = () => {
                 const count = document.getElementById('quiz-count').value;
-                window.location.href = `quiz_engine.html?mode=${mobileSelectionMode}&count=${count}`;
+                window.location.href = `quiz_engine_mobile.html?mode=${mobileSelectionMode}&count=${count}`;
             };
         }
 
