@@ -66,7 +66,6 @@
         width: 100%;
     }
 
-    /* Tarjeta Principal (Accuracy) */
     .card-promo-style {
         background: linear-gradient(180deg, rgba(30, 30, 35, 0.8) 0%, rgba(10, 10, 10, 0.9) 100%); 
         border: 1px solid var(--accent); border-radius: 16px; padding: 20px;
@@ -75,7 +74,6 @@
     .accuracy-display { font-size: 3.5rem; font-weight: 900; color: var(--accent); line-height: 1; text-shadow: 0 0 20px var(--accent-glow); }
     .card-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
 
-    /* Grid 2x2 (Contadores) */
     .grid-2x2 {
         display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
     }
@@ -86,7 +84,6 @@
     .hero-card .title { font-size: 1.5rem; font-weight: 800; color: #fff; margin: 0; }
     .hero-card .sub { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
 
-    /* --- 5. SEMÁFORO / CONFIDENCE CARD --- */
     .card-confidence {
         background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px;
         display: flex; flex-direction: column; align-items: center;
@@ -116,7 +113,6 @@
     .conf-label { font-size: 0.65rem; text-transform: uppercase; color: #888; margin-top: 2px; }
     .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
 
-    /* --- 6. CATEGORY LIST --- */
     .card-expandable {
         background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; margin-bottom: 20px;
     }
@@ -135,28 +131,20 @@
     .progress-track { width: 100%; height: 4px; background: #222; border-radius: 2px; }
     .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; }
 
-    /* --- 7. BUTTONS --- */
     .btn-start { 
         display: block; width: 100%; background: var(--accent); color: #000; font-weight: 900; padding: 15px; 
         border-radius: 12px; text-transform: uppercase; text-align: center; text-decoration: none; border: none; cursor: pointer;
         margin-top: auto;
     }
-    /* Estilo corregido para el botón de regreso (div en lugar de a href) */
     .btn-back-link { 
-        display: block; 
-        text-align: center; 
-        color: #666; 
-        font-size: 0.8rem; 
-        margin-top: 15px; 
-        text-decoration: none; 
-        cursor: pointer;
-        padding: 10px;
+        display: block; width: 100%; text-align: center; color: #666; font-size: 0.8rem; margin-top: 15px; 
+        text-decoration: none; padding: 15px; cursor: pointer; border: 1px solid transparent;
     }
-    .btn-back-link:hover { color: var(--accent); }
+    .btn-back-link:active { color: var(--accent); border-color: #333; border-radius: 8px; }
 
 </style>
 </head>
-<body onload="loadStats()">
+<body>
 
 <div class="lab-container">
     
@@ -238,6 +226,7 @@
 
 <script src="app.js"></script>
 <script>
+    // Función de navegación segura
     function goBack() {
         if (window.matchMedia("(max-width: 768px)").matches) {
             window.location.href = 'mobile.html';
@@ -246,132 +235,131 @@
         }
     }
 
-    async function loadStats() {
-        // Verificar si Supabase cargó
+    // Bandera para evitar cargas múltiples
+    let isStatsLoaded = false;
+
+    // Función principal de carga (Blindada para móvil)
+    async function initStatsPage() {
+        if (isStatsLoaded) return; // Evitar doble ejecución
+
+        // 1. Esperar a que app.js cargue _supabase
         if (typeof _supabase === 'undefined') {
-            setTimeout(loadStats, 100); 
+            setTimeout(initStatsPage, 100);
             return;
         }
 
         try {
-            // FIX DE SESIÓN:
-            // 1. Intentar obtener sesión local (es instantáneo y no falla por red)
-            const { data: { session } } = await _supabase.auth.getSession();
-            let activeUser = session?.user;
-
-            // 2. Si no hay sesión local, intentar recuperar del servidor (lento, puede fallar)
-            if (!activeUser) {
-                const { data: { user }, error: userError } = await _supabase.auth.getUser();
-                if (userError || !user) {
-                    console.warn("No session found. Redirecting...");
-                    window.location.href = 'index.html';
-                    return;
-                }
-                activeUser = user;
-            }
-
-            // Si llegamos aquí, tenemos usuario
-            const email = activeUser.email;
-            if(document.getElementById('user-display')) {
-                document.getElementById('user-display').innerText = email.split('@')[0];
-            }
-
-            // --- FETCH DE DATOS ---
-            const { data: attempts, error: statsError } = await _supabase
-                .from('user_progress')
-                .select(`
-                    status,
-                    questions_bank!inner (
-                        category
-                    )
-                `)
-                .eq('user_id', activeUser.id);
-
-            if (statsError) {
-                console.error("Error fetching stats:", statsError);
-                return; 
-            }
-
-            // --- CÁLCULOS MATEMÁTICOS ---
-            let totalQuestions = 0;
-            let totalCorrect = 0;
-            let sumMastered = 0;   
-            let sumReviewing = 0;  
-            let sumLearning = 0;   
-            
-            const categoryMap = {};
-
-            if (attempts && attempts.length > 0) {
-                attempts.forEach(row => {
-                    if (row.questions_bank && row.questions_bank.category) {
-                        const cat = row.questions_bank.category;
-                        const status = row.status;
-                        const isCorrect = (status === 'mastered');
-
-                        totalQuestions++;
-                        if (isCorrect) totalCorrect++;
-
-                        if (status === 'mastered') sumMastered++;
-                        else if (status === 'reviewing') sumReviewing++;
-                        else if (status === 'learning') sumLearning++;
-
-                        if (!categoryMap[cat]) {
-                            categoryMap[cat] = { total: 0, correct: 0 };
-                        }
-                        categoryMap[cat].total++;
-                        if (isCorrect) categoryMap[cat].correct++;
+            // 2. Escuchar el estado de autenticación (Método más fiable)
+            // Esto se dispara automáticamente si la sesión se restaura desde localStorage
+            const { data: { subscription } } = _supabase.auth.onAuthStateChange(async (event, session) => {
+                
+                if (session && session.user) {
+                    // ¡Tenemos sesión! Cargar datos.
+                    await loadData(session.user);
+                } else {
+                    // Si no hay sesión en el evento, intentamos getUser() como último recurso
+                    // antes de decidir que el usuario no está logueado.
+                    const { data: { user }, error } = await _supabase.auth.getUser();
+                    if (user) {
+                        await loadData(user);
+                    } else {
+                        // Solo redirigir si realmente no hay usuario después de todo
+                        console.warn("No user found. Redirecting...");
+                        window.location.href = 'index.html';
                     }
-                });
-            }
-
-            // Cálculos Finales
-            const totalIncorrect = totalQuestions - totalCorrect;
-            const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-
-            // Convertir Mapa a Array
-            const topicList = Object.keys(categoryMap).map(key => ({
-                name: key,
-                pct: Math.round((categoryMap[key].correct / categoryMap[key].total) * 100)
-            }));
-
-            // --- ACTUALIZACIÓN DOM ---
-            document.getElementById('total-quizzes').innerText = Object.keys(categoryMap).length; 
-            document.getElementById('total-questions').innerText = totalQuestions;
-            document.getElementById('total-correct').innerText = totalCorrect;
-            document.getElementById('total-incorrect').innerText = totalIncorrect;
-            
-            const accEl = document.getElementById('accuracy-pct');
-            accEl.innerText = accuracy + "%";
-            accEl.style.color = accuracy < 71 ? "var(--danger)" : "var(--success)";
-
-            document.getElementById('count-mastered').innerText = sumMastered;
-            document.getElementById('count-reviewing').innerText = sumReviewing;
-            document.getElementById('count-learning').innerText = sumLearning;
-            document.getElementById('total-mastered-display').innerText = sumMastered;
-
-            const totalTraffic = sumMastered + sumReviewing + sumLearning;
-            if (totalTraffic > 0) {
-                const pctRed = (sumLearning / totalTraffic) * 100;
-                const pctYellow = (sumReviewing / totalTraffic) * 100;
-                const pieEl = document.getElementById('traffic-pie-chart');
-                pieEl.style.background = `conic-gradient(
-                    var(--danger) 0% ${pctRed}%, 
-                    var(--accent) ${pctRed}% ${pctRed + pctYellow}%, 
-                    var(--success) ${pctRed + pctYellow}% 100%
-                )`;
-            } else {
-                document.getElementById('traffic-pie-chart').style.background = "#222";
-            }
-
-            renderTopics(topicList);
+                }
+            });
 
         } catch (e) {
-            console.error("Critical error loading stats:", e);
+            console.error("Critical Init Error:", e);
         }
+    }
+
+    // Lógica de carga de datos separada
+    async function loadData(user) {
+        if(isStatsLoaded) return;
+        isStatsLoaded = true; // Marcar como cargado
+
+        // UI: Mostrar nombre
+        if(user.email && document.getElementById('user-display')) {
+            document.getElementById('user-display').innerText = user.email.split('@')[0];
+        }
+
+        // Consultar BD
+        const { data: attempts, error } = await _supabase
+            .from('user_progress')
+            .select(`status, questions_bank!inner(category)`)
+            .eq('user_id', user.id);
+
+        if (error) {
+            console.error("Error stats:", error);
+            return;
+        }
+
+        processStats(attempts || []);
+    }
+
+    // Lógica de cálculo y renderizado (Separada para limpieza)
+    function processStats(rows) {
+        let totalQ = 0, totalC = 0;
+        let sMas = 0, sRev = 0, sLea = 0;
+        const catMap = {};
+
+        rows.forEach(row => {
+            if (row.questions_bank && row.questions_bank.category) {
+                const cat = row.questions_bank.category;
+                const st = row.status;
+                const isCorrect = (st === 'mastered');
+
+                totalQ++;
+                if(isCorrect) totalC++;
+
+                if(st === 'mastered') sMas++;
+                else if(st === 'reviewing') sRev++;
+                else if(st === 'learning') sLea++;
+
+                if(!catMap[cat]) catMap[cat] = { t: 0, c: 0 };
+                catMap[cat].t++;
+                if(isCorrect) catMap[cat].c++;
+            }
+        });
+
+        // Update UI Global
+        const acc = totalQ > 0 ? Math.round((totalC / totalQ) * 100) : 0;
+        const accEl = document.getElementById('accuracy-pct');
+        if(accEl) {
+            accEl.innerText = acc + "%";
+            accEl.style.color = acc < 71 ? "var(--danger)" : "var(--success)";
+        }
+
+        document.getElementById('total-quizzes').innerText = Object.keys(catMap).length;
+        document.getElementById('total-questions').innerText = totalQ;
+        document.getElementById('total-correct').innerText = totalC;
+        document.getElementById('total-incorrect').innerText = totalQ - totalC;
+
+        document.getElementById('count-mastered').innerText = sMas;
+        document.getElementById('count-reviewing').innerText = sRev;
+        document.getElementById('count-learning').innerText = sLea;
+        document.getElementById('total-mastered-display').innerText = sMas;
+
+        // Pie Chart
+        const totalT = sMas + sRev + sLea;
+        if(totalT > 0) {
+            const pR = (sLea / totalT) * 100;
+            const pY = (sRev / totalT) * 100;
+            const pie = document.getElementById('traffic-pie-chart');
+            if(pie) pie.style.background = `conic-gradient(var(--danger) 0% ${pR}%, var(--accent) ${pR}% ${pR + pY}%, var(--success) ${pR + pY}% 100%)`;
+        }
+
+        // List Categories
+        const list = Object.keys(catMap).map(k => ({ name: k, pct: Math.round((catMap[k].c / catMap[k].t) * 100) }));
+        renderTopics(list);
     }
 
     function renderTopics(list) {
         const container = document.getElementById('topic-list-content');
+        if (!container) return;
+        
         if (list.length === 0) {
             container.innerHTML = '<div style="text-align:center; padding:10px; color:#666;">No data yet.</div>';
             return;
@@ -380,7 +368,6 @@
         container.innerHTML = '';
         list.sort((a,b) => b.pct - a.pct).forEach(topic => {
             const color = "var(--success)"; 
-            
             container.innerHTML += `
                 <div class="topic-item">
                     <div class="topic-row">
@@ -394,6 +381,9 @@
             `;
         });
     }
+
+    // Iniciar al cargar
+    document.addEventListener('DOMContentLoaded', initStatsPage);
 </script>
 </body>
 </html>
