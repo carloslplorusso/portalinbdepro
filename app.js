@@ -1,11 +1,10 @@
 // app.js
 
 // --- CONFIGURACIÓN CENTRAL DE SUPABASE ---
-// La URL y la clave ANÓNIMA se definen una sola vez aquí
 const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
 
-// Inicialización del cliente Supabase (Se hará globalmente accesible)
+// Inicialización del cliente Supabase
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- FUNCIONES Y VARIABLES GLOBALES ---
@@ -13,10 +12,18 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // 1. VARIABLE GLOBAL PARA EL MODO
 let currentSelectionMode = 'practice';
 
+// --- FUNCIONES AUXILIARES DE UI (NUEVO: Para evitar errores en Móvil/Desktop) ---
+function safeSetText(elementId, text) {
+    const el = document.getElementById(elementId);
+    if (el) {
+        el.innerText = text;
+    }
+    // Si no existe, no hacemos nada (evita errores de consola)
+}
+
 // 2. FUNCIÓN PARA EL DAILY RUN
 function startDailyRun() {
     console.log("Starting Daily Run...");
-    // Redirige al modo 'daily' con 10 preguntas fijas
     window.location.href = 'quiz_engine.html?mode=daily&count=10';
 }
 
@@ -285,7 +292,6 @@ function goBackToPomodoro() { switchView('pomodoro-view'); }
 
 // --- SELECTION VIEW LOGIC ---
 function openSelectionView(mode) {
-    // 1. Guardamos el modo seleccionado ('standalone', 'itemsets', 'simulation')
     currentSelectionMode = mode;
 
     const titleEl = document.getElementById('selection-mode-title');
@@ -336,26 +342,20 @@ function closeQuizSettings() {
 // 5. START QUIZ
 function startQuiz() {
     const count = document.getElementById('quiz-count').value;
-    // Ahora usa la variable global para enviar el modo correcto
     window.location.href = `quiz_engine.html?mode=${currentSelectionMode}&count=${count}`;
 }
 
-// MODIFICACIÓN SOLICITADA EN startQuizEngine
 function startQuizEngine(mode) {
-    // Si es simulación o itemsets, count puede ser 50 o fijo.
-    // Si es standalone, normalmente no se usa esta función directamente salvo para simulación.
     window.location.href = `quiz_engine.html?mode=${mode}&count=50`; 
 }
 
 
 // --- QUICK NOTES LOGIC ---
-// Función helper para obtener el ID del usuario
 async function getCurrentUserId() {
     const { data: { session } } = await _supabase.auth.getSession();
     if (session) {
         return session.user.id;
     }
-    // Devolver un ID de prueba para entorno de desarrollo sin login si es necesario
     return '00000000-0000-0000-0000-000000000000'; 
 }
 
@@ -387,7 +387,6 @@ async function saveNote() {
         return;
     }
     
-    // --- LÓGICA DE PERSISTENCIA MIGRADA A SUPABASE ---
     const { error } = await _supabase
         .from('user_notes')
         .insert({ user_id: userId, content: text });
@@ -413,7 +412,6 @@ async function loadNotes() {
         return;
     }
     
-    // --- LÓGICA DE CARGA MIGRADA DE LOCALSTORAGE A SUPABASE ---
     const { data: notes, error } = await _supabase
         .from('user_notes')
         .select('content, created_at')
@@ -458,7 +456,7 @@ function closeAIModal() {
     }
 }
 
-// NUEVA FUNCIÓN CALLGEMINI (Buscador y redirección directa)
+// BUSCADOR Y REDIRECCIÓN DIRECTA
 function callGemini() {
     const inputEl = document.getElementById('ai-input');
     const outputEl = document.getElementById('ai-output');
@@ -467,7 +465,6 @@ function callGemini() {
 
     const query = inputEl.value.trim();
 
-    // Validación: Solo una palabra y no estar vacío
     if (!query) {
         alert("Please enter a keyword.");
         return;
@@ -480,7 +477,6 @@ function callGemini() {
     outputEl.style.display = 'block';
     outputEl.innerHTML = '<div style="color:var(--accent);">🔍 Searching database...</div>';
 
-    // Redirigir directamente al quiz con el término de búsqueda
     setTimeout(() => {
         window.location.href = `quiz_engine.html?mode=search&term=${encodeURIComponent(query)}`;
     }, 1000);
@@ -539,49 +535,6 @@ function resetPomo() {
 }
 
 
-// --- FUNCIONES AUXILIARES DE UI Y CARGA DE USUARIO ---
-
-// Función segura para actualizar texto sin romper el código si el ID no existe
-function safeSetText(elementId, text) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.innerText = text;
-    }
-}
-
-// --- CARGA DE DATOS DE USUARIO ---
-
-async function loadUserData() {
-    try {
-        // Obtenemos el usuario actual de Supabase
-        const { data: { user }, error } = await _supabase.auth.getUser();
-
-        if (error) throw error;
-
-        if (user) {
-            const email = user.email;
-            
-            // Lógica para extraer un nombre legible del email
-            // Ejemplo: doctor.smith@gmail.com -> Doctor
-            const namePart = email.split('@')[0];
-            const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-
-            // Usamos la función segura para actualizar la UI
-            // Esto buscará ids="user-name" y "user-email" en tu HTML
-            safeSetText('user-name', displayName);
-            safeSetText('user-email', email);
-            
-            // También actualizamos el saludo específico del dashboard si existe
-            safeSetText('user-name-display', displayName); 
-
-            console.log("User data loaded:", email);
-        }
-    } catch (err) {
-        console.error("Error loading user data:", err.message);
-    }
-}
-
-
 // --- AUTHENTICATION ---
 async function logout() {
     if(typeof _supabase !== 'undefined') {
@@ -599,14 +552,12 @@ async function initCountdown() {
     const badge = document.getElementById('countdown-badge');
     if (!badge) return;
 
-    // Verificar sesión
     const { data: { session } } = await _supabase.auth.getSession();
     if (!session) {
         badge.innerText = "Set Date";
         return;
     }
 
-    // Buscar fecha en Supabase
     const { data, error } = await _supabase
         .from('user_settings')
         .select('exam_date')
@@ -615,7 +566,6 @@ async function initCountdown() {
 
     if (data && data.exam_date) {
         updateDaysLeftUI(data.exam_date);
-        // Guardamos en input por si abre el modal
         const dateInput = document.getElementById('exam-date-input');
         if(dateInput) dateInput.value = data.exam_date;
     } else {
@@ -633,7 +583,6 @@ async function saveExamDate() {
     const { data: { session } } = await _supabase.auth.getSession();
     if (!session) return alert("Please log in to save dates.");
 
-    // Guardar en Base de Datos (Upsert: crea o actualiza)
     const { error } = await _supabase
         .from('user_settings')
         .upsert({ 
@@ -655,7 +604,6 @@ async function saveExamDate() {
 function updateDaysLeftUI(dateString) {
     const target = new Date(dateString);
     const today = new Date();
-    // Resetear horas para comparar solo fechas
     today.setHours(0,0,0,0);
     target.setHours(0,0,0,0);
 
@@ -699,16 +647,86 @@ function setPomodoroMode(mode) {
     resetPomo();
 }
 
-// --- INITIALIZATION ---
-// Reemplaza el listener DOMContentLoaded final con esto:
 
+// --- CARGA DE DATOS Y ESTADÍSTICAS (VERSIÓN SEGURA) ---
+
+async function loadUserData() {
+    try {
+        const { data: { user }, error } = await _supabase.auth.getUser();
+
+        if (error) throw error;
+
+        if (user) {
+            const email = user.email;
+            
+            let displayName = "User";
+            if (email) {
+                const namePart = email.split('@')[0];
+                displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+            }
+
+            // Usamos safeSetText para actualizar UI sin errores
+            safeSetText('user-name', displayName);
+            safeSetText('user-email', email);
+            safeSetText('user-name-display', displayName);
+
+            console.log("User data loaded:", email);
+        }
+    } catch (err) {
+        console.error("Error loading user data:", err.message);
+    }
+}
+
+async function loadDashboardStats() {
+    try {
+        const { data: questions, error } = await _supabase
+            .from('questions_bank')
+            .select('category, is_active');
+
+        if (error) throw error;
+
+        // Calcular totales
+        const stats = {
+            general: questions.filter(q => q.category === 'General').length,
+            oralPathology: questions.filter(q => q.category === 'Oral Pathology').length,
+            prostho: questions.filter(q => q.category === 'Prosthodontics').length,
+            pharma: questions.filter(q => q.category === 'Pharmacology').length,
+            operative: questions.filter(q => q.category === 'Operative Dentistry').length,
+            endo: questions.filter(q => q.category === 'Endodontics').length,
+            perio: questions.filter(q => q.category === 'Periodontics').length,
+            ortho: questions.filter(q => q.category === 'Orthodontics').length,
+            anatomy: questions.filter(q => q.category === 'Oral Anatomy').length,
+            surgery: questions.filter(q => q.category === 'Oral Surgery').length,
+            patient: questions.filter(q => q.category === 'Patient Management').length
+        };
+
+        const total = questions.length;
+
+        // Usar safeSetText en lugar de document.getElementById directo
+        safeSetText('total-questions', total);
+        safeSetText('cat-general-total', stats.general);
+        safeSetText('cat-pathology-total', stats.oralPathology);
+        safeSetText('cat-prostho-total', stats.prostho);
+        safeSetText('cat-pharma-total', stats.pharma);
+        safeSetText('cat-operative-total', stats.operative);
+        safeSetText('cat-endo-total', stats.endo);
+        safeSetText('cat-perio-total', stats.perio);
+        safeSetText('cat-ortho-total', stats.ortho);
+        safeSetText('cat-anatomy-total', stats.anatomy);
+        safeSetText('cat-surgery-total', stats.surgery);
+        safeSetText('cat-patient-total', stats.patient);
+
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+// --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // Inicializar Auth
-    // NOTA: Asegúrate de que la función checkAuth esté definida o importada antes de usar este bloque.
+    
+    // Verificar Auth si existe la función externa
     if (typeof checkAuth === 'function') {
         checkAuth();
-    } else {
-        console.warn('checkAuth function is missing. Skipping auth check.');
     }
 
     const path = window.location.pathname;
@@ -717,15 +735,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (path.includes('dashboard.html') || path.includes('mobile.html')) {
         console.log("Vista detectada: Cargando datos de usuario y estadísticas...");
         
-        // Cargar datos del usuario (Nombre, Email)
-        if (typeof loadUserData === 'function') {
-            await loadUserData();
-        }
-
-        // Cargar estadísticas
-        if (typeof loadDashboardStats === 'function') {
-            loadDashboardStats();
-        }
+        await loadUserData();
+        loadDashboardStats();
         
         // Configurar botón de logout
         const logoutBtn = document.getElementById('logout-btn');
@@ -733,11 +744,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             logoutBtn.addEventListener('click', logout);
         }
         
-        // Reactivamos listeners básicos que estaban en el código original para que la UI funcione
-        // (Agregado para asegurar que los botones funcionen tras el reemplazo)
+        // Listeners seguros (con Optional Chaining ?.)
         document.getElementById('btn-daily-run')?.addEventListener('click', startDailyRun);
         document.getElementById('card-notes-desktop')?.addEventListener('click', openNotesModal);
-        // ... (Agrega aquí otros listeners si los necesitas inmediatamente)
     }
 
     // Inicializar Quiz si estamos en esa vista
