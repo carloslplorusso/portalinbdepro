@@ -81,6 +81,8 @@
             border-radius: 12px;
             border: 1px solid #333;
             overflow: hidden;
+            max-height: 50vh; /* Scroll si hay muchas */
+            overflow-y: auto;
         }
 
         .mobile-cat-item {
@@ -88,7 +90,7 @@
             align-items: center;
             padding: 16px;
             border-bottom: 1px solid #222;
-            color: #888;
+            color: #ccc;
             cursor: pointer;
             font-size: 1rem;
             transition: background 0.2s;
@@ -567,18 +569,23 @@
             }
         });
 
-        // --- CARGA DE CATEGORÍAS (VERSIÓN MÓVIL PURA) ---
+        // --- CARGA DE CATEGORÍAS (VERSIÓN CORREGIDA DIRECTA A QUESTIONS_BANK) ---
         async function loadCategories() {
             if(typeof _supabase === 'undefined') {
                 document.getElementById('category-list-container').innerHTML = '<p style="color:red">Error: Supabase not found.</p>';
                 return;
             }
 
-            const { data, error } = await _supabase.rpc('get_category_progress');
+            // MODIFICACIÓN: CONSULTA DIRECTA A QUESTIONS_BANK
+            const { data, error } = await _supabase
+                .from('questions_bank')
+                .select('category');
+
             const container = document.getElementById('category-list-container');
             container.innerHTML = '';
 
             if (error) {
+                console.error("Error fetching categories:", error);
                 container.innerHTML = '<p style="color:red; text-align:center;">Error loading topics.</p>';
                 return;
             }
@@ -588,15 +595,20 @@
                 return;
             }
 
-            // Renderizado Simple para Móvil
-            data.forEach(cat => {
+            // Filtrar categorías únicas y limpiar nulos
+            const uniqueCategories = [...new Set(data.map(item => item.category))]
+                .filter(c => c !== null && c !== undefined && c.trim() !== '')
+                .sort();
+
+            // Renderizado Limpio (Solo Nombre y Checkbox)
+            uniqueCategories.forEach(catName => {
                 const div = document.createElement('div');
                 div.className = 'mobile-cat-item';
-                div.onclick = () => toggleCategorySelection(div, cat.category);
+                div.onclick = () => toggleCategorySelection(div, catName);
                 
                 div.innerHTML = `
                     <div class="mobile-checkbox"></div>
-                    <span>${cat.category}</span>
+                    <span>${catName}</span>
                 `;
                 container.appendChild(div);
             });
@@ -779,8 +791,8 @@
                 const ans = userAnswers[q.id];
                 let isCorr = false;
                 if(ans) {
-                       const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
-                       if(ans === q.correct_answer || opts[ans.charCodeAt(0)-65] === q.correct_answer) isCorr = true;
+                        const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
+                        if(ans === q.correct_answer || opts[ans.charCodeAt(0)-65] === q.correct_answer) isCorr = true;
                 }
                 if(isCorr) correct++;
                 
