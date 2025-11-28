@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>INBDE Pro Lab</title>
+    <title>INBDE Pro Lab - Desktop</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
         /* ================================================================= */
         /* === UTILIDADES Y RESET === */
         /* ================================================================= */
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; }
         body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; transition: background-color 0.3s; min-height: 100vh; }
         .hidden { display: none !important; }
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
@@ -30,7 +30,7 @@
 
         .practice-wrapper { width: 100%; max-width: 900px; padding: 20px; }
 
-        /* --- PANTALLA INICIO PRÁCTICA (MODIFICADO: CATEGORÍAS) --- */
+        /* --- PANTALLA INICIO PRÁCTICA --- */
         #prac-start-screen { 
             display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; 
         }
@@ -50,7 +50,7 @@
             padding-right: 5px;
         }
 
-        /* Botón de Categoría Individual */
+        /* Botón de Categoría Individual (Estilo Desktop) */
         .btn-cat-select {
             position: relative;
             background: #18181b;
@@ -177,26 +177,21 @@
         /* ================================================================= */
         /* === ESTILOS PERFORMANCE (Resultados) === */
         /* ================================================================= */
-        /* Contenedor general de resultados */
+        /* Contenedor general de resultados - Estilo Desktop Fijo */
         .perf-container {
             width: 100%; max-width: 1000px;
             background-color: #1c1c1c;
             border-radius: 20px;
             display: grid;
-            grid-template-columns: 1fr; /* Mobile first */
             gap: 20px;
-            padding: 30px;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
             margin: 20px auto;
-        }
-
-        @media (min-width: 768px) {
-            .perf-container {
-                grid-template-columns: 1fr 1fr; 
-                grid-template-rows: auto 1fr;
-                padding: 40px;
-                align-items: start;
-            }
+            
+            /* Layout Desktop forzado */
+            grid-template-columns: 1fr 1fr; 
+            grid-template-rows: auto 1fr;
+            padding: 40px;
+            align-items: start;
         }
 
         .perf-title {
@@ -211,7 +206,6 @@
             width: 220px; height: 220px; border-radius: 50%; position: relative;
             display: flex; justify-content: center; align-items: center;
             margin-bottom: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.2);
-            /* Gradiente se inyecta vía JS */
         }
         .pie-center {
             width: 65%; height: 65%; background-color: #1c1c1c; border-radius: 50%;
@@ -268,11 +262,27 @@
         .sim-header { background: #235d88; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; font-size: 14px; }
         .sim-footer { background: #235d88; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; margin-top: auto; flex-shrink: 0; z-index: 10; }
         
-        .sim-content { padding: 30px 20px; width: 100%; max-width: 1300px; margin: 0 auto; display: flex; gap: 25px; flex-grow: 1; }
-        @media (max-width: 900px) { .sim-content { flex-direction: column; } }
+        .sim-content { 
+            padding: 30px 20px; 
+            width: 100%; 
+            max-width: 1300px; 
+            margin: 0 auto; 
+            display: flex; 
+            gap: 25px; 
+            flex-grow: 1; 
+            /* Forzar layout horizontal (Desktop) */
+            flex-direction: row;
+        }
         
-        .sim-patient-panel { background: white; border: 1px solid #ddd; border-radius: 4px; width: 320px; flex-shrink: 0; height: fit-content; }
-        @media (max-width: 900px) { .sim-patient-panel { width: 100%; } }
+        .sim-patient-panel { 
+            background: white; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            width: 320px; 
+            flex-shrink: 0; 
+            height: fit-content; 
+        }
+
         .sim-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .sim-table th { background: #e0e6ec; padding: 8px; text-align: left; border-top: 1px solid #ddd; }
         .sim-table td { padding: 8px; border-bottom: 1px solid #ddd; }
@@ -295,58 +305,6 @@
         .sim-review-table { width: 100%; border-collapse: collapse; font-size: 14px; }
         .sim-review-table th { background: #e0e6ec; padding: 10px; text-align: left; }
         .sim-review-table td { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
-
-        /* --- ESTILOS ESPECÍFICOS PARA LISTA MÓVIL --- */
-        .mobile-cat-list {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-        }
-
-        .mobile-cat-item {
-            display: flex;
-            align-items: center;
-            padding: 15px 10px;
-            border-bottom: 1px solid #333;
-            color: #888;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.2s;
-        }
-
-        .mobile-cat-item:hover {
-            background: #111;
-        }
-
-        .mobile-cat-item.selected {
-            color: white;
-            font-weight: 600;
-            background: #0a0a0a;
-        }
-
-        .mobile-checkbox {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #555;
-            margin-right: 15px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .mobile-cat-item.selected .mobile-checkbox {
-            background: #facc15;
-            border-color: #facc15;
-        }
-
-        .mobile-cat-item.selected .mobile-checkbox::after {
-            content: '✓';
-            color: black;
-            font-size: 14px;
-            font-weight: bold;
-        }
 
     </style>
 </head>
@@ -565,9 +523,6 @@
                 return;
             }
 
-            // 1. Detectar si es Móvil (ancho menor a 768px)
-            const isMobile = window.innerWidth <= 768;
-
             // 2. Obtener datos de Supabase
             await _supabase.auth.getUser(); 
             const { data, error } = await _supabase.rpc('get_category_progress');
@@ -586,47 +541,24 @@
                 return;
             }
 
-            // 3. Renderizar según el dispositivo
-            if (isMobile) {
-                // === VERSIÓN MÓVIL: LISTA SIMPLE (CHECKBOXES) ===
-                // Usamos una clase contenedora para los estilos
-                container.classList.add('mobile-cat-list'); 
-                
-                data.forEach(cat => {
-                    const div = document.createElement('div');
-                    div.className = 'mobile-cat-item';
-                    // Al hacer clic, alternamos selección
-                    div.onclick = () => toggleCategorySelection(div, cat.category);
-                    
-                    div.innerHTML = `
-                        <div class="mobile-checkbox"></div>
+            // === VERSIÓN DESKTOP: BARRAS DE PROGRESO ===
+            data.forEach(cat => {
+                const total = cat.total_questions || 0;
+                const answered = cat.answered_questions || 0;
+                const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
+
+                const btn = document.createElement('div');
+                btn.className = 'btn-cat-select';
+                btn.onclick = () => toggleCategorySelection(btn, cat.category);
+                btn.innerHTML = `
+                    <div class="cat-progress-bg" style="width: ${pct}%"></div>
+                    <div class="cat-content-wrapper">
                         <span>${cat.category}</span>
-                    `;
-                    container.appendChild(div);
-                });
-
-            } else {
-                // === VERSIÓN DESKTOP: BARRAS DE PROGRESO (TU DISEÑO ACTUAL) ===
-                container.classList.remove('mobile-cat-list'); // Limpiar clases móviles por si acaso
-
-                data.forEach(cat => {
-                    const total = cat.total_questions || 0;
-                    const answered = cat.answered_questions || 0;
-                    const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
-
-                    const btn = document.createElement('div');
-                    btn.className = 'btn-cat-select';
-                    btn.onclick = () => toggleCategorySelection(btn, cat.category);
-                    btn.innerHTML = `
-                        <div class="cat-progress-bg" style="width: ${pct}%"></div>
-                        <div class="cat-content-wrapper">
-                            <span>${cat.category}</span>
-                            <span class="cat-stats">${pct}%</span>
-                        </div>
-                    `;
-                    container.appendChild(btn);
-                });
-            }
+                        <span class="cat-stats">${pct}%</span>
+                    </div>
+                `;
+                container.appendChild(btn);
+            });
         }
 
         function toggleCategorySelection(element, categoryName) {
@@ -844,8 +776,8 @@
                 const ans = userAnswers[q.id];
                 let isCorr = false;
                 if(ans) {
-                       const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
-                       if(ans === q.correct_answer || opts[ans.charCodeAt(0)-65] === q.correct_answer) isCorr = true;
+                        const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
+                        if(ans === q.correct_answer || opts[ans.charCodeAt(0)-65] === q.correct_answer) isCorr = true;
                 }
                 if(isCorr) correct++;
                 
@@ -937,15 +869,15 @@
             if(q.clinical_cases) {
                  const c = Array.isArray(q.clinical_cases) ? q.clinical_cases[0] : q.clinical_cases;
                  if(c && c.patient_data) {
-                      try {
-                          const parsed = typeof c.patient_data === 'string' ? JSON.parse(c.patient_data) : c.patient_data;
-                          pData = {
-                              patient: parsed.patient || parsed.age || "N/A",
-                              cc: parsed.cc || parsed.complaint || "-",
-                              history: parsed.history || "-",
-                              findings: parsed.findings || "-"
-                          };
-                      } catch(e){}
+                       try {
+                           const parsed = typeof c.patient_data === 'string' ? JSON.parse(c.patient_data) : c.patient_data;
+                           pData = {
+                               patient: parsed.patient || parsed.age || "N/A",
+                               cc: parsed.cc || parsed.complaint || "-",
+                               history: parsed.history || "-",
+                               findings: parsed.findings || "-"
+                           };
+                       } catch(e){}
                  }
             }
             document.getElementById('sim-pat-demo').innerHTML = `<tr><td>${pData.patient}</td></tr>`;
@@ -1082,7 +1014,8 @@
         }
 
         function goToDashboard() {
-            window.location.href = (window.innerWidth <= 768) ? 'mobile.html' : 'dashboard.html';
+            // Siempre dashboard de escritorio
+            window.location.href = 'dashboard.html';
         }
     </script>
 </body>
