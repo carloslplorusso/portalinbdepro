@@ -296,6 +296,58 @@
         .sim-review-table th { background: #e0e6ec; padding: 10px; text-align: left; }
         .sim-review-table td { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
 
+        /* --- ESTILOS ESPECÍFICOS PARA LISTA MÓVIL --- */
+        .mobile-cat-list {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .mobile-cat-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 10px;
+            border-bottom: 1px solid #333;
+            color: #888;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .mobile-cat-item:hover {
+            background: #111;
+        }
+
+        .mobile-cat-item.selected {
+            color: white;
+            font-weight: 600;
+            background: #0a0a0a;
+        }
+
+        .mobile-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #555;
+            margin-right: 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .mobile-cat-item.selected .mobile-checkbox {
+            background: #facc15;
+            border-color: #facc15;
+        }
+
+        .mobile-cat-item.selected .mobile-checkbox::after {
+            content: '✓';
+            color: black;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
     </style>
 </head>
 <body>
@@ -513,11 +565,11 @@
                 return;
             }
 
-            // CORRECCIÓN PARA MÓVIL: Esperar sesión antes de llamar RPC
-            // Si no esperamos, la DB piensa que es anon y devuelve 0s si hay RLS
-            await _supabase.auth.getUser(); 
+            // 1. Detectar si es Móvil (ancho menor a 768px)
+            const isMobile = window.innerWidth <= 768;
 
-            // Llamada a la función SQL (RPC) get_category_progress
+            // 2. Obtener datos de Supabase
+            await _supabase.auth.getUser(); 
             const { data, error } = await _supabase.rpc('get_category_progress');
 
             const container = document.getElementById('category-list-container');
@@ -525,7 +577,7 @@
 
             if (error) {
                 console.error(error);
-                container.innerHTML = '<p style="color:red">Error loading categories. Check SQL Function.</p>';
+                container.innerHTML = '<p style="color:red">Error loading categories.</p>';
                 return;
             }
 
@@ -534,23 +586,47 @@
                 return;
             }
 
-            data.forEach(cat => {
-                const total = cat.total_questions || 0;
-                const answered = cat.answered_questions || 0;
-                const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
-
-                const btn = document.createElement('div');
-                btn.className = 'btn-cat-select';
-                btn.onclick = () => toggleCategorySelection(btn, cat.category);
-                btn.innerHTML = `
-                    <div class="cat-progress-bg" style="width: ${pct}%"></div>
-                    <div class="cat-content-wrapper">
+            // 3. Renderizar según el dispositivo
+            if (isMobile) {
+                // === VERSIÓN MÓVIL: LISTA SIMPLE (CHECKBOXES) ===
+                // Usamos una clase contenedora para los estilos
+                container.classList.add('mobile-cat-list'); 
+                
+                data.forEach(cat => {
+                    const div = document.createElement('div');
+                    div.className = 'mobile-cat-item';
+                    // Al hacer clic, alternamos selección
+                    div.onclick = () => toggleCategorySelection(div, cat.category);
+                    
+                    div.innerHTML = `
+                        <div class="mobile-checkbox"></div>
                         <span>${cat.category}</span>
-                        <span class="cat-stats">${answered}/${total} (${pct}%)</span>
-                    </div>
-                `;
-                container.appendChild(btn);
-            });
+                    `;
+                    container.appendChild(div);
+                });
+
+            } else {
+                // === VERSIÓN DESKTOP: BARRAS DE PROGRESO (TU DISEÑO ACTUAL) ===
+                container.classList.remove('mobile-cat-list'); // Limpiar clases móviles por si acaso
+
+                data.forEach(cat => {
+                    const total = cat.total_questions || 0;
+                    const answered = cat.answered_questions || 0;
+                    const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
+
+                    const btn = document.createElement('div');
+                    btn.className = 'btn-cat-select';
+                    btn.onclick = () => toggleCategorySelection(btn, cat.category);
+                    btn.innerHTML = `
+                        <div class="cat-progress-bg" style="width: ${pct}%"></div>
+                        <div class="cat-content-wrapper">
+                            <span>${cat.category}</span>
+                            <span class="cat-stats">${pct}%</span>
+                        </div>
+                    `;
+                    container.appendChild(btn);
+                });
+            }
         }
 
         function toggleCategorySelection(element, categoryName) {
@@ -628,10 +704,10 @@
                    
                    // 4. Traemos la información completa de ESOS 10 IDs
                    const res = await _supabase
-                        .from('questions_bank')
-                        .select('*, clinical_cases (*)')
-                        .in('id', selectedIds);
-                        
+                       .from('questions_bank')
+                       .select('*, clinical_cases (*)')
+                       .in('id', selectedIds);
+                       
                    data = res.data;
                 }
             } 
@@ -768,8 +844,8 @@
                 const ans = userAnswers[q.id];
                 let isCorr = false;
                 if(ans) {
-                      const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
-                      if(ans === q.correct_answer || opts[ans.charCodeAt(0)-65] === q.correct_answer) isCorr = true;
+                       const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
+                       if(ans === q.correct_answer || opts[ans.charCodeAt(0)-65] === q.correct_answer) isCorr = true;
                 }
                 if(isCorr) correct++;
                 
