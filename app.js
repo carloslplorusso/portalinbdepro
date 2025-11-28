@@ -21,10 +21,11 @@ function safeSetText(elementId, text) {
     // Si no existe, no hacemos nada (evita errores de consola)
 }
 
-// 2. FUNCIÓN PARA EL DAILY RUN
-function startDailyRun() {
-    console.log("Starting Daily Run...");
-    window.location.href = 'quiz_engine.html?mode=daily&count=10';
+// 2. FUNCIÓN PARA EL RANDOM LAB RUN (10 Preguntas Aleatorias)
+function startRandomRun() {
+    console.log("Starting Random Run...");
+    // Cambiamos el modo a 'random'
+    window.location.href = 'quiz_engine.html?mode=random&count=10';
 }
 
 // 3. MANEJO DE ESTADO (SEMÁFORO)
@@ -745,7 +746,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         // Listeners seguros (con Optional Chaining ?.)
-        document.getElementById('btn-daily-run')?.addEventListener('click', startDailyRun);
+        // ** CAMBIO AQUÍ: Se asigna la función startRandomRun al botón **
+        document.getElementById('btn-daily-run')?.addEventListener('click', startRandomRun);
         document.getElementById('card-notes-desktop')?.addEventListener('click', openNotesModal);
     }
 
