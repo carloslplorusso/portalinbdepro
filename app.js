@@ -539,6 +539,49 @@ function resetPomo() {
 }
 
 
+// --- FUNCIONES AUXILIARES DE UI Y CARGA DE USUARIO ---
+
+// Función segura para actualizar texto sin romper el código si el ID no existe
+function safeSetText(elementId, text) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.innerText = text;
+    }
+}
+
+// --- CARGA DE DATOS DE USUARIO ---
+
+async function loadUserData() {
+    try {
+        // Obtenemos el usuario actual de Supabase
+        const { data: { user }, error } = await _supabase.auth.getUser();
+
+        if (error) throw error;
+
+        if (user) {
+            const email = user.email;
+            
+            // Lógica para extraer un nombre legible del email
+            // Ejemplo: doctor.smith@gmail.com -> Doctor
+            const namePart = email.split('@')[0];
+            const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+
+            // Usamos la función segura para actualizar la UI
+            // Esto buscará ids="user-name" y "user-email" en tu HTML
+            safeSetText('user-name', displayName);
+            safeSetText('user-email', email);
+            
+            // También actualizamos el saludo específico del dashboard si existe
+            safeSetText('user-name-display', displayName); 
+
+            console.log("User data loaded:", email);
+        }
+    } catch (err) {
+        console.error("Error loading user data:", err.message);
+    }
+}
+
+
 // --- AUTHENTICATION ---
 async function logout() {
     if(typeof _supabase !== 'undefined') {
@@ -654,29 +697,6 @@ function setPomodoroMode(mode) {
     pMode = mode;
     console.log(`Pomodoro mode set to: ${mode}`);
     resetPomo();
-}
-
-// --- FUNCIÓN PARA SALUDO DE USUARIO (SOLO NOMBRE) ---
-async function displayUserGreeting() {
-    const nameEl = document.getElementById('user-name-display');
-    if (!nameEl) return;
-
-    // Intentamos obtener la sesión
-    const { data: { session } } = await _supabase.auth.getSession();
-
-    if (session && session.user && session.user.email) {
-        // Extraemos el nombre antes del @
-        const userEmail = session.user.email;
-        const shortName = userEmail.split('@')[0];
-        
-        // Capitalizamos (primera letra mayúscula)
-        const formattedName = shortName.charAt(0).toUpperCase() + shortName.slice(1);
-
-        // Solo reemplazamos el texto dentro del SPAN, manteniendo el estilo
-        nameEl.innerText = formattedName;
-    } else {
-        nameEl.innerText = "Doctor"; // Valor por defecto si no hay login
-    }
 }
 
 // --- INITIALIZATION ---
