@@ -72,26 +72,114 @@ function goBackToDashboard() {
     document.getElementById('nav-home-mobile')?.classList.add('active');
 }
 
-// --- LÓGICA DE SELECCIÓN DE TEMAS ---
+// --- NUEVA LÓGICA DE CATEGORÍAS CON PROGRESO ---
+async function renderCategoriesWithProgress() {
+    const list = document.getElementById('dynamic-cat-list');
+    if (!list) return;
+
+    list.innerHTML = '<div style="padding:20px; color:#666;">Cargando progreso desde Supabase...</div>';
+
+    try {
+        const userId = await getCurrentUserId();
+        if (!userId) {
+            list.innerHTML = 'Por favor inicia sesión.';
+            return;
+        }
+
+        // 1. Traemos TODAS las preguntas activas y el progreso del usuario en paralelo
+        const [questionsRes, progressRes] = await Promise.all([
+            _supabase.from('questions_bank').select('id, category').eq('is_active', true),
+            _supabase.from('user_progress').select('question_id').eq('user_id', userId)
+        ]);
+
+        if (questionsRes.error) throw questionsRes.error;
+        if (progressRes.error) throw progressRes.error;
+
+        // 2. Procesamos los datos en JS
+        const stats = {};
+        const answeredIds = new Set(progressRes.data.map(p => p.question_id));
+
+        questionsRes.data.forEach(q => {
+            // Normalizar nombre de categoría (si es null, poner 'General')
+            const cat = q.category || 'General';
+            
+            if (!stats[cat]) {
+                stats[cat] = { total: 0, answered: 0 };
+            }
+            stats[cat].total++;
+            
+            if (answeredIds.has(q.id)) {
+                stats[cat].answered++;
+            }
+        });
+
+        // 3. Renderizamos el HTML
+        list.innerHTML = '';
+        const sortedCategories = Object.keys(stats).sort();
+
+        if (sortedCategories.length === 0) {
+            list.innerHTML = '<div style="padding:20px;">No se encontraron categorías.</div>';
+            return;
+        }
+
+        sortedCategories.forEach(cat => {
+            const data = stats[cat];
+            // Calculamos porcentaje
+            const percent = data.total === 0 ? 0 : Math.round((data.answered / data.total) * 100);
+
+            const card = document.createElement('div');
+            card.className = 'category-card';
+            // Al hacer click, marcamos visualmente (puedes agregar lógica extra aquí si necesitas filtrar por categoría luego)
+            card.onclick = () => {
+                document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                // Opcional: Guardar la categoría seleccionada en una variable global si el Quiz Engine lo requiere
+                // selectedCategory = cat; 
+            };
+
+            card.innerHTML = `
+                <div class="cat-header-flex">
+                    <span class="cat-name">${cat}</span>
+                    <span class="cat-percent">${percent}%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: ${percent}%"></div>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error('Error cargando categorías:', error);
+        list.innerHTML = '<div style="color:red; padding:20px;">Error cargando datos.</div>';
+    }
+}
+
+// --- LÓGICA DE SELECCIÓN DE TEMAS (ACTUALIZADA) ---
 function openSelectionView(mode) {
     currentSelectionMode = mode;
     const titleEl = document.getElementById('selection-mode-title');
+    
+    // Configurar Títulos
     if (titleEl) {
         if (mode === 'standalone') titleEl.innerText = 'Stand Alone Practice';
         else if (mode === 'itemsets') titleEl.innerText = 'Item Sets';
         else if (mode === 'simulation') titleEl.innerText = 'Customize Simulation';
     }
-    // Renderizado simple de lista
-    const list = document.getElementById('dynamic-cat-list');
-    if (list) {
-        list.innerHTML = `
-            <div class="subject-item active" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Oral Pathology</div>
-            <div class="subject-item" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Pharmacology</div>
-            <div class="subject-item" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Operative Dentistry</div>
-            <div class="subject-item" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Patient Management</div>
-        `;
-    }
+
+    // Cambiar vista primero
     switchView('selection-view');
+
+    // LÓGICA MODIFICADA: Si es Stand Alone, cargar barras de progreso reales
+    if (mode === 'standalone') {
+        renderCategoriesWithProgress(); 
+    } else {
+        // Mantener lógica antigua o mostrar mensaje para otros modos
+        const list = document.getElementById('dynamic-cat-list');
+        if (list) {
+            list.innerHTML = '<div style="padding:20px; color:#888;">Selecciona opciones para este modo (Lógica en desarrollo).</div>';
+        }
+    }
 }
 
 // --- LÓGICA DE NOTAS (QUICK NOTES) ---
