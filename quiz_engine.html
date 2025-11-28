@@ -614,16 +614,26 @@
 
             let data = [];
             
-            if (mode === 'daily') {
-                // ... (Lógica Daily existente) ...
+            // CAMBIO: Detectar modo 'random' (o 'daily' por compatibilidad)
+            if (mode === 'random' || mode === 'daily') {
+                // Obtenemos TODOS los IDs de la base de datos
                 const { data: allIds } = await _supabase.from('questions_bank').select('id');
+                
                 if(allIds) {
-                   const shuffled = allIds.sort(() => 0.5 - Math.random());
-                   const selectedIds = shuffled.slice(0, 10).map(x => x.id);
-                   const res = await _supabase.from('questions_bank').select('*, clinical_cases (*)').in('id', selectedIds);
-                   data = res.data;
+                    // Barajamos aleatoriamente el array de IDs cada vez que entramos
+                    const shuffled = allIds.sort(() => 0.5 - Math.random());
+                    
+                    // Tomamos los primeros 10
+                    const selectedIds = shuffled.slice(0, 10).map(x => x.id);
+                    
+                    // Traemos la data completa de esos 10 IDs
+                    const res = await _supabase.from('questions_bank')
+                                             .select('*, clinical_cases (*)')
+                                             .in('id', selectedIds);
+                    data = res.data;
                 }
-            } else if (mode === 'search' && searchTerm) {
+            } 
+            else if (mode === 'search' && searchTerm) {
                  const res = await _supabase.from('questions_bank').select('*, clinical_cases (*)').ilike('question_text', `%${searchTerm}%`);
                  data = res.data;
             } else {
@@ -752,8 +762,8 @@
                 const ans = userAnswers[q.id];
                 let isCorr = false;
                 if(ans) {
-                     const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
-                     if(ans === q.correct_answer || opts[ans.charCodeAt(0)-65] === q.correct_answer) isCorr = true;
+                      const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
+                      if(ans === q.correct_answer || opts[ans.charCodeAt(0)-65] === q.correct_answer) isCorr = true;
                 }
                 if(isCorr) correct++;
                 
