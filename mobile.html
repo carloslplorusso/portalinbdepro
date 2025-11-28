@@ -54,6 +54,18 @@
     .profile-info-row { display: flex; flex-direction: column; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 15px; }
     .profile-label { color: #666; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
     .profile-value { color: white; font-size: 1.1rem; font-weight: 600; }
+
+    /* ESTILOS NUEVOS PARA STATS */
+    .stat-main-card { background: var(--accent); color: black; border-radius: 20px; padding: 25px; text-align: center; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(250, 204, 21, 0.15); }
+    .stat-number { font-size: 3.5rem; font-weight: 900; line-height: 1; margin: 0; letter-spacing: -2px; }
+    .stat-subtitle { font-size: 0.9rem; font-weight: 600; opacity: 0.8; margin-top: 5px; text-transform: uppercase; }
+    
+    .stat-list-container { background: #111; border: 1px solid #333; border-radius: 16px; overflow: hidden; }
+    .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #222; }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-cat-name { color: #fff; font-weight: 500; }
+    .stat-badge { background: #333; color: white; padding: 4px 12px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; }
+
 </style>
 </head>
 <body>
@@ -112,6 +124,36 @@
             <button class="btn-back-small" id="btn-back-selection-mobile-cancel">Cancel</button>
         </div>
 
+        <div id="stats-view" class="app-container hidden">
+            <h2 style="color:white; margin:0 0 20px 0;">Performance</h2>
+            
+            <div class="stat-main-card">
+                <div class="stat-number" id="total-questions">0</div>
+                <div class="stat-subtitle">Total Preguntas Disponibles</div>
+            </div>
+
+            <div class="stat-list-container">
+                <div class="stat-row">
+                    <span class="stat-cat-name">Pathology</span>
+                    <span class="stat-badge" id="cat-pathology-total">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-cat-name">Pharmacology</span>
+                    <span class="stat-badge" id="cat-pharma-total">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-cat-name">Operative</span>
+                    <span class="stat-badge" id="cat-operative-total">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-cat-name">Patient Mgmt</span>
+                    <span class="stat-badge" id="cat-patient-total">0</span>
+                </div>
+            </div>
+
+            <button class="btn-back-small" onclick="goBackToDashboardMobile()">Back Home</button>
+        </div>
+
         <div id="profile-view" class="app-container hidden">
             <h2 style="color:white; margin:0 0 20px 0;">My Profile</h2>
             <div style="background:#111; border:1px solid #333; border-radius:16px; padding:20px;">
@@ -135,7 +177,7 @@
             <div class="nav-item active" id="nav-home-mobile" onclick="goBackToDashboardMobile()">
                 <span class="nav-icon">🏠</span><span>Home</span>
             </div>
-            <div class="nav-item" onclick="window.location.href='stats.html'">
+            <div class="nav-item" onclick="showStats()">
                 <span class="nav-icon">📊</span><span>Stats</span>
             </div>
             <div class="nav-item" id="nav-notes-mobile">
@@ -190,32 +232,114 @@
 
     <script src="app.js"></script>
     <script>
+        // Utilidad para ocultar todas las vistas
         function hideAllViews() {
-            ['dashboard-content', 'learning-view', 'simulation-view', 'selection-view', 'profile-view']
+            ['dashboard-content', 'learning-view', 'simulation-view', 'selection-view', 'profile-view', 'stats-view']
                 .forEach(id => document.getElementById(id).classList.add('hidden'));
         }
 
+        // Navegación: Volver al Dashboard
         function goBackToDashboardMobile() {
             hideAllViews();
             document.getElementById('dashboard-content').classList.remove('hidden');
             document.getElementById('dashboard-content').classList.add('fade-in');
+            
+            // Reset nav active states
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('nav-home-mobile').classList.add('active');
         }
 
+        // Navegación: Mostrar Stats
+        async function showStats() {
+            hideAllViews();
+            document.getElementById('stats-view').classList.remove('hidden');
+            document.getElementById('stats-view').classList.add('fade-in');
+            
+            // Highlight nav item
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            // Busca el item de stats (el segundo hijo)
+            document.querySelectorAll('.nav-item')[1].classList.add('active');
+
+            await loadStatsData();
+        }
+
+        // Lógica: Cargar datos de Stats
+        async function loadStatsData() {
+            // Valores por defecto
+            let total = 0;
+            let path = 0;
+            let pharma = 0;
+
+            if (typeof _supabase !== 'undefined') {
+                try {
+                    // Ejemplo: contar todas las preguntas
+                    const { count } = await _supabase.from('questions').select('*', { count: 'exact', head: true });
+                    if(count) total = count;
+
+                    // Ejemplo: contar por categoría (esto requiere lógica más compleja o tablas de resumen)
+                    // Aquí simulamos para que la UI se vea bien por ahora:
+                    path = Math.floor(total * 0.3); // Simulado
+                    pharma = Math.floor(total * 0.2); // Simulado
+                } catch (e) {
+                    console.log("Error fetching stats", e);
+                }
+            }
+
+            // Actualizar DOM
+            document.getElementById('total-questions').innerText = total;
+            document.getElementById('cat-pathology-total').innerText = path;
+            document.getElementById('cat-pharma-total').innerText = pharma;
+        }
+
+        // Navegación: Mostrar Perfil
+        async function showProfile() {
+            hideAllViews();
+            document.getElementById('profile-view').classList.remove('hidden');
+            document.getElementById('profile-view').classList.add('fade-in');
+
+            // Highlight nav item
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('btn-profile-safe').classList.add('active');
+
+            if (typeof _supabase !== 'undefined') {
+                const { data: { user } } = await _supabase.auth.getUser();
+                
+                if(user) {
+                    document.getElementById('profile-email-val').innerText = user.email;
+                    const name = user.email.split('@')[0];
+                    document.getElementById('profile-name-val').innerText = name.charAt(0).toUpperCase() + name.slice(1);
+                    
+                    const { data: settings } = await _supabase
+                        .from('user_settings')
+                        .select('exam_date')
+                        .eq('user_id', user.id)
+                        .maybeSingle();
+                    
+                    if(settings && settings.exam_date) {
+                        document.getElementById('profile-date-val').innerText = settings.exam_date;
+                    } else {
+                        document.getElementById('profile-date-val').innerText = "Not set";
+                    }
+                } else {
+                    document.getElementById('profile-name-val').innerText = "Guest";
+                    document.getElementById('profile-email-val').innerText = "Not logged in";
+                }
+            }
+        }
+
+        // Inicialización
         async function initMobile() {
             let attempts = 0;
-            // Esperar carga de Supabase
             while (typeof _supabase === 'undefined' && attempts < 10) {
                 await new Promise(r => setTimeout(r, 200));
                 attempts++;
             }
 
             if (typeof _supabase !== 'undefined') {
-                // Intento 1: Sesión local (más rápido)
                 const { data: { session } } = await _supabase.auth.getSession();
                 if (session && session.user) {
                     updateName(session.user.email);
                 } else {
-                    // Intento 2: Verificar con servidor
                     const { data: { user } } = await _supabase.auth.getUser();
                     if (user && user.email) updateName(user.email);
                 }
@@ -230,40 +354,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', initMobile);
-
-        async function showProfile() {
-            hideAllViews();
-            document.getElementById('profile-view').classList.remove('hidden');
-            document.getElementById('profile-view').classList.add('fade-in');
-
-            if (typeof _supabase !== 'undefined') {
-                // Usamos getUser para obtener datos frescos
-                const { data: { user } } = await _supabase.auth.getUser();
-                
-                if(user) {
-                    document.getElementById('profile-email-val').innerText = user.email;
-                    const name = user.email.split('@')[0];
-                    document.getElementById('profile-name-val').innerText = name.charAt(0).toUpperCase() + name.slice(1);
-                    
-                    // CORRECCIÓN CLAVE: maybeSingle() evita error si no hay datos
-                    const { data: settings } = await _supabase
-                        .from('user_settings')
-                        .select('exam_date')
-                        .eq('user_id', user.id)
-                        .maybeSingle();
-                    
-                    if(settings && settings.exam_date) {
-                        document.getElementById('profile-date-val').innerText = settings.exam_date;
-                    } else {
-                        document.getElementById('profile-date-val').innerText = "Not set";
-                    }
-                } else {
-                    // Si no hay usuario, mostrar mensaje en vez de redirigir (para evitar loops)
-                    document.getElementById('profile-name-val').innerText = "Guest";
-                    document.getElementById('profile-email-val').innerText = "Not logged in";
-                }
-            }
-        }
     </script>
 </body>
 </html>
