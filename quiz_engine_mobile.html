@@ -36,7 +36,7 @@
             background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 90%);
             display: flex; 
             justify-content: center; 
-            align-items: center; /* Centrado vertical en móvil */
+            align-items: center; 
         }
 
         .practice-wrapper { 
@@ -45,7 +45,7 @@
             padding: 10px; 
         }
 
-        /* --- PANTALLA INICIO (SELECCIÓN) --- */
+        /* --- PANTALLA INICIO (SELECCIÓN DE CATEGORÍAS) --- */
         #prac-start-screen { 
             display: flex; 
             flex-direction: column; 
@@ -70,7 +70,7 @@
             text-align: center; 
         }
         
-        /* Lista de Categorías (Estilo Checkbox Móvil) */
+        /* Lista de Categorías (Estilo Checkbox Móvil - Simple) */
         .cat-selection-container {
             width: 100%;
             display: flex;
@@ -81,14 +81,14 @@
             border-radius: 12px;
             border: 1px solid #333;
             overflow: hidden;
-            max-height: 50vh; /* Scroll si hay muchas */
+            max-height: 55vh; /* Altura máxima con scroll */
             overflow-y: auto;
         }
 
         .mobile-cat-item {
             display: flex;
             align-items: center;
-            padding: 16px;
+            padding: 18px 16px; /* Padding cómodo para el dedo */
             border-bottom: 1px solid #222;
             color: #ccc;
             cursor: pointer;
@@ -114,6 +114,7 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            background: transparent;
         }
 
         .mobile-cat-item.selected .mobile-checkbox {
@@ -179,7 +180,7 @@
             background: #18181b; 
             border: 1px solid #27272a; 
             border-radius: 12px; 
-            padding: 18px 15px; /* Área de toque grande */
+            padding: 18px 15px; 
             cursor: pointer; 
             margin-bottom: 12px; 
             transition: 0.1s;
@@ -200,7 +201,7 @@
         
         .prac-classify-btns { 
             display: grid; 
-            grid-template-columns: 1fr 1fr 1fr; /* Grid para botones fáciles de tocar */
+            grid-template-columns: 1fr 1fr 1fr; 
             gap: 10px; 
             margin: 15px 0; 
         }
@@ -238,12 +239,6 @@
             text-transform: uppercase; font-size: 1rem;
         }
 
-        .btn-end-session {
-            background: transparent; border: 1px solid #ef4444; color: #ef4444;
-            width: 100%; padding: 14px; border-radius: 10px; font-weight: 700;
-            margin-top: 25px; text-transform: uppercase; font-size: 0.85rem;
-        }
-
         /* ================================================================= */
         /* === 3. MODO SIMULACIÓN (LIGHT) === */
         /* ================================================================= */
@@ -251,24 +246,24 @@
             background-color: #f2f2f2; 
             color: #333; 
             display: block; 
-            padding: 0; /* Full width para header/footer */
+            padding: 0; 
         }
         
         .sim-screen { display: none; flex-direction: column; min-height: 100vh; }
         .sim-screen.active { display: flex; }
         
-        /* Layout Vertical Estricto */
         .sim-content { 
             padding: 15px; 
             width: 100%; 
             display: flex; 
-            flex-direction: column; /* SIEMPRE COLUMNA */
+            flex-direction: column; 
             gap: 20px; 
             flex-grow: 1; 
-            padding-bottom: 80px; /* Espacio para footer */
+            
+            /* MODIFICACIÓN: Aumentado para evitar que el footer fijo tape el contenido */
+            padding-bottom: 160px; 
         }
         
-        /* Header y Footer Stacked */
         .sim-header { 
             background: #235d88; 
             color: white; 
@@ -326,7 +321,6 @@
         }
         .btn-sim-nav.mark.active { background: #ffc107; color: #333; }
         
-        /* Contenedor botones footer */
         .footer-btns-row { display: flex; gap: 10px; width: 100%; }
         .footer-btns-row button { flex: 1; }
 
@@ -372,10 +366,10 @@
         
         <div id="prac-start-screen" class="fade-in">
             <h1 class="prac-title">Select Topics</h1>
-            <p class="prac-desc">Tap to select subjects</p>
+            <p class="prac-desc">Choose categories to practice</p>
             
             <div id="category-list-container" class="cat-selection-container">
-                <div style="padding:20px; text-align:center; color:#666;">Loading topics...</div>
+                <div style="padding:20px; text-align:center; color:#666;">Initializing...</div>
             </div>
 
             <button id="btn-start-selected" class="btn-start-custom" onclick="startSelectedPractice()">
@@ -561,57 +555,68 @@
                 body.classList.add('mode-practice');
                 document.getElementById('root-practice').classList.remove('hidden');
                 
+                // Si es modo standalone y NO hay count, mostramos selección de categorías
                 if (mode === 'random' || mode === 'daily' || mode === 'search' || (mode === 'standalone' && count !== null)) {
                     await fetchQuestions();
                 } else {
+                    // Cargar categorías para Standalone
                     await loadCategories();
                 }
             }
         });
 
-        // --- CARGA DE CATEGORÍAS (VERSIÓN CORREGIDA DIRECTA A QUESTIONS_BANK) ---
+        // --- CARGA DE CATEGORÍAS CORREGIDA ---
         async function loadCategories() {
             if(typeof _supabase === 'undefined') {
-                document.getElementById('category-list-container').innerHTML = '<p style="color:red">Error: Supabase not found.</p>';
+                document.getElementById('category-list-container').innerHTML = '<p style="color:red">Error: Supabase client not found.</p>';
                 return;
             }
-
-            // MODIFICACIÓN: CONSULTA DIRECTA A QUESTIONS_BANK
-            const { data, error } = await _supabase
-                .from('questions_bank')
-                .select('category');
 
             const container = document.getElementById('category-list-container');
-            container.innerHTML = '';
+            container.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">Loading categories...</div>';
 
-            if (error) {
-                console.error("Error fetching categories:", error);
-                container.innerHTML = '<p style="color:red; text-align:center;">Error loading topics.</p>';
-                return;
+            try {
+                // Consulta directa simple: traer todas las categorías
+                const { data, error } = await _supabase
+                    .from('questions_bank')
+                    .select('category');
+
+                if (error) {
+                    console.error("Error loading categories:", error);
+                    container.innerHTML = `<p style="color:red; text-align:center; padding:20px;">Error loading data: ${error.message}</p>`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">No categories found.</p>';
+                    return;
+                }
+
+                // Filtrar categorías únicas, eliminar nulos y ordenar alfabéticamente
+                const uniqueCategories = [...new Set(data.map(item => item.category))]
+                    .filter(c => c !== null && c !== undefined && c.trim() !== '')
+                    .sort();
+
+                container.innerHTML = ''; // Limpiar loader
+
+                // Renderizar lista simple (Solo Checkbox y Texto)
+                uniqueCategories.forEach(catName => {
+                    const div = document.createElement('div');
+                    div.className = 'mobile-cat-item';
+                    // Toggle selección al hacer click en todo el renglón
+                    div.onclick = () => toggleCategorySelection(div, catName);
+                    
+                    div.innerHTML = `
+                        <div class="mobile-checkbox"></div>
+                        <span>${catName}</span>
+                    `;
+                    container.appendChild(div);
+                });
+
+            } catch (err) {
+                console.error("Unexpected error:", err);
+                container.innerHTML = '<p style="color:red; text-align:center;">Unexpected error occurred.</p>';
             }
-
-            if (!data || data.length === 0) {
-                container.innerHTML = '<p style="color:#666; text-align:center;">No topics found.</p>';
-                return;
-            }
-
-            // Filtrar categorías únicas y limpiar nulos
-            const uniqueCategories = [...new Set(data.map(item => item.category))]
-                .filter(c => c !== null && c !== undefined && c.trim() !== '')
-                .sort();
-
-            // Renderizado Limpio (Solo Nombre y Checkbox)
-            uniqueCategories.forEach(catName => {
-                const div = document.createElement('div');
-                div.className = 'mobile-cat-item';
-                div.onclick = () => toggleCategorySelection(div, catName);
-                
-                div.innerHTML = `
-                    <div class="mobile-checkbox"></div>
-                    <span>${catName}</span>
-                `;
-                container.appendChild(div);
-            });
         }
 
         function toggleCategorySelection(element, categoryName) {
@@ -625,10 +630,10 @@
             const startBtn = document.getElementById('btn-start-selected');
             if (selectedCategories.size > 0) {
                 startBtn.classList.add('ready');
-                startBtn.innerText = `Start Practice (${selectedCategories.size})`;
+                startBtn.innerText = `START PRACTICE (${selectedCategories.size})`;
             } else {
                 startBtn.classList.remove('ready');
-                startBtn.innerText = 'Start Practice';
+                startBtn.innerText = 'START PRACTICE';
             }
         }
 
@@ -636,22 +641,32 @@
             if (selectedCategories.size === 0) return;
             
             const btn = document.getElementById('btn-start-selected');
-            btn.innerText = "Loading...";
+            const originalText = btn.innerText;
+            btn.innerText = "LOADING...";
+            btn.style.opacity = "0.7";
 
             const catsArray = Array.from(selectedCategories);
             
+            // Traer preguntas que coincidan con las categorías seleccionadas
             const { data, error } = await _supabase
                 .from('questions_bank')
                 .select('*, clinical_cases (*)')
                 .in('category', catsArray)
-                .is('case_id', null); 
+                .is('case_id', null); // Excluir casos clínicos para standalone simple
 
-            if (error || !data || data.length === 0) {
-                alert("No questions found.");
-                btn.innerText = "Try Again";
+            if (error) {
+                alert("Error fetching questions: " + error.message);
+                btn.innerText = originalText;
                 return;
             }
 
+            if (!data || data.length === 0) {
+                alert("No questions found for selected topics.");
+                btn.innerText = originalText;
+                return;
+            }
+
+            // Aleatorizar y comenzar
             quizData = data.sort(() => Math.random() - 0.5);
             currentIndex = 0;
             
@@ -660,7 +675,7 @@
             renderPracticeQuestion();
         }
 
-        // --- FETCH QUESTIONS (COMÚN) ---
+        // --- FETCH QUESTIONS (Lógica existente para otros modos) ---
         async function fetchQuestions() {
             if(typeof _supabase === 'undefined') { alert("Connection Error"); return; }
 
@@ -704,7 +719,7 @@
             }
         }
 
-        // --- LÓGICA PRÁCTICA ---
+        // --- LÓGICA PRÁCTICA (UI) ---
         function renderPracticeQuestion() {
             const q = quizData[currentIndex]          
             document.getElementById('prac-q-text').innerText = q.question_text;
@@ -1011,7 +1026,7 @@
             }
         }
 
-        // REDIRECCIÓN FORZADA A MOBILE.HTML
+        // REDIRECCIÓN FORZADA A MOBILE.HTML (DASHBOARD)
         function goToDashboard() {
             window.location.href = 'mobile.html';
         }
