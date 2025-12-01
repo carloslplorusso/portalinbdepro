@@ -538,5 +538,96 @@
     </div>
 
 <script src="app.js"></script>
+<script>
+    // Asumimos que _supabase está definido en app.js
+
+    // 1. Detección de Parámetros de Recuperación
+    function checkRecoveryMode() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const isRecovery = urlParams.get('recovery') === 'true';
+
+        if (isRecovery) {
+            // Ocultar el Dashboard principal
+            document.getElementById('dashboard-content').classList.add('hidden');
+            // Ocultar el Header (si es necesario para una vista de pantalla completa)
+            document.querySelector('.header-area').classList.add('hidden');
+            // Mostrar la nueva vista de Reset
+            document.getElementById('reset-password-view').classList.remove('hidden');
+            
+            // Opcional: Limpiar el URL para evitar que se quede en loop si el usuario recarga
+            // Nota: Supabase a veces necesita el hash completo, pero al menos eliminamos el parámetro recovery=true.
+            // Usamos replaceState para no llenar el historial.
+            // Manteniendo el hash (#access_token=...) que Supabase necesita.
+            const newUrl = window.location.pathname + window.location.hash;
+            history.replaceState(null, '', newUrl);
+
+            // Mostrar alerta de contraseña (si lo deseas)
+            const alertContainer = document.getElementById('password-alert-container');
+            if (alertContainer) {
+                alertContainer.innerHTML = '<div class="password-alert" style="display:block;">⚠️ You are in Password Reset Mode. Please set a new password.</div>';
+            }
+
+        } else {
+            // Asegurarse de que el dashboard esté visible si NO estamos en modo recuperación
+            document.getElementById('dashboard-content').classList.remove('hidden');
+            document.querySelector('.header-area').classList.remove('hidden');
+            document.getElementById('reset-password-view').classList.add('hidden');
+        }
+    }
+
+    // 2. Función para Actualizar la Contraseña usando Supabase
+    async function updatePassword() {
+        const password = document.getElementById('new-password').value;
+        const confirm = document.getElementById('confirm-password').value;
+        const btn = document.getElementById('btn-update-password');
+        const msg = document.getElementById('reset-msg');
+
+        // Validación básica
+        if (password.length < 6 || password !== confirm) {
+            msg.innerText = password.length < 6 ? 'Password must be at least 6 characters.' : 'Passwords do not match.';
+            msg.style.color = '#ef4444';
+            return;
+        }
+
+        btn.innerText = 'Updating...'; 
+        btn.disabled = true;
+        msg.innerText = '';
+        
+        // Supabase usa la sesión temporal que se activó con el link de correo para update.
+        // El objeto _supabase debe estar inicializado en app.js
+        if (typeof _supabase === 'undefined') {
+            msg.innerText = 'Error: Supabase client not initialized.';
+            msg.style.color = '#ef4444';
+            btn.innerText = 'Update Password';
+            btn.disabled = false;
+            return;
+        }
+
+        const { error } = await _supabase.auth.updateUser({ password: password });
+
+        if (error) {
+            msg.innerText = `Error: ${error.message}. Try logging out and using the recovery link again.`;
+            msg.style.color = '#ef4444';
+            btn.innerText = 'Update Password';
+            btn.disabled = false;
+        } else {
+            msg.innerText = '✅ Password updated successfully! Redirecting to login.';
+            msg.style.color = '#22c55e'; // Color verde para éxito
+
+            // Borrar sesión y redirigir a Login para forzar el re-logueo
+            await _supabase.auth.signOut();
+            
+            // Ocultar el formulario
+            document.getElementById('reset-form-content').classList.add('hidden');
+            
+            setTimeout(() => {
+                window.location.href = 'index.html'; 
+            }, 3000);
+        }
+    }
+
+    // Ejecutar la comprobación al cargar la página
+    document.addEventListener('DOMContentLoaded', checkRecoveryMode);
+</script>
 </body>
 </html>
