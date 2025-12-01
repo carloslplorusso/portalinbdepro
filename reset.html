@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INBDE Pro - Reset Password</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+    /* Estilos basados en tu archivo index.html */
+    :root {
+        --accent: #facc15; 
+        --bg-dark: #050505;
+        --card-bg: #121214;
+        --card-border: #27272a;
+        --text-main: #f4f4f5;
+        --danger: #ef4444;
+        --success: #10b981;
+    }
+    body {
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-dark);
+        color: var(--text-main);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%);
+        padding: 20px;
+    }
+    .auth-card {
+        background: var(--card-bg);
+        padding: 40px;
+        border-radius: 24px;
+        width: 100%;
+        max-width: 420px;
+        text-align: center;
+        border: 1px solid var(--card-border);
+    }
+    .brand-title { color: #fff; font-size: 2.2rem; font-weight: 900; margin-bottom: 5px; }
+    .brand-subtitle { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px; opacity: 0.9; }
+    .input-group { margin-bottom: 20px; text-align: left; }
+    input { width: 100%; padding: 14px; background: #000; border: 1px solid var(--card-border); color: #fff; border-radius: 12px; font-size: 1rem; }
+    input:focus { border-color: var(--accent); outline: none; }
+    .btn-main { width: 100%; background-color: var(--accent); color: #000; font-weight: 900; padding: 14px; border: none; border-radius: 12px; cursor: pointer; margin-top: 20px; }
+    .msg-box { padding: 12px; border-radius: 8px; font-size: 0.85rem; margin-top: 20px; font-weight: 600; display: none; }
+    .msg-error { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+    .msg-success { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
+</style>
+</head>
+<body>
+
+<div class="auth-card">
+    <div class="brand-title">INBDE Pro</div>
+    <div class="brand-subtitle">Reset Password</div>
+    
+    <div id="reset-form">
+        <p style="color:#71717a; margin-bottom:25px;">
+            Enter your new password below.
+        </p>
+        <div class="input-group">
+            <label style="display:block; color:#71717a; font-weight:600; margin-bottom:8px;">New Password</label>
+            <input type="password" id="new-password" placeholder="New Password">
+        </div>
+        <div class="input-group">
+            <label style="display:block; color:#71717a; font-weight:600; margin-bottom:8px;">Confirm Password</label>
+            <input type="password" id="confirm-password" placeholder="Confirm Password">
+        </div>
+        <button class="btn-main" onclick="updatePassword()" id="btn-update">Change Password</button>
+    </div>
+
+    <div id="msg-box" class="msg-box"></div>
+</div>
+
+<script>
+    // Configuración de Supabase (Asumimos las mismas credenciales de app.js)
+    const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
+    const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    function showMsg(text, type) {
+        const box = document.getElementById('msg-box');
+        box.innerText = text;
+        box.className = `msg-box msg-${type}`;
+        box.style.display = 'block';
+    }
+
+    async function updatePassword() {
+        const password = document.getElementById('new-password').value;
+        const confirm = document.getElementById('confirm-password').value;
+        const btn = document.getElementById('btn-update');
+
+        if (password.length < 6) {
+            return showMsg('Password must be at least 6 characters.', 'error');
+        }
+        if (password !== confirm) {
+            return showMsg('Passwords do not match.', 'error');
+        }
+
+        btn.innerText = 'Updating...'; 
+        btn.disabled = true;
+
+        // La función updateUser usa la sesión temporal que Supabase 
+        // ya estableció al cargar esta página con el token de la URL.
+        const { error } = await _supabase.auth.updateUser({
+            password: password
+        });
+
+        if (error) {
+            showMsg(`Error: Could not update password. Please try the recovery link again.`, 'error');
+            btn.innerText = 'Try Again';
+            btn.disabled = false;
+        } else {
+            showMsg('✅ Password successfully changed! Redirecting to login...', 'success');
+            document.getElementById('reset-form').style.display = 'none';
+
+            // Redirigir al login después de un breve momento
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 3000);
+        }
+    }
+    
+    // Al cargar la página, verificamos si la URL contiene el token de recuperación
+    document.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.hash.substring(1));
+        const type = params.get('type');
+        
+        // Si no hay token en la URL, se le pide al usuario que use el link del email
+        if (!type || type !== 'recovery') {
+             showMsg('Please use the recovery link sent to your email.', 'error');
+             document.getElementById('reset-form').style.display = 'none';
+        }
+        // Si el token está presente, Supabase ya maneja la sesión temporalmente, 
+        // y el usuario puede usar la función updatePassword().
+    });
+</script>
+</body>
+</html>
