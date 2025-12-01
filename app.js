@@ -445,23 +445,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('btn-pomo-reset')?.addEventListener('click', resetPomo);
             document.getElementById('btn-back-timer')?.addEventListener('click', () => switchView('pomodoro-view'));
 
-            // Quiz Config (Modal)
+            // --- QUIZ START (MODIFICADO) ---
+            // Se eliminó la lógica que abría el modal. Ahora inicia directamente.
             document.getElementById('btn-start-quiz-selection')?.addEventListener('click', () => {
-                 const modal = document.getElementById('quiz-settings-modal');
-                 modal.classList.remove('hidden'); modal.classList.add('active');
-                 const select = document.getElementById('quiz-count');
-                 if(select && select.options.length === 0) {
-                    select.innerHTML = `<option value="10">10 Questions</option><option value="20">20 Questions</option><option value="50">50 Questions</option>`;
-                 }
+                 // Al no pasar "&count=XX", el quiz_engine usará su valor por defecto (150 preguntas o lo que tenga configurado)
+                 window.location.href = `quiz_engine.html?mode=${currentSelectionMode}`;
             });
-            document.getElementById('btn-close-quiz-settings')?.addEventListener('click', () => {
-                 const modal = document.getElementById('quiz-settings-modal');
-                 modal.classList.remove('active'); setTimeout(() => modal.classList.add('hidden'), 300);
-            });
-            document.getElementById('btn-start-quiz-confirm')?.addEventListener('click', () => {
-                 const count = document.getElementById('quiz-count').value;
-                 window.location.href = `quiz_engine.html?mode=${currentSelectionMode}&count=${count}`;
-            });
+            // Las escuchas del modal se han eliminado porque ya no se utiliza el modal.
         } 
         else {
             console.log("Modo Móvil Detectado: app.js no interferirá con la navegación.");
