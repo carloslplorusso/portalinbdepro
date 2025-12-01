@@ -284,7 +284,7 @@
     async function handleGoogleLogin() {
         // Construye la URL dinámicamente basándose en el origen actual (localhost o producción)
         // Esto asegura que siempre redirija al dashboard.html en la misma carpeta donde estás.
-        const redirectUrl = new URL('dashboard.html', window.location.href).href;
+        const redirectUrl = new URL('reset.html', window.location.href).href;
 
         const { data, error } = await _supabase.auth.signInWithOAuth({
             provider: 'google',
