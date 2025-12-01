@@ -233,8 +233,12 @@
     // --- MANEJO DE ESTADO DE AUTENTICACIÓN ---
     _supabase.auth.onAuthStateChange((event, session) => {
         if (session) {
+            // El evento PASSWORD_RECOVERY ocurre cuando entras con el link de reset
+            // Pero en este caso, la redirección de handleReset (ver abajo) tendrá prioridad.
             if (event === "PASSWORD_RECOVERY") {
-                window.location.href = './dashboard.html?recovery=true';
+                // Redirigir a reset.html si por alguna razón cayera aquí,
+                // aunque el redirectTo del correo debería encargarse.
+                window.location.href = './reset.html' + window.location.hash;
             } else {
                 window.location.href = './dashboard.html';
             }
@@ -270,15 +274,14 @@
             btn.innerText = 'Sign In'; 
             btn.disabled = false;
         } else {
-            // Login exitoso
             btn.innerText = 'Success! Redirecting...';
-            // El observador onAuthStateChange se encargará de redirigir.
+            // onAuthStateChange redirige
         }
     }
 
-    // --- 2. LOGIN CON GOOGLE (CORREGIDO) ---
+    // --- 2. LOGIN CON GOOGLE ---
     async function handleGoogleLogin() {
-        // CORRECCIÓN CRÍTICA: Cambiado de reset.html a dashboard.html
+        // Para Google Login, SÍ queremos ir al dashboard directamente
         const redirectUrl = new URL('dashboard.html', window.location.href).href;
 
         const { data, error } = await _supabase.auth.signInWithOAuth({
@@ -290,7 +293,7 @@
         if (error) showMsg(error.message, 'error');
     }
 
-    // --- 3. RECUPERAR CONTRASEÑA ---
+    // --- 3. RECUPERAR CONTRASEÑA (CORREGIDO) ---
     async function handleReset() {
         const email = document.getElementById('reset-email').value;
         const btn = document.getElementById('btn-reset');
@@ -300,7 +303,9 @@
         btn.innerText = 'Sending...'; 
         btn.disabled = true;
 
-        const redirectUrl = new URL('dashboard.html', window.location.href).href;
+        // CORRECCIÓN CRÍTICA: Aquí indicamos que el correo debe llevar a reset.html
+        // Esto asegura que el usuario pueda cambiar su clave antes de entrar al dashboard.
+        const redirectUrl = new URL('reset.html', window.location.href).href;
 
         const { data, error } = await _supabase.auth.resetPasswordForEmail(email, {
             redirectTo: redirectUrl, 
