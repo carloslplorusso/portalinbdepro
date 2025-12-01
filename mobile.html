@@ -282,15 +282,15 @@
                 }
             };
 
-            // Confirmar Start Quiz desde Selection View
+            // --- CAMBIO IMPORTANTE: INICIO DIRECTO SIN MODAL ---
+            // Antes: Abría el modal de configuración.
+            // Ahora: Redirige directamente al motor de quiz.
             document.getElementById('btn-start-quiz-selection').onclick = () => {
-                // Abre el modal de configuración de cantidad
-                const modal = document.getElementById('quiz-settings-modal');
-                modal.classList.remove('hidden');
-                modal.classList.add('active');
+                // Se elimina la apertura del modal. Se usa el conteo por defecto.
+                window.location.href = `quiz_engine_mobile.html?mode=${mobileSelectionMode}`;
             };
 
-            // Botón final START NOW (en modal settings)
+            // Botón final START NOW (en modal settings) - Ya no se usa para este flujo pero se deja por seguridad
             document.getElementById('btn-start-quiz-confirm').onclick = () => {
                 const count = document.getElementById('quiz-count').value;
                 window.location.href = `quiz_engine_mobile.html?mode=${mobileSelectionMode}&count=${count}`;
