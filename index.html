@@ -6,7 +6,7 @@
 <title>INBDE Pro - Access</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-    /* --- 1. VARIABLES & BASE (Extraídas de tu CSS) --- */
+    /* --- 1. VARIABLES & BASE --- */
     :root {
         --accent: #facc15; 
         --accent-glow: rgba(250, 204, 21, 0.15);
@@ -31,22 +31,20 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        /* Fondo radial idéntico a tu Dashboard */
         background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%);
         padding: 20px;
     }
 
-    /* --- 2. AUTH CARD (Adaptada al estilo Dashboard) --- */
+    /* --- 2. AUTH CARD --- */
     .auth-card {
         background: var(--card-bg);
         padding: 40px;
-        border-radius: 24px; /* Bordes más redondeados como en learning-card */
+        border-radius: 24px;
         width: 100%;
         max-width: 420px;
         text-align: center;
         border: 1px solid var(--card-border);
         position: relative;
-        /* Sutil resplandor amarillo inspirado en el dashboard */
         box-shadow: 0 0 40px rgba(0,0,0,0.5), 0 0 20px var(--accent-glow);
         transition: all 0.3s ease;
     }
@@ -80,7 +78,7 @@
     .form-view.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* --- 4. INPUTS & LABELS (Estilo Dark) --- */
+    /* --- 4. INPUTS & LABELS --- */
     .input-group { margin-bottom: 20px; text-align: left; }
     
     .input-group label { 
@@ -250,7 +248,7 @@
         document.getElementById(`view-${viewName}`).classList.add('active');
     }
 
-    // --- 1. LOGIN CON EMAIL (ACTIVADO) ---
+    // --- 1. LOGIN CON EMAIL ---
     async function handleLogin() {
         const email = document.getElementById('login-email').value;
         const pass = document.getElementById('login-password').value;
@@ -261,7 +259,6 @@
         btn.innerText = 'Verifying...'; 
         btn.disabled = true;
         
-        // Llamada a Supabase (definido en app.js)
         const { data, error } = await _supabase.auth.signInWithPassword({ 
             email: email, 
             password: pass 
@@ -275,15 +272,13 @@
         } else {
             // Login exitoso
             btn.innerText = 'Success! Redirecting...';
-            // El observador onAuthStateChange (arriba en el script original) 
-            // se encargará de redirigir a dashboard.html automáticamente.
+            // El observador onAuthStateChange se encargará de redirigir.
         }
     }
 
     // --- 2. LOGIN CON GOOGLE (CORREGIDO) ---
     async function handleGoogleLogin() {
-        // Construye la URL dinámicamente basándose en el origen actual
-        // CORRECCIÓN: Ahora apunta a dashboard.html en lugar de reset.html
+        // CORRECCIÓN CRÍTICA: Cambiado de reset.html a dashboard.html
         const redirectUrl = new URL('dashboard.html', window.location.href).href;
 
         const { data, error } = await _supabase.auth.signInWithOAuth({
@@ -305,7 +300,6 @@
         btn.innerText = 'Sending...'; 
         btn.disabled = true;
 
-        // Construye la URL dinámicamente para el link de reseteo
         const redirectUrl = new URL('dashboard.html', window.location.href).href;
 
         const { data, error } = await _supabase.auth.resetPasswordForEmail(email, {
@@ -328,7 +322,6 @@
         box.innerText = text;
         box.className = `msg-box msg-${type}`;
         box.style.display = 'block';
-        // Auto-ocultar solo si es error, el éxito suele requerir lectura
         if(type === 'error') {
             setTimeout(() => { 
                 box.style.display = 'none'; 
