@@ -141,7 +141,7 @@ function openSelectionView(mode) {
         else if (mode === 'simulation') titleEl.innerText = 'Customize Simulation';
     }
     switchView('selection-view');
-    // Solo cargar categorías si estamos en standalone y no estamos en móvil (o según prefieras)
+    // Solo cargar categorías si estamos en standalone
     if (mode === 'standalone') {
         renderCategoriesWithProgress(); 
     }
@@ -307,7 +307,7 @@ async function saveExamDate() {
     if (session) { await _supabase.from('user_settings').upsert({ user_id: session.user.id, exam_date: dateInput.value }); updateDaysLeftUI(dateInput.value); closeDateModal(); }
 }
 
-// --- LÓGICA QUIZ ENGINE Y ESTADÍSTICAS (CRÍTICO: RESTAURADO) ---
+// --- LÓGICA QUIZ ENGINE Y ESTADÍSTICAS ---
 function startRandomRun() {
     // DETECCIÓN INTELIGENTE DE MÓVIL
     if (window.location.href.includes('mobile.html')) {
@@ -388,15 +388,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (path.includes('dashboard.html') || isMobilePage) {
         console.log("Inicializando App...");
         await loadUserData();
-        loadDashboardStats(); // Restaurado
+        loadDashboardStats();
         renderMiniActivity();
 
         // --- LÓGICA COMÚN (AUTH, NOTAS, MODALES) ---
-        // Estos elementos existen tanto en mobile.html como dashboard.html (o no causan conflicto si faltan)
         document.getElementById('btn-logout-desktop')?.addEventListener('click', logout);
         document.getElementById('card-activity-log')?.addEventListener('click', openActivityModal);
         
-        // Notas (Desktop y Mobile tienen IDs distintos o compartidos)
+        // Notas
         document.getElementById('card-notes-desktop')?.addEventListener('click', openNotesModal);
         document.getElementById('nav-notes-mobile')?.addEventListener('click', openNotesModal);
         document.getElementById('btn-save-note')?.addEventListener('click', saveNote);
@@ -414,8 +413,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const btnCloseDate = document.querySelector('#date-setup-modal .close-btn');
         if(btnCloseDate) btnCloseDate.onclick = closeDateModal;
         
-        // --- AQUÍ ESTÁ EL CAMBIO IMPORTANTE ---
-        // SOLO ACTIVAMOS LA NAVEGACIÓN DE ESCRITORIO SI NO ESTAMOS EN MÓVIL
+        // --- NAVEGACIÓN DE ESCRITORIO ---
         if (!isMobilePage) {
             console.log("Modo Escritorio Detectado: Activando navegación desktop.");
 
@@ -433,7 +431,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('btn-back-selection')?.addEventListener('click', showLearningLab);
 
             // Botones internos Learning / Simulation
+            // A. MODIFICACIÓN: Restaurar apertura de selección para Stand Alone
             document.getElementById('btn-learn-standalone')?.addEventListener('click', () => openSelectionView('standalone'));
+            
             document.getElementById('btn-learn-itemsets')?.addEventListener('click', () => window.location.href = 'quiz_engine.html?mode=itemsets&count=20');
 
             document.getElementById('btn-sim-customize')?.addEventListener('click', () => openSelectionView('simulation'));
@@ -446,17 +446,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('btn-back-timer')?.addEventListener('click', () => switchView('pomodoro-view'));
 
             // --- QUIZ START (MODIFICADO) ---
-            // Se eliminó la lógica que abría el modal. Ahora inicia directamente.
+            // B. MODIFICACIÓN: Capturar categoría seleccionada y enviarla en la URL
             document.getElementById('btn-start-quiz-selection')?.addEventListener('click', () => {
-                 // Al no pasar "&count=XX", el quiz_engine usará su valor por defecto (150 preguntas o lo que tenga configurado)
-                 window.location.href = `quiz_engine.html?mode=${currentSelectionMode}`;
+                
+                // Si estamos en modo standalone, exigimos una categoría
+                if (currentSelectionMode === 'standalone') {
+                    // 1. Buscamos si hay alguna tarjeta seleccionada
+                    const selectedCard = document.querySelector('.category-card.selected');
+                    
+                    if (selectedCard) {
+                        // 2. Extraemos el nombre de la categoría
+                        const catName = selectedCard.querySelector('.cat-name').innerText.trim();
+                        
+                        // 3. Enviamos al quiz CON la categoría
+                        window.location.href = `quiz_engine.html?mode=standalone&cats=${encodeURIComponent(catName)}`;
+                    } else {
+                        // No seleccionó nada
+                        alert("Please select a subject first.");
+                    }
+                } else {
+                    // Si estamos en otro modo (ej. simulacion custom), procedemos normal
+                     window.location.href = `quiz_engine.html?mode=${currentSelectionMode}`;
+                }
             });
-            // Las escuchas del modal se han eliminado porque ya no se utiliza el modal.
         } 
         else {
             console.log("Modo Móvil Detectado: app.js no interferirá con la navegación.");
-            // En modo móvil, app.js solo provee Supabase, utilidades y lógica global (notas, auth),
-            // la navegación específica de tarjetas se maneja en el script inline de mobile.html.
         }
     }
 });
