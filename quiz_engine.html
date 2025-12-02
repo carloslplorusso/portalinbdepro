@@ -21,11 +21,20 @@
         /* ================================================================= */
         /* === ESTILOS MODO PRÁCTICA (DARK / STANDALONE) === */
         /* ================================================================= */
+        
+        /* --- MODIFICACIÓN 1: AJUSTE DE BODY PARA SCROLL --- */
         body.mode-practice {
             background-color: #050505;
             background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%);
             color: #f4f4f5;
-            display: flex; justify-content: center; align-items: center;
+            display: flex; 
+            justify-content: center; 
+            /* Cambiamos center por flex-start para que empiece arriba y permita scroll */
+            align-items: flex-start; 
+            padding-top: 50px; 
+            padding-bottom: 50px;
+            min-height: 100vh;
+            overflow-y: auto; /* Asegura que aparezca la barra de scroll de la página */
         }
 
         .practice-wrapper { width: 100%; max-width: 900px; padding: 20px; }
@@ -37,6 +46,7 @@
         .prac-title { font-size: 2.5rem; font-weight: 800; color: #facc15; text-shadow: 0 0 10px rgba(250, 204, 21, 0.2); margin-bottom: 10px; text-align: center; }
         .prac-desc { font-size: 1.1rem; color: #71717a; margin-bottom: 30px; text-align: center; }
         
+        /* --- MODIFICACIÓN 2: MEJORA DE LISTA DE CATEGORÍAS Y SCROLLBAR --- */
         /* Contenedor de lista de categorías */
         .cat-selection-container {
             width: 100%;
@@ -44,10 +54,26 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
-            max-height: 55vh; /* Scroll si hay muchas categorías */
+            max-height: 60vh; /* Aumentamos un poco la altura máxima */
             overflow-y: auto;
             margin-bottom: 25px;
-            padding-right: 5px;
+            padding-right: 10px; /* Espacio para que el scroll no tape el texto */
+        }
+
+        /* Estilos para que la barra de scroll se vea bien */
+        .cat-selection-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .cat-selection-container::-webkit-scrollbar-track {
+            background: #121214;
+            border-radius: 4px;
+        }
+        .cat-selection-container::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        .cat-selection-container::-webkit-scrollbar-thumb:hover {
+            background: #facc15; /* Color amarillo al pasar el mouse */
         }
 
         /* Botón de Categoría Individual (Estilo Desktop) */
@@ -700,7 +726,7 @@
         }
 
         function renderPracticeQuestion() {
-            const q = quizData[currentIndex]           
+            const q = quizData[currentIndex]            
             document.getElementById('prac-q-text').innerText = q.question_text;
             
             document.getElementById('prac-review-area').classList.add('hidden');
@@ -885,15 +911,15 @@
             if(q.clinical_cases) {
                  const c = Array.isArray(q.clinical_cases) ? q.clinical_cases[0] : q.clinical_cases;
                  if(c && c.patient_data) {
-                       try {
-                           const parsed = typeof c.patient_data === 'string' ? JSON.parse(c.patient_data) : c.patient_data;
-                           pData = {
-                               patient: parsed.patient || parsed.age || "N/A",
-                               cc: parsed.cc || parsed.complaint || "-",
-                               history: parsed.history || "-",
-                               findings: parsed.findings || "-"
-                           };
-                       } catch(e){}
+                        try {
+                            const parsed = typeof c.patient_data === 'string' ? JSON.parse(c.patient_data) : c.patient_data;
+                            pData = {
+                                patient: parsed.patient || parsed.age || "N/A",
+                                cc: parsed.cc || parsed.complaint || "-",
+                                history: parsed.history || "-",
+                                findings: parsed.findings || "-"
+                            };
+                        } catch(e){}
                  }
             }
             document.getElementById('sim-pat-demo').innerHTML = `<tr><td>${pData.patient}</td></tr>`;
