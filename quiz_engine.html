@@ -494,22 +494,38 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const body = document.body;
             
-            // Lógica de Modos
+            // Lógica de Modos (MODIFICADA PARA ACEPTAR 'CATS' EN URL)
             if (isSimulation) {
                 body.classList.add('mode-simulation');
                 document.getElementById('root-simulation').classList.remove('hidden');
-                simTotalTime = count ? count * 90 : 50 * 90; // Default 50 preguntas si no hay count
+                simTotalTime = count ? count * 90 : 50 * 90; 
                 startSimTimer();
-                await fetchQuestions(); // Simulación carga preguntas directo
+                await fetchQuestions(); 
             } else {
                 body.classList.add('mode-practice');
                 document.getElementById('root-practice').classList.remove('hidden');
                 
-                // CAMBIO: Se agrega mode === 'random' para que salte la selección de categorías
-                if (mode === 'random' || mode === 'daily' || mode === 'search' || (mode === 'standalone' && count !== null)) {
+                // --- NUEVA LÓGICA DE DETECCIÓN DE URL ---
+                const urlCats = urlParams.get('cats'); // Verificamos si vienen categorías de app.js
+
+                if (urlCats) {
+                    // SI VIENEN CATEGORÍAS:
+                    console.log("Categoría detectada desde Dashboard:", urlCats);
+                    
+                    // 1. Agregamos la categoría al Set de seleccionadas
+                    urlCats.split(',').forEach(c => selectedCategories.add(decodeURIComponent(c)));
+                    
+                    // 2. Ocultamos la pantalla de selección interna inmediatamente
+                    document.getElementById('prac-start-screen').classList.add('hidden');
+                    
+                    // 3. Iniciamos la práctica directamente
+                    await startSelectedPractice();
+
+                } else if (mode === 'random' || mode === 'daily' || mode === 'search') {
+                    // Modos aleatorios o búsqueda
                     await fetchQuestions();
                 } else {
-                    // Cargar lista de categorías en lugar de preguntas directamente
+                    // SOLO si NO hay datos en la URL, mostramos la selección interna (fallback)
                     await loadCategories();
                 }
             }
@@ -684,7 +700,7 @@
         }
 
         function renderPracticeQuestion() {
-            const q = quizData[currentIndex]          
+            const q = quizData[currentIndex]           
             document.getElementById('prac-q-text').innerText = q.question_text;
             
             document.getElementById('prac-review-area').classList.add('hidden');
