@@ -34,48 +34,32 @@
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-    /* CORRECCIÓN 1: BODY
-       Se cambia la alineación vertical a flex-start para evitar cortes superiores
-       y se habilita el scroll vertical.
-    */
     body {
         margin: 0;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         background-color: #000;
         color: var(--text-main);
         min-height: 100vh;
-        
         display: flex;
         justify-content: center;
-        
-        /* CAMBIO APLICADO: Alineación arriba y permitir scroll */
         align-items: flex-start; 
         overflow-y: auto; 
         padding-top: 20px;
         padding-bottom: 20px;
-
         background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%);
     }
 
     /* --- 2. GRID LAYOUT (DESKTOP BENTO) --- */
-    /* CORRECCIÓN 2: CONTAINER
-       Se elimina la altura fija y el overflow:hidden para permitir que el contenido empuje hacia abajo.
-    */
     .lab-container {
         width: 100%;
         max-width: 1500px;
-        
-        /* CAMBIO APLICADO: Altura mínima adaptable, no fija */
         min-height: 90vh; 
         height: auto; 
-        
         display: grid;
         grid-template-columns: var(--col-width) 1fr var(--col-width);
         grid-template-rows: auto 1fr;
         gap: 25px;
         padding: 20px;
-        
-        /* CAMBIO APLICADO: Permitir scroll si es necesario */
         overflow: visible; 
         position: relative;
     }
@@ -181,10 +165,6 @@
     .metrics-title { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
     .pie-chart-main { width: 90px; height: 90px; border-radius: 50%; background: conic-gradient(var(--accent) 0% 0%, #27272a 0% 100%); box-shadow: 0 0 15px rgba(0,0,0,0.5); margin: auto; }
     
-    .activity-dots { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; width: 100%; margin-top: 10px; }
-    .dot { width: 8px; height: 8px; background: #333; border-radius: 2px; }
-    .dot.active { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
-
     /* --- VISTAS OCULTAS --- */
     #learning-view, #simulation-view, #pomodoro-view { grid-column: 1 / -1; grid-row: 2 / -1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 30px; height: 100%; }
     .learning-cards-row { display: flex; flex-direction: row; gap: 40px; justify-content: center; align-items: center; width: 100%; }
@@ -208,9 +188,6 @@
     .btn-back-small:hover { border-color: var(--accent); color: var(--accent); }
 
     /* --- SELECTION VIEW --- */
-    /* CORRECCIÓN 3: SELECTION VIEW
-       Se asegura que la altura sea automática para no comprimir el contenido interno.
-    */
     #selection-view { 
         grid-column: 1 / -1; 
         grid-row: 2 / -1; 
@@ -219,13 +196,10 @@
         justify-content: flex-start; 
         align-items: center; 
         gap: 20px; 
-        
-        /* CAMBIO APLICADO: Altura automática para empujar el contenido hacia abajo */
         height: auto; 
         min-height: 100%;
-        
         padding: 20px; 
-        padding-bottom: 50px; /* Espacio extra al final */
+        padding-bottom: 50px; 
     }
 
     .selection-container { display: flex; width: 100%; max-width: 1000px; gap: 30px; height: 100%; }
@@ -274,6 +248,63 @@
 
     #password-alert-container { position: absolute; top: 0; width: 100%; z-index: 2000; }
     .password-alert { background: rgba(250, 204, 21, 0.2); color: var(--accent); border-bottom: 1px solid var(--accent); padding: 10px; text-align: center; font-size: 0.9rem; display: none; }
+
+    /* --- NUEVOS ESTILOS (Actividad & Calendario) --- */
+    
+    /* Pie Chart en la Card */
+    .activity-pie-chart {
+        width: 90px; 
+        height: 90px; 
+        border-radius: 50%; 
+        background: conic-gradient(#222 0% 100%); /* Default background */
+        display: flex; 
+        justify-content: center; 
+        align-items: center;
+        box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        transition: background 0.5s ease;
+    }
+    .activity-pie-inner {
+        width: 70px; 
+        height: 70px; 
+        background-color: #121214; /* Mismo color que card-bg */
+        border-radius: 50%; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center;
+        font-weight: 800;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    /* Calendario en el Modal */
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+    }
+    .cal-day-header {
+        text-align: center;
+        font-size: 0.75rem;
+        color: #666;
+        padding-bottom: 5px;
+        font-weight: bold;
+    }
+    .cal-day {
+        aspect-ratio: 1/1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #222;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        color: #666;
+        border: 1px solid transparent;
+    }
+    .cal-day.active-day { background: rgba(16, 185, 129, 0.2); color: #10b981; border-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.1); }
+    .cal-day.missed-day { background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+    .cal-day.future-day { background: #1a1a1a; color: #444; }
+    .cal-day.today { border: 1px solid var(--accent); }
+
 </style>
 </head>
 <body>
@@ -352,12 +383,21 @@
                 <div class="promo-desc">Smart Search. Find questions instantly.</div>
                 <button class="btn-start" id="btn-ia-lab-start" style="background:#fff; color:#000;">ASK AI</button>
             </div>
+            
             <div class="card card-metrics square-card-bottom" id="card-activity-log">
-                <div class="metrics-header"><span class="metrics-title">ACTIVITY LOG</span></div>
-                <div class="activity-dots" id="activity-dots-container">
-                    <span style="font-size:0.7rem; color:#666;">Loading activity...</span>
+                <div class="metrics-header">
+                    <span class="metrics-title">ACTIVITY LOG</span>
+                    <span style="font-size:0.8rem; color:#666;">Monthly Rate</span>
+                </div>
+                <div style="display:flex; justify-content:center; align-items:center; height:100%; padding-top:10px;">
+                    <div class="activity-pie-chart" id="activity-pie-chart">
+                        <div class="activity-pie-inner">
+                            <span id="activity-percent-text">0%</span>
+                        </div>
+                    </div>
                 </div>
             </div>
+
         </div>
     </div>
 
@@ -461,16 +501,25 @@
     </div>
 
     <div id="activity-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h3 style="margin:0; color:white;">Activity Calendar</h3>
+        <div class="modal-content" style="max-width: 450px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:white;">Activity Log</h3>
                 <span class="close-btn" id="btn-close-activity-modal">×</span>
             </div>
-            <div id="full-calendar-container" style="color:white;">
+            
+            <div class="calendar-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; color:white;">
+                <button id="btn-prev-month" style="background:none; border:1px solid #333; color:white; border-radius:5px; cursor:pointer; padding:5px 10px;">&lt;</button>
+                <span id="calendar-month-year" style="font-weight:bold; text-transform:uppercase;">MONTH YEAR</span>
+                <button id="btn-next-month" style="background:none; border:1px solid #333; color:white; border-radius:5px; cursor:pointer; padding:5px 10px;">&gt;</button>
             </div>
-            <div style="margin-top:20px; font-size:0.8rem; color:#666;">
-                <span style="color:#10b981;">■</span> Day with activity. 
-                <span style="color:var(--accent); margin-left:10px;">■</span> Current day.
+
+            <div id="full-calendar-container" class="calendar-grid">
+                </div>
+
+            <div style="margin-top:20px; font-size:0.8rem; color:#888; display:flex; gap:15px; justify-content:center;">
+                <div style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; background:#10b981; border-radius:2px;"></span> Active</div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; background:#ef4444; border-radius:2px;"></span> Missed</div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; background:#333; border-radius:2px;"></span> Future</div>
             </div>
         </div>
     </div>
