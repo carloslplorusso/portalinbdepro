@@ -555,11 +555,13 @@
                 body.classList.add('mode-practice');
                 document.getElementById('root-practice').classList.remove('hidden');
                 
-                // Si es modo standalone y NO hay count, mostramos selección de categorías
+                // --- LÓGICA CRÍTICA PARA EL MODO STANDALONE (MOBILE) ---
+                // Si es random, daily, search O tiene un 'count' definido, carga preguntas directo.
+                // Si es 'standalone' SIN 'count', muestra los checkboxes.
                 if (mode === 'random' || mode === 'daily' || mode === 'search' || (mode === 'standalone' && count !== null)) {
                     await fetchQuestions();
                 } else {
-                    // Cargar categorías para Standalone
+                    // Cargar categorías para Standalone (Checkboxes)
                     await loadCategories();
                 }
             }
@@ -721,7 +723,7 @@
 
         // --- LÓGICA PRÁCTICA (UI) ---
         function renderPracticeQuestion() {
-            const q = quizData[currentIndex]          
+            const q = quizData[currentIndex]           
             document.getElementById('prac-q-text').innerText = q.question_text;
             
             document.getElementById('prac-review-area').classList.add('hidden');
