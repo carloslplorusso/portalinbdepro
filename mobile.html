@@ -300,7 +300,12 @@
             };
 
             // Sub-botones
-            document.getElementById('btn-learn-standalone').onclick = () => openMobileSelection('standalone');
+            // --- MODIFICACIÓN SOLICITADA: Redirección directa para Stand Alone ---
+            document.getElementById('btn-learn-standalone').onclick = () => {
+                window.location.href = 'quiz_engine_mobile.html?mode=standalone';
+            };
+            // ---------------------------------------------------------------------
+
             document.getElementById('btn-learn-itemsets').onclick = () => window.location.href = 'quiz_engine_mobile.html?mode=itemsets&count=20';
             document.getElementById('btn-sim-customize-mobile').onclick = () => openMobileSelection('simulation');
             document.getElementById('btn-sim-start-mobile').onclick = () => window.location.href = 'quiz_engine_mobile.html?mode=simulation';
