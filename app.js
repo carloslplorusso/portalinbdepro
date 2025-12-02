@@ -109,9 +109,11 @@ async function renderCategoriesWithProgress() {
 
             const card = document.createElement('div');
             card.className = 'category-card';
+            
+            // MODIFICACIÓN 1: Selección Múltiple (toggle)
             card.onclick = () => {
-                document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
+                // En lugar de remover la clase de todos, solo alternamos en la tarjeta actual
+                card.classList.toggle('selected');
             };
 
             card.innerHTML = `
@@ -431,9 +433,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('btn-back-selection')?.addEventListener('click', showLearningLab);
 
             // Botones internos Learning / Simulation
-            // A. MODIFICACIÓN: Restaurar apertura de selección para Stand Alone
             document.getElementById('btn-learn-standalone')?.addEventListener('click', () => openSelectionView('standalone'));
-            
             document.getElementById('btn-learn-itemsets')?.addEventListener('click', () => window.location.href = 'quiz_engine.html?mode=itemsets&count=20');
 
             document.getElementById('btn-sim-customize')?.addEventListener('click', () => openSelectionView('simulation'));
@@ -446,26 +446,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('btn-back-timer')?.addEventListener('click', () => switchView('pomodoro-view'));
 
             // --- QUIZ START (MODIFICADO) ---
-            // B. MODIFICACIÓN: Capturar categoría seleccionada y enviarla en la URL
+            // MODIFICACIÓN 2: Capturar MÚLTIPLES categorías y enviarlas al quiz
             document.getElementById('btn-start-quiz-selection')?.addEventListener('click', () => {
                 
-                // Si estamos en modo standalone, exigimos una categoría
                 if (currentSelectionMode === 'standalone') {
-                    // 1. Buscamos si hay alguna tarjeta seleccionada
-                    const selectedCard = document.querySelector('.category-card.selected');
+                    // 1. Buscamos TODAS las tarjetas seleccionadas (clase .selected)
+                    const selectedCards = document.querySelectorAll('.category-card.selected');
                     
-                    if (selectedCard) {
-                        // 2. Extraemos el nombre de la categoría
-                        const catName = selectedCard.querySelector('.cat-name').innerText.trim();
+                    if (selectedCards.length > 0) {
+                        // 2. Extraemos los nombres de todas las seleccionadas en un array
+                        const selectedCats = Array.from(selectedCards).map(card => 
+                            card.querySelector('.cat-name').innerText.trim()
+                        );
                         
-                        // 3. Enviamos al quiz CON la categoría
-                        window.location.href = `quiz_engine.html?mode=standalone&cats=${encodeURIComponent(catName)}`;
+                        // 3. Unimos las categorías con comas para la URL
+                        // Nota: quiz_engine.html debe estar preparado para recibir "cat1,cat2,cat3"
+                        const catsParam = selectedCats.map(c => encodeURIComponent(c)).join(',');
+                        
+                        window.location.href = `quiz_engine.html?mode=standalone&cats=${catsParam}`;
                     } else {
-                        // No seleccionó nada
-                        alert("Please select a subject first.");
+                        alert("Please select at least one subject.");
                     }
                 } else {
-                    // Si estamos en otro modo (ej. simulacion custom), procedemos normal
+                     // Si estamos en otro modo, procedemos normal
                      window.location.href = `quiz_engine.html?mode=${currentSelectionMode}`;
                 }
             });
