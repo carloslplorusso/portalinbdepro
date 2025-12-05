@@ -1,3 +1,6 @@
+// quiz_engine.js
+// Motor unificado de Quiz para Desktop y Mobile
+
 const QuizEngine = {
     // --- ESTADO DEL QUIZ ---
     data: [],
@@ -12,35 +15,30 @@ const QuizEngine = {
 
     // --- 1. INICIALIZACIÓN ---
     async init() {
-        // Leer parámetros de la URL
         const urlParams = new URLSearchParams(window.location.search);
         this.mode = urlParams.get('mode') || 'practice';
         const count = urlParams.get('count') ? parseInt(urlParams.get('count')) : null;
-        const term = urlParams.get('term'); // Para búsqueda
-        const cats = urlParams.get('cats'); // Categorías seleccionadas
+        const term = urlParams.get('term'); 
+        const cats = urlParams.get('cats'); 
         
         console.log(`QuizEngine iniciado. Modo: ${this.mode}, Mobile: ${this.isMobile}`);
 
-        // Configurar clases en el Body para CSS específico
         const isSimulation = (this.mode.includes('simulation') || this.mode === 'itemsets');
         if (isSimulation) {
             document.body.classList.add('mode-simulation');
             document.getElementById('root-simulation')?.classList.remove('hidden');
-            this.simTotalTime = count ? count * 90 : 100 * 90; // 90 segs por pregunta aprox
+            this.simTotalTime = count ? count * 90 : 100 * 90; 
             this.startSimTimer();
         } else {
             document.body.classList.add('mode-practice');
             document.getElementById('root-practice')?.classList.remove('hidden');
         }
 
-        // Decidir si cargar preguntas o mostrar selección
         if (this.mode === 'random' || this.mode === 'daily' || this.mode === 'search' || cats) {
-            // Modos que arrancan directo
             await this.fetchQuestions(count, term, cats);
         } else if (this.mode === 'simulation') {
               await this.fetchQuestions(count);
         } else {
-            // Modo standalone sin categorías predefinidas: Cargar lista de categorías
             if(typeof loadCategoriesUI === 'function') {
                 await loadCategoriesUI(); 
             } else {
@@ -56,9 +54,7 @@ const QuizEngine = {
         let query = _supabase.from('questions_bank').select('*, clinical_cases (*)');
         let data = [];
 
-        // Lógica de Filtros
         if (this.mode === 'random' || this.mode === 'daily') {
-            // Random real usando IDs
             const { data: allIds } = await _supabase.from('questions_bank').select('id');
             if (allIds) {
                 const shuffled = allIds.sort(() => 0.5 - Math.random()).slice(0, 10);
@@ -74,12 +70,11 @@ const QuizEngine = {
             const res = await query.in('category', catsArr).is('case_id', null);
             data = res.data;
         } else {
-            // Simulation o Itemsets
             if (this.mode.includes('simulation')) query = query.not('case_id', 'is', null);
             else query = query.is('case_id', null);
             
             if (count) query = query.limit(count);
-            else query = query.limit(100); // Límite por defecto
+            else query = query.limit(100); 
             
             const res = await query;
             data = res.data;
@@ -91,7 +86,6 @@ const QuizEngine = {
             return;
         }
 
-        // Mezclar si no es daily (que ya se mezcló arriba)
         if (this.mode !== 'random' && this.mode !== 'daily') {
             this.data = data.sort(() => Math.random() - 0.5);
         } else {
@@ -104,7 +98,6 @@ const QuizEngine = {
     // --- 3. INICIO Y RENDERIZADO ---
     startQuiz() {
         this.currentIndex = 0;
-        // Ocultar pantallas de carga/inicio
         document.getElementById('prac-start-screen')?.classList.add('hidden');
         
         if (this.mode.includes('simulation')) {
@@ -119,11 +112,8 @@ const QuizEngine = {
     // --- 3A. RENDER MODO PRÁCTICA ---
     renderPracticeQuestion() {
         const q = this.data[this.currentIndex];
-        
-        // Elementos comunes en Desktop y Mobile
         document.getElementById('prac-q-text').innerText = q.question_text;
         
-        // Reset UI
         document.getElementById('prac-review-area').classList.add('hidden');
         document.getElementById('prac-error-msg')?.classList.add('hidden');
         document.getElementById('btn-prac-next').classList.add('hidden');
@@ -135,28 +125,24 @@ const QuizEngine = {
             if (!opt) return;
             const letter = String.fromCharCode(65 + idx);
             const div = document.createElement('div');
-            div.className = 'prac-option'; // Clase CSS compartida
+            div.className = 'prac-option'; 
             div.id = `prac-opt-${idx}`;
-            
-            // HTML Interno (Radio visual + Texto)
             div.innerHTML = `<div class="prac-radio"></div><span>${opt}</span>`;
-            
             div.onclick = () => this.handlePracticeAnswer(idx, letter, q);
             container.appendChild(div);
         });
     },
 
     handlePracticeAnswer(idx, letter, q) {
-        if (this.userAnswers[q.id]) return; // Ya respondido
+        if (this.userAnswers[q.id]) return; 
         this.userAnswers[q.id] = letter;
 
         const selectedDiv = document.getElementById(`prac-opt-${idx}`);
         selectedDiv.classList.add('selected');
 
-        // Revelar respuesta
         const allOpts = document.getElementById('prac-options-list').children;
         Array.from(allOpts).forEach((div, i) => {
-            div.classList.add('answered'); // Clase para CSS
+            div.classList.add('answered'); 
             const optLet = String.fromCharCode(65 + i);
             const optText = [q.option_a, q.option_b, q.option_c, q.option_d][i];
 
@@ -167,7 +153,6 @@ const QuizEngine = {
             }
         });
 
-        // Mostrar explicación
         const expArea = document.getElementById('prac-explanation');
         expArea.innerHTML = q.explanation ? `<strong>Explanation:</strong><br>${q.explanation}` : "No explanation available.";
         expArea.classList.remove('hidden');
@@ -176,24 +161,20 @@ const QuizEngine = {
 
     // --- 4. CLASIFICACIÓN (EASY/MED/HARD) ---
     async classifyQuestion(status) {
-        // Guardar stats locales
         if (status === 'learning') this.stats.hard++;
         if (status === 'reviewing') this.stats.medium++;
         if (status === 'mastered') this.stats.easy++;
 
-        // Feedback Visual en botones
         const btns = document.querySelectorAll('.btn-classify');
         btns.forEach(b => b.classList.remove('active'));
         
         const btnMap = { 'learning': '.btn-hard', 'reviewing': '.btn-medium', 'mastered': '.btn-easy' };
         document.querySelector(btnMap[status])?.classList.add('active');
 
-        // Guardar en DB
         const q = this.data[this.currentIndex];
         const { data: { session } } = await _supabase.auth.getSession();
         
         if (session) {
-            // Fire and forget (no esperamos el await para agilidad visual)
             _supabase.from('user_progress').insert([{
                 user_id: session.user.id,
                 question_id: q.id,
@@ -217,18 +198,13 @@ const QuizEngine = {
         }
     },
 
-    // --- 5. RESULTADOS (UNIFICADO) ---
-
-    // --- FUNCIÓN UNIFICADA: Renderizar lista de revisión (Practice & Sim) ---
+    // --- 5. RENDERIZAR LISTA DE REVISIÓN ---
     renderFinalReview(prefix) {
-        // IDs de los nuevos contenedores de lista
-        const screenId = prefix === 'sim' ? 'sim-final-review-screen' : 'prac-review-screen';
         const listContainer = document.getElementById(`${prefix}-final-list-content`);
-        
         if (!listContainer) return;
+        
         listContainer.innerHTML = ''; 
 
-        // Estilos según modo
         const isSim = (prefix === 'sim');
         const theme = isSim ? {
             card: '#ffffff', border: '#e5e7eb', text: '#1f2937', header: '#f9fafb', hover: '#f3f4f6', detail: '#f9fafb', detailText: '#4b5563', accent: '#235d88'
@@ -240,22 +216,19 @@ const QuizEngine = {
 
         this.data.forEach((q, index) => {
             const userAns = this.userAnswers[q.id];
-
-            // --- FILTRO: Solo preguntas respondidas ---
-            if (userAns === undefined || userAns === null) return;
+            // Filtro: Solo mostrar si fue respondida
+            if (userAns === undefined || userAns === null) return; 
             questionsShown++;
 
-            // Lógica de corrección
             const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
             const ansChar = typeof userAns === 'number' ? String.fromCharCode(65 + userAns) : userAns;
-            const ansText = typeof userAns === 'number' ? opts[userAns] : (ansChar ? opts[ansChar.charCodeAt(0) - 65] : null);
+            const ansText = typeof userAns === 'number' ? opts[userAns] : (userAns.length > 1 ? userAns : opts[ansChar?.charCodeAt(0) - 65]);
             const isCorrect = (ansChar === q.correct_answer || ansText === q.correct_answer);
             
             const statusText = isCorrect ? 'Correct' : 'Incorrect';
             const statusColor = isCorrect ? '#22c55e' : '#ef4444'; 
             const icon = isCorrect ? '✓' : '✕';
 
-            // HTML del Item
             const itemDiv = document.createElement('div');
             itemDiv.style.cssText = `background:${theme.card}; border:1px solid ${theme.border}; border-radius:8px; margin-bottom:10px; overflow:hidden;`;
 
@@ -299,64 +272,61 @@ const QuizEngine = {
         }
     },
     
-    // --- FUNCIÓN PRINCIPAL DE FINALIZACIÓN MODIFICADA (FLUJO CORREGIDO) ---
+    // --- 6. FUNCIÓN DE FINALIZACIÓN (FLUJO: QUIZ -> LISTA) ---
     finishQuiz() {
         if (this.simTimerInterval) clearInterval(this.simTimerInterval);
 
-        // Ocultar Quiz Activo
+        // Ocultar Quizzes Activos
         document.getElementById('prac-quiz-screen')?.classList.add('hidden');
         document.getElementById('sim-screen-quiz')?.classList.remove('active');
-        document.getElementById('sim-screen-review')?.classList.remove('active'); // Ocultar review intermedia
+        document.getElementById('sim-screen-review')?.classList.remove('active'); 
 
         const prefix = this.mode.includes('simulation') ? 'sim' : 'prac';
 
-        // 1. Calcular Gráficos (Llena la pantalla de resultados PERO NO LA MUESTRA AÚN)
+        // 1. Calcular Gráficos (Prepara los datos, pero NO muestra la pantalla aún)
         this.calculateAndRenderCharts(prefix);
 
-        // 2. Generar Lista de Revisión
+        // 2. Renderizar Lista
         this.renderFinalReview(prefix);
 
         // 3. MOSTRAR PANTALLA DE LISTA DE REVISIÓN PRIMERO
         if (prefix === 'sim') {
             document.getElementById('sim-final-review-screen').classList.add('active');
             document.getElementById('sim-final-review-screen').style.display = 'flex';
+            // Asegurar stats oculto
+            document.getElementById('sim-screen-perf').classList.remove('active');
+            document.getElementById('sim-screen-perf').style.display = 'none';
         } else {
-            // En modo práctica, la pantalla de revisión es 'prac-review-screen'
             document.getElementById('prac-review-screen').classList.remove('hidden');
-            document.getElementById('prac-results-screen').classList.add('hidden'); // Asegurar que stats esté oculto
+            // Asegurar stats oculto
+            document.getElementById('prac-results-screen').classList.add('hidden');
         }
     },
 
-    // --- NUEVA: PASAR DE LISTA A ESTADÍSTICAS DE SESIÓN ---
+    // --- 7. PASAR DE LISTA A ESTADÍSTICAS ---
     showSessionResults(prefix) {
-        // Ocultar Lista
         if (prefix === 'sim') {
             document.getElementById('sim-final-review-screen').classList.remove('active');
             document.getElementById('sim-final-review-screen').style.display = 'none';
             
-            // Mostrar Stats Simulación
             const statsScreen = document.getElementById('sim-screen-perf');
             statsScreen.classList.add('active');
             statsScreen.style.display = 'flex';
         } else {
             document.getElementById('prac-review-screen').classList.add('hidden');
-            
-            // Mostrar Stats Práctica
             document.getElementById('prac-results-screen').classList.remove('hidden');
         }
     },
 
-    // --- LÓGICA DE GRÁFICOS Y ESTADÍSTICAS (DIFERENCIADA) ---
+    // --- 8. CÁLCULO DE ESTADÍSTICAS (DIFERENCIADO) ---
     calculateAndRenderCharts(prefix) {
         let correct = 0;
         let catMap = {};
 
-        // 1. Cálculo base de aciertos y categorías (Común para ambos)
         this.data.forEach(q => {
             const userAns = this.userAnswers[q.id];
             let isCorr = false;
             
-            // Normalizar y verificar respuesta
             if (userAns !== undefined && userAns !== null) {
                 const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
                 const ansChar = typeof userAns === 'number' ? String.fromCharCode(65 + userAns) : userAns;
@@ -367,7 +337,7 @@ const QuizEngine = {
 
             if (isCorr) correct++;
 
-            const cat = q.category || "General"; // Aseguramos que use 'category' o 'subject' según tu DB
+            const cat = q.category || "General";
             if (!catMap[cat]) catMap[cat] = { c: 0, t: 0 };
             catMap[cat].t++;
             if (isCorr) catMap[cat].c++;
@@ -376,34 +346,27 @@ const QuizEngine = {
         const total = this.data.length;
         const acc = total > 0 ? Math.round((correct / total) * 100) : 0;
 
-        // Renderizar textos básicos (Precisión y conteos numéricos)
+        // Renderizar Textos
         this.setText(`${prefix}-acc-val`, acc + "%");
         this.setText(`${prefix}-correct-val`, correct);
         this.setText(`${prefix}-incorrect-val`, total - correct);
 
-        // 2. LOGICA DEL PIE CHART (ESPECÍFICA POR MODO)
+        // Renderizar Pie Chart (Lógica Específica)
         const pie = document.getElementById(`${prefix}-perf-pie`);
-        
         if (pie) {
             if (prefix === 'sim') {
-                // --- MODO SIMULACIÓN (LIGHT): CORRECTO vs INCORRECTO ---
-                // Gráfico Bicolor: Verde (Correcto) / Rojo (Incorrecto)
+                // MODO SIMULACIÓN (LIGHT): CORRECTO vs INCORRECTO
                 const deg = Math.round((acc / 100) * 360);
                 pie.style.background = `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
-            
             } else {
-                // --- MODO PRÁCTICA (DARK): EASY / MEDIUM / HARD ---
-                // Gráfico Tricolor basado en la clasificación del usuario (this.stats)
+                // MODO PRÁCTICA (DARK): EASY / MEDIUM / HARD
                 const s = this.stats;
-                const totalRated = (s.easy + s.medium + s.hard) || 1; // Evitar división por 0
+                const totalRated = (s.easy + s.medium + s.hard) || 1; 
 
-                // Calcular grados para cada segmento
                 const degEasy = (s.easy / totalRated) * 360;
                 const degMed = (s.medium / totalRated) * 360;
-                const degHard = (s.hard / totalRated) * 360;
+                // degHard es el resto
 
-                // Construir el gradiente acumulativo
-                // Verde (Easy) -> Amarillo (Medium) -> Rojo (Hard)
                 pie.style.background = `conic-gradient(
                     #22c55e 0deg ${degEasy}deg, 
                     #facc15 ${degEasy}deg ${degEasy + degMed}deg, 
@@ -412,7 +375,7 @@ const QuizEngine = {
             }
         }
 
-        // 3. Renderizar Lista de Categorías (Común, ajusta estilos por CSS)
+        // Renderizar Categorías
         const catDiv = document.getElementById(`${prefix}-cat-list`);
         if (catDiv) {
             catDiv.innerHTML = '';
@@ -428,7 +391,7 @@ const QuizEngine = {
         }
     },
 
-    // --- 6. SIMULACIÓN (Lógica Específica) ---
+    // --- UTILS ---
     startSimTimer() {
         this.simTimerInterval = setInterval(() => {
             this.simTotalTime--;
@@ -449,7 +412,6 @@ const QuizEngine = {
         this.setText('sim-q-counter', `Question ${this.currentIndex + 1} of ${this.data.length}`);
         this.setText('sim-q-text', q.question_text);
 
-        // Parsear Paciente
         let pData = { patient: "N/A", cc: "-", history: "-", findings: "-" };
         if (q.clinical_cases) {
             const c = Array.isArray(q.clinical_cases) ? q.clinical_cases[0] : q.clinical_cases;
@@ -466,32 +428,28 @@ const QuizEngine = {
             }
         }
         
-        // Renderizar Tablas
         const setTable = (id, val) => { const el = document.getElementById(id); if(el) el.innerHTML = `<tr><td>${val}</td></tr>`; };
         setTable('sim-pat-demo', pData.patient);
         setTable('sim-pat-cc', pData.cc);
         setTable('sim-pat-hist', pData.history);
         setTable('sim-pat-find', pData.findings);
 
-        // Renderizar Opciones
         const container = document.getElementById('sim-options-container');
         container.innerHTML = '';
         [q.option_a, q.option_b, q.option_c, q.option_d].forEach((opt, idx) => {
             if (!opt) return;
             const div = document.createElement('div');
             div.className = 'sim-option';
-            // Simulación guarda el índice de la opción
             if (this.userAnswers[q.id] === idx) div.classList.add('selected'); 
             
             div.innerHTML = `<div class="sim-radio"></div> ${opt}`;
             div.onclick = () => {
-                this.userAnswers[q.id] = idx; // Guardamos índice en simulación
-                this.renderSimQuestion(); // Re-render para mostrar selección
+                this.userAnswers[q.id] = idx; 
+                this.renderSimQuestion(); 
             };
             container.appendChild(div);
         });
 
-        // Botón Mark
         const btnMark = document.getElementById('btn-sim-mark');
         if (this.markedQuestions.has(this.currentIndex)) {
             btnMark.classList.add('active');
@@ -532,33 +490,27 @@ const QuizEngine = {
         this.renderSimQuestion();
     },
 
-    // --- 7. UTILIDADES ---
     setText(id, txt) {
         const el = document.getElementById(id);
         if (el) el.innerText = txt;
     },
 
     goBack() {
-        // Redirección inteligente basada en dispositivo
         if (this.isMobile) window.location.href = 'mobile.html';
         else window.location.href = 'dashboard.html';
     }
 };
 
-// Exponer funciones globales para que los botones HTML "onclick" sigan funcionando
 window.classifyPractice = (s) => QuizEngine.classifyQuestion(s);
 window.nextPracticeQuestion = () => QuizEngine.nextQuestion();
-// ¡NUEVO! Conecta el botón de Práctica Review con la función para ir a estadísticas
-window.showPracticeResults = () => QuizEngine.showSessionResults('prac'); 
-
+window.finishPracticeQuiz = () => QuizEngine.finishQuiz();
 window.nextSimQuestion = () => QuizEngine.nextQuestion();
 window.toggleSimMark = () => QuizEngine.toggleSimMark();
 window.goToSimReview = () => QuizEngine.goToSimReview();
 window.returnToSimQuiz = () => QuizEngine.returnToSimQuiz();
 window.finishSimExam = () => QuizEngine.finishQuiz();
-// ¡NUEVO! Conecta el botón de Simulación Review con la función para ir a estadísticas
-window.showSimResults = () => QuizEngine.showSessionResults('sim'); 
+window.showPracticeResults = () => QuizEngine.showSessionResults('prac');
+window.showSimResults = () => QuizEngine.showSessionResults('sim');
 window.goToDashboard = () => QuizEngine.goBack();
 
-// Iniciar al cargar
 document.addEventListener('DOMContentLoaded', () => QuizEngine.init());
