@@ -44,10 +44,8 @@ const QuizEngine = {
              await this.fetchQuestions(count);
         } else {
             // Modo standalone sin categorías predefinidas: Cargar lista de categorías
-            // Aquí delegamos a una función que puede ser específica si la UI difiere mucho,
-            // pero intentaremos compartirla.
             if(typeof loadCategoriesUI === 'function') {
-                await loadCategoriesUI(); // Función que dejaremos en el HTML para UI específica
+                await loadCategoriesUI(); 
             } else {
                 console.warn("No loadCategoriesUI function found.");
             }
@@ -223,22 +221,109 @@ const QuizEngine = {
     },
 
     // --- 5. RESULTADOS ---
+
+    // --- NUEVA FUNCIÓN: Renderizar lista de revisión para Práctica ---
+    renderPracticeReview() {
+        const listContainer = document.getElementById('prac-review-list');
+        if (!listContainer) return;
+        
+        listContainer.innerHTML = ''; // Limpiar
+
+        this.data.forEach((q, index) => {
+            // 1. Determinar estado (Correcto/Incorrecto)
+            const userAns = this.userAnswers[q.id];
+            const isCorrect = userAns === q.correct_answer;
+            const statusText = isCorrect ? 'Correct' : (userAns ? 'Incorrect' : 'Skipped');
+            const statusColor = isCorrect ? '#22c55e' : '#ef4444'; // Verde o Rojo
+            const icon = isCorrect ? '✓' : '✕';
+
+            // 2. Crear elementos HTML
+            const itemDiv = document.createElement('div');
+            itemDiv.style.cssText = "background: #27272a; border-radius: 8px; overflow: hidden; border: 1px solid #333; margin-bottom: 10px;";
+
+            // Header (La fila visible)
+            const headerDiv = document.createElement('div');
+            headerDiv.style.cssText = "padding: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #18181b;";
+            headerDiv.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px; font-weight:bold; color:white;">
+                    <span style="color:#666;">Q ${index + 1}</span>
+                    <span style="color:${statusColor}; display:flex; align-items:center; gap:5px;">
+                        ${icon} ${statusText}
+                    </span>
+                </div>
+                <div style="color:#facc15; font-size:0.8rem; font-weight:600; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+                    Explain this <span>▼</span>
+                </div>
+            `;
+
+            // Detalle (Oculto inicialmente)
+            const detailDiv = document.createElement('div');
+            detailDiv.className = 'hidden';
+            detailDiv.style.cssText = "padding: 20px; background: #111; border-top: 1px solid #333; color: #ccc; line-height: 1.6; font-size: 0.95rem;";
+            
+            // Contenido del detalle: Pregunta + Explicación
+            detailDiv.innerHTML = `
+                <div style="margin-bottom:15px; font-weight:600; color:white;">${q.question_text}</div>
+                <div style="background:rgba(250, 204, 21, 0.1); border-left:3px solid #facc15; padding:15px; border-radius:4px;">
+                    <strong style="color:#facc15;">Explanation:</strong><br>
+                    ${q.explanation || 'No explanation available.'}
+                </div>
+            `;
+
+            // Lógica Toggle (Expandir/Colapsar)
+            headerDiv.onclick = () => {
+                const isHidden = detailDiv.classList.contains('hidden');
+                if (isHidden) {
+                    detailDiv.classList.remove('hidden');
+                    headerDiv.style.background = '#222';
+                } else {
+                    detailDiv.classList.add('hidden');
+                    headerDiv.style.background = '#18181b';
+                }
+            };
+
+            itemDiv.appendChild(headerDiv);
+            itemDiv.appendChild(detailDiv);
+            listContainer.appendChild(itemDiv);
+        });
+    },
+
+    // --- FUNCIÓN PRINCIPAL DE FINALIZACIÓN MODIFICADA ---
     finishQuiz() {
-        // Ocultar pantallas de quiz
+        // Detener timers si existen
+        if (this.simTimerInterval) clearInterval(this.simTimerInterval);
+
+        // Ocultar pantallas de quiz activas
         document.getElementById('prac-quiz-screen')?.classList.add('hidden');
         document.getElementById('sim-screen-quiz')?.classList.remove('active');
         document.getElementById('sim-screen-review')?.classList.remove('active');
 
-        // Mostrar pantalla de resultados
-        // Nota: Los IDs de resultados son casi idénticos en ambos HTML
-        const resultScreenId = this.mode.includes('simulation') ? 'sim-screen-perf' : 'prac-results-screen';
-        const el = document.getElementById(resultScreenId);
-        if(el) {
-            el.classList.remove('hidden');
-            el.style.display = 'flex'; // Forzar flex si estaba hidden
-        }
+        // LÓGICA DE VISUALIZACIÓN SEGÚN MODO
+        if (this.mode.includes('simulation')) {
+            // --- MODO SIMULACIÓN ---
+            const el = document.getElementById('sim-screen-perf');
+            if(el) {
+                el.classList.remove('hidden');
+                el.style.display = 'flex'; // Forzar display flex para simulación
+            }
+            // Mantenemos los gráficos para Simulación
+            this.calculateAndRenderCharts('sim'); 
 
-        // Cálculos
+        } else {
+            // --- MODO PRÁCTICA (NUEVA LISTA) ---
+            const el = document.getElementById('prac-results-screen');
+            if(el) {
+                el.classList.remove('hidden');
+                // Aseguramos que se muestre, el display lo maneja CSS o flex
+                el.style.display = 'flex'; 
+            }
+            // Llamamos a la nueva función de lista
+            this.renderPracticeReview();
+        }
+    },
+    
+    // Helper para mantener compatibilidad de gráficos con Simulación
+    calculateAndRenderCharts(prefix) {
         let correct = 0;
         let catMap = {};
 
@@ -246,17 +331,13 @@ const QuizEngine = {
             const ans = this.userAnswers[q.id];
             let isCorr = false;
             
-            // Normalizar respuesta (puede ser índice o letra)
-            if (ans !== undefined) {
-                const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
-                // Si es práctica guardamos Letra, si es Sim guardamos Índice (ajustar si es necesario)
-                // Aquí asumimos que ans puede ser Letra o Índice, comparamos ambas formas
-                const ansChar = typeof ans === 'number' ? String.fromCharCode(65 + ans) : ans;
-                const ansText = typeof ans === 'number' ? opts[ans] : opts[ans.charCodeAt(0) - 65];
-                
-                if (ansChar === q.correct_answer || ansText === q.correct_answer) isCorr = true;
-            }
-
+            // Lógica de corrección unificada (Soporta indice o letra)
+            const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
+            // Normalizar a letra o texto para comparar
+            const ansChar = typeof ans === 'number' ? String.fromCharCode(65 + ans) : ans;
+            const ansText = typeof ans === 'number' ? opts[ans] : (ans ? opts[ans.charCodeAt(0) - 65] : null);
+            
+            if (ansChar === q.correct_answer || ansText === q.correct_answer) isCorr = true;
             if (isCorr) correct++;
 
             const cat = q.subject || "General";
@@ -267,30 +348,19 @@ const QuizEngine = {
 
         const total = this.data.length;
         const acc = total > 0 ? Math.round((correct / total) * 100) : 0;
-        const prefix = this.mode.includes('simulation') ? 'sim' : 'prac';
-
-        // Renderizar DOM de resultados
+        
         this.setText(`${prefix}-acc-val`, acc + "%");
         this.setText(`${prefix}-correct-val`, correct);
         this.setText(`${prefix}-incorrect-val`, total - correct);
-
-        // Gráfico Circular (Pie Chart)
-        // Usamos lógica de colores de práctica o simulación
+        
+        // Render Pie solo si existe el elemento (Simulación)
         const pie = document.getElementById(`${prefix}-perf-pie`);
         if (pie) {
-            if (this.mode.includes('simulation')) {
-                const deg = Math.round((acc / 100) * 360);
-                pie.style.background = `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
-            } else {
-                // Modo práctica: 3 colores (Easy, Med, Hard)
-                const totDif = this.stats.easy + this.stats.medium + this.stats.hard || 1;
-                const pEasy = (this.stats.easy / totDif) * 360;
-                const pMed = (this.stats.medium / totDif) * 360;
-                pie.style.background = `conic-gradient(#22c55e 0deg ${pEasy}deg, #facc15 ${pEasy}deg ${pEasy + pMed}deg, #ef4444 ${pEasy + pMed}deg 360deg)`;
-            }
+            const deg = Math.round((acc / 100) * 360);
+            pie.style.background = `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
         }
-
-        // Renderizar Lista Categorías
+        
+        // Render Categorías
         const catDiv = document.getElementById(`${prefix}-cat-list`);
         if (catDiv) {
             catDiv.innerHTML = '';
@@ -298,9 +368,7 @@ const QuizEngine = {
                 catDiv.innerHTML += `
                     <div class="cat-item">
                         <span>${name}</span>
-                        <span style="font-family:monospace;">
-                            <span style="color:#22c55e">${d.c}</span> / <span style="color:#ef4444">${d.t - d.c}</span>
-                        </span>
+                        <span style="font-family:monospace;">${d.c}/${d.t}</span>
                     </div>`;
             }
         }
