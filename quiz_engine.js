@@ -221,90 +221,71 @@ const QuizEngine = {
 
     // --- FUNCIÓN UNIFICADA: Renderizar lista de revisión (Practice & Sim) ---
     renderFinalReview(prefix) {
-        // 'prefix' será 'prac' o 'sim'
-        const listContainer = document.getElementById(`${prefix}-review-list`);
+        // IDs de los nuevos contenedores de lista
+        const screenId = prefix === 'sim' ? 'sim-final-review-screen' : 'prac-review-screen';
+        const listContainer = document.getElementById(`${prefix}-final-list-content`);
+        
         if (!listContainer) return;
-        
-        listContainer.innerHTML = ''; // Limpiar lista anterior
+        listContainer.innerHTML = ''; 
 
-        // Definir estilos según el modo (Dark vs Light)
+        // Estilos según modo
         const isSim = (prefix === 'sim');
-        
-        // Colores Dark (Practice)
-        const styleDark = {
-            cardBg: '#27272a', border: '#333', text: 'white', 
-            headerBg: '#18181b', hoverBg: '#222', detailBg: '#111', detailText: '#ccc'
-        };
-        // Colores Light (Simulation)
-        const styleLight = {
-            cardBg: '#ffffff', border: '#e5e7eb', text: '#1f2937', 
-            headerBg: '#f9fafb', hoverBg: '#f3f4f6', detailBg: '#f9fafb', detailText: '#4b5563'
+        const theme = isSim ? {
+            card: '#ffffff', border: '#e5e7eb', text: '#1f2937', header: '#f9fafb', hover: '#f3f4f6', detail: '#f9fafb', detailText: '#4b5563', accent: '#235d88'
+        } : {
+            card: '#27272a', border: '#333', text: 'white', header: '#18181b', hover: '#222', detail: '#111', detailText: '#ccc', accent: '#facc15'
         };
 
-        const theme = isSim ? styleLight : styleDark;
+        let questionsShown = 0;
 
         this.data.forEach((q, index) => {
-            // 1. OBTENER RESPUESTA DEL USUARIO
             const userAns = this.userAnswers[q.id];
 
-            // --- FILTRO: SI NO FUE RESPONDIDA, NO LA MOSTRAMOS ---
-            if (userAns === undefined || userAns === null) return; 
+            // --- FILTRO: Solo preguntas respondidas ---
+            if (userAns === undefined || userAns === null) return;
+            questionsShown++;
 
-            // 2. Lógica de Corrección (Normalizar indice vs letra)
+            // Lógica de corrección
             const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
             const ansChar = typeof userAns === 'number' ? String.fromCharCode(65 + userAns) : userAns;
-            const ansText = typeof userAns === 'number' ? opts[userAns] : (userAns ? opts[ansChar.charCodeAt(0) - 65] : null);
-            
+            const ansText = typeof userAns === 'number' ? opts[userAns] : (ansChar ? opts[ansChar.charCodeAt(0) - 65] : null);
             const isCorrect = (ansChar === q.correct_answer || ansText === q.correct_answer);
             
             const statusText = isCorrect ? 'Correct' : 'Incorrect';
-            const statusColor = isCorrect ? '#22c55e' : '#ef4444'; // Verde o Rojo
+            const statusColor = isCorrect ? '#22c55e' : '#ef4444'; 
             const icon = isCorrect ? '✓' : '✕';
 
-            // 3. Crear elementos HTML con estilos dinámicos
+            // HTML del Item
             const itemDiv = document.createElement('div');
-            itemDiv.style.cssText = `background: ${theme.cardBg}; border-radius: 8px; overflow: hidden; border: 1px solid ${theme.border}; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);`;
+            itemDiv.style.cssText = `background:${theme.card}; border:1px solid ${theme.border}; border-radius:8px; margin-bottom:10px; overflow:hidden;`;
 
-            // Header (La fila visible)
             const headerDiv = document.createElement('div');
-            headerDiv.style.cssText = `padding: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: ${theme.headerBg}; transition: background 0.2s;`;
-            
+            headerDiv.style.cssText = `padding:15px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:${theme.header};`;
             headerDiv.innerHTML = `
-                <div style="display:flex; align-items:center; gap:12px; font-weight:bold; color:${theme.text};">
-                    <span style="opacity:0.6;">Q ${index + 1}</span>
-                    <span style="color:${statusColor}; display:flex; align-items:center; gap:6px; font-size:0.95rem;">
-                        ${icon} ${statusText}
-                    </span>
+                <div style="display:flex; align-items:center; gap:10px; color:${theme.text}; font-weight:bold;">
+                    <span style="opacity:0.7;">Q ${index + 1}</span>
+                    <span style="color:${statusColor}; display:flex; align-items:center; gap:5px;">${icon} ${statusText}</span>
                 </div>
-                <div style="color:${isSim ? '#d97706' : '#facc15'}; font-size:0.8rem; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
-                    Explain this <span>▼</span>
-                </div>
+                <div style="color:${theme.accent}; font-size:0.8rem; font-weight:700; text-transform:uppercase;">Explain this ▼</div>
             `;
 
-            // Detalle (Oculto inicialmente)
             const detailDiv = document.createElement('div');
             detailDiv.className = 'hidden';
-            detailDiv.style.cssText = `padding: 20px; background: ${theme.detailBg}; border-top: 1px solid ${theme.border}; color: ${theme.detailText}; line-height: 1.6; font-size: 0.95rem;`;
-            
-            // Contenido del detalle
+            detailDiv.style.cssText = `padding:20px; background:${theme.detail}; border-top:1px solid ${theme.border}; color:${theme.detailText}; line-height:1.5;`;
             detailDiv.innerHTML = `
-                <div style="margin-bottom:15px; font-weight:700; color:${theme.text}; font-size:1rem;">${q.question_text}</div>
-                
-                <div style="background:${isSim ? '#fffbeb' : 'rgba(250, 204, 21, 0.1)'}; border-left:4px solid ${isSim ? '#d97706' : '#facc15'}; padding:15px; border-radius:4px;">
-                    <strong style="color:${isSim ? '#d97706' : '#facc15'}; text-transform:uppercase; font-size:0.8rem;">Explanation:</strong><br>
-                    <span style="color:${theme.text}">${q.explanation || 'No explanation available.'}</span>
+                <div style="margin-bottom:15px; font-weight:600; color:${theme.text};">${q.question_text}</div>
+                <div style="background:${isSim?'#fffbeb':'rgba(250,204,21,0.1)'}; border-left:4px solid ${theme.accent}; padding:15px; border-radius:4px;">
+                    <strong style="color:${theme.accent};">EXPLANATION:</strong><br>${q.explanation || 'No explanation available.'}
                 </div>
             `;
 
-            // Lógica Toggle (Expandir/Colapsar)
             headerDiv.onclick = () => {
-                const isHidden = detailDiv.classList.contains('hidden');
-                if (isHidden) {
+                if (detailDiv.classList.contains('hidden')) {
                     detailDiv.classList.remove('hidden');
-                    headerDiv.style.background = theme.hoverBg;
+                    headerDiv.style.background = theme.hover;
                 } else {
                     detailDiv.classList.add('hidden');
-                    headerDiv.style.background = theme.headerBg;
+                    headerDiv.style.background = theme.header;
                 }
             };
 
@@ -312,44 +293,59 @@ const QuizEngine = {
             itemDiv.appendChild(detailDiv);
             listContainer.appendChild(itemDiv);
         });
-    },
 
-    // --- FUNCIÓN PRINCIPAL DE FINALIZACIÓN MODIFICADA ---
-    finishQuiz() {
-        // Detener timers si existen
-        if (this.simTimerInterval) clearInterval(this.simTimerInterval);
-
-        // Ocultar pantallas de quiz activas
-        document.getElementById('prac-quiz-screen')?.classList.add('hidden');
-        document.getElementById('sim-screen-quiz')?.classList.remove('active');
-        document.getElementById('sim-screen-review')?.classList.remove('active');
-
-        // LÓGICA DE VISUALIZACIÓN SEGÚN MODO
-        if (this.mode.includes('simulation')) {
-            // --- MODO SIMULACIÓN ---
-            const el = document.getElementById('sim-screen-perf');
-            if(el) {
-                el.classList.remove('hidden');
-                el.style.display = 'flex'; // Forzar display flex para simulación
-            }
-            // Mantenemos los gráficos para Simulación
-            this.calculateAndRenderCharts('sim'); 
-            // Llamamos a la nueva función de lista de revisión
-            this.renderFinalReview('sim');
-
-        } else {
-            // --- MODO PRÁCTICA (NUEVA LISTA) ---
-            const el = document.getElementById('prac-results-screen');
-            if(el) {
-                el.classList.remove('hidden');
-                // Aseguramos que se muestre, el display lo maneja CSS o flex
-                el.style.display = 'flex'; 
-            }
-            // Llamamos a la nueva función de lista de revisión
-            this.renderFinalReview('prac');
+        if (questionsShown === 0) {
+            listContainer.innerHTML = `<div style="padding:20px; text-align:center; color:${theme.detailText}">No questions answered yet.</div>`;
         }
     },
     
+    // --- FUNCIÓN PRINCIPAL DE FINALIZACIÓN MODIFICADA (FLUJO CORREGIDO) ---
+    finishQuiz() {
+        if (this.simTimerInterval) clearInterval(this.simTimerInterval);
+
+        // Ocultar Quiz Activo
+        document.getElementById('prac-quiz-screen')?.classList.add('hidden');
+        document.getElementById('sim-screen-quiz')?.classList.remove('active');
+        document.getElementById('sim-screen-review')?.classList.remove('active'); // Ocultar review intermedia
+
+        const prefix = this.mode.includes('simulation') ? 'sim' : 'prac';
+
+        // 1. Calcular Gráficos (Llena la pantalla de resultados PERO NO LA MUESTRA AÚN)
+        this.calculateAndRenderCharts(prefix);
+
+        // 2. Generar Lista de Revisión
+        this.renderFinalReview(prefix);
+
+        // 3. MOSTRAR PANTALLA DE LISTA DE REVISIÓN PRIMERO
+        if (prefix === 'sim') {
+            document.getElementById('sim-final-review-screen').classList.add('active');
+            document.getElementById('sim-final-review-screen').style.display = 'flex';
+        } else {
+            // En modo práctica, la pantalla de revisión es 'prac-review-screen'
+            document.getElementById('prac-review-screen').classList.remove('hidden');
+            document.getElementById('prac-results-screen').classList.add('hidden'); // Asegurar que stats esté oculto
+        }
+    },
+
+    // --- NUEVA: PASAR DE LISTA A ESTADÍSTICAS DE SESIÓN ---
+    showSessionResults(prefix) {
+        // Ocultar Lista
+        if (prefix === 'sim') {
+            document.getElementById('sim-final-review-screen').classList.remove('active');
+            document.getElementById('sim-final-review-screen').style.display = 'none';
+            
+            // Mostrar Stats Simulación
+            const statsScreen = document.getElementById('sim-screen-perf');
+            statsScreen.classList.add('active');
+            statsScreen.style.display = 'flex';
+        } else {
+            document.getElementById('prac-review-screen').classList.add('hidden');
+            
+            // Mostrar Stats Práctica
+            document.getElementById('prac-results-screen').classList.remove('hidden');
+        }
+    },
+
     // Helper para mantener compatibilidad de gráficos con Simulación
     calculateAndRenderCharts(prefix) {
         let correct = 0;
@@ -363,7 +359,7 @@ const QuizEngine = {
             const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
             // Normalizar a letra o texto para comparar
             const ansChar = typeof ans === 'number' ? String.fromCharCode(65 + ans) : ans;
-            const ansText = typeof ans === 'number' ? opts[ans] : (ans ? opts[ans.charCodeAt(0) - 65] : null);
+            const ansText = typeof ans === 'number' ? opts[ans] : (ansChar ? opts[ansChar.charCodeAt(0) - 65] : null);
             
             if (ansChar === q.correct_answer || ansText === q.correct_answer) isCorr = true;
             if (isCorr) correct++;
@@ -522,12 +518,16 @@ const QuizEngine = {
 // Exponer funciones globales para que los botones HTML "onclick" sigan funcionando
 window.classifyPractice = (s) => QuizEngine.classifyQuestion(s);
 window.nextPracticeQuestion = () => QuizEngine.nextQuestion();
-window.finishPracticeQuiz = () => QuizEngine.finishQuiz();
+// ¡NUEVO! Conecta el botón de Práctica Review con la función para ir a estadísticas
+window.showPracticeResults = () => QuizEngine.showSessionResults('prac'); 
+
 window.nextSimQuestion = () => QuizEngine.nextQuestion();
 window.toggleSimMark = () => QuizEngine.toggleSimMark();
 window.goToSimReview = () => QuizEngine.goToSimReview();
 window.returnToSimQuiz = () => QuizEngine.returnToSimQuiz();
 window.finishSimExam = () => QuizEngine.finishQuiz();
+// ¡NUEVO! Conecta el botón de Simulación Review con la función para ir a estadísticas
+window.showSimResults = () => QuizEngine.showSessionResults('sim'); 
 window.goToDashboard = () => QuizEngine.goBack();
 
 // Iniciar al cargar
