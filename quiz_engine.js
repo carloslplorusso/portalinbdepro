@@ -1,6 +1,3 @@
-// quiz_engine.js
-// Motor unificado de Quiz para Desktop y Mobile
-
 const QuizEngine = {
     // --- ESTADO DEL QUIZ ---
     data: [],
@@ -41,7 +38,7 @@ const QuizEngine = {
             // Modos que arrancan directo
             await this.fetchQuestions(count, term, cats);
         } else if (this.mode === 'simulation') {
-             await this.fetchQuestions(count);
+              await this.fetchQuestions(count);
         } else {
             // Modo standalone sin categorías predefinidas: Cargar lista de categorías
             if(typeof loadCategoriesUI === 'function') {
@@ -220,38 +217,66 @@ const QuizEngine = {
         }
     },
 
-    // --- 5. RESULTADOS ---
+    // --- 5. RESULTADOS (UNIFICADO) ---
 
-    // --- NUEVA FUNCIÓN: Renderizar lista de revisión para Práctica ---
-    renderPracticeReview() {
-        const listContainer = document.getElementById('prac-review-list');
+    // --- FUNCIÓN UNIFICADA: Renderizar lista de revisión (Practice & Sim) ---
+    renderFinalReview(prefix) {
+        // 'prefix' será 'prac' o 'sim'
+        const listContainer = document.getElementById(`${prefix}-review-list`);
         if (!listContainer) return;
         
-        listContainer.innerHTML = ''; // Limpiar
+        listContainer.innerHTML = ''; // Limpiar lista anterior
+
+        // Definir estilos según el modo (Dark vs Light)
+        const isSim = (prefix === 'sim');
+        
+        // Colores Dark (Practice)
+        const styleDark = {
+            cardBg: '#27272a', border: '#333', text: 'white', 
+            headerBg: '#18181b', hoverBg: '#222', detailBg: '#111', detailText: '#ccc'
+        };
+        // Colores Light (Simulation)
+        const styleLight = {
+            cardBg: '#ffffff', border: '#e5e7eb', text: '#1f2937', 
+            headerBg: '#f9fafb', hoverBg: '#f3f4f6', detailBg: '#f9fafb', detailText: '#4b5563'
+        };
+
+        const theme = isSim ? styleLight : styleDark;
 
         this.data.forEach((q, index) => {
-            // 1. Determinar estado (Correcto/Incorrecto)
+            // 1. OBTENER RESPUESTA DEL USUARIO
             const userAns = this.userAnswers[q.id];
-            const isCorrect = userAns === q.correct_answer;
-            const statusText = isCorrect ? 'Correct' : (userAns ? 'Incorrect' : 'Skipped');
+
+            // --- FILTRO: SI NO FUE RESPONDIDA, NO LA MOSTRAMOS ---
+            if (userAns === undefined || userAns === null) return; 
+
+            // 2. Lógica de Corrección (Normalizar indice vs letra)
+            const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
+            const ansChar = typeof userAns === 'number' ? String.fromCharCode(65 + userAns) : userAns;
+            const ansText = typeof userAns === 'number' ? opts[userAns] : (userAns ? opts[ansChar.charCodeAt(0) - 65] : null);
+            
+            const isCorrect = (ansChar === q.correct_answer || ansText === q.correct_answer);
+            
+            const statusText = isCorrect ? 'Correct' : 'Incorrect';
             const statusColor = isCorrect ? '#22c55e' : '#ef4444'; // Verde o Rojo
             const icon = isCorrect ? '✓' : '✕';
 
-            // 2. Crear elementos HTML
+            // 3. Crear elementos HTML con estilos dinámicos
             const itemDiv = document.createElement('div');
-            itemDiv.style.cssText = "background: #27272a; border-radius: 8px; overflow: hidden; border: 1px solid #333; margin-bottom: 10px;";
+            itemDiv.style.cssText = `background: ${theme.cardBg}; border-radius: 8px; overflow: hidden; border: 1px solid ${theme.border}; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);`;
 
             // Header (La fila visible)
             const headerDiv = document.createElement('div');
-            headerDiv.style.cssText = "padding: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #18181b;";
+            headerDiv.style.cssText = `padding: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: ${theme.headerBg}; transition: background 0.2s;`;
+            
             headerDiv.innerHTML = `
-                <div style="display:flex; align-items:center; gap:10px; font-weight:bold; color:white;">
-                    <span style="color:#666;">Q ${index + 1}</span>
-                    <span style="color:${statusColor}; display:flex; align-items:center; gap:5px;">
+                <div style="display:flex; align-items:center; gap:12px; font-weight:bold; color:${theme.text};">
+                    <span style="opacity:0.6;">Q ${index + 1}</span>
+                    <span style="color:${statusColor}; display:flex; align-items:center; gap:6px; font-size:0.95rem;">
                         ${icon} ${statusText}
                     </span>
                 </div>
-                <div style="color:#facc15; font-size:0.8rem; font-weight:600; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+                <div style="color:${isSim ? '#d97706' : '#facc15'}; font-size:0.8rem; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                     Explain this <span>▼</span>
                 </div>
             `;
@@ -259,14 +284,15 @@ const QuizEngine = {
             // Detalle (Oculto inicialmente)
             const detailDiv = document.createElement('div');
             detailDiv.className = 'hidden';
-            detailDiv.style.cssText = "padding: 20px; background: #111; border-top: 1px solid #333; color: #ccc; line-height: 1.6; font-size: 0.95rem;";
+            detailDiv.style.cssText = `padding: 20px; background: ${theme.detailBg}; border-top: 1px solid ${theme.border}; color: ${theme.detailText}; line-height: 1.6; font-size: 0.95rem;`;
             
-            // Contenido del detalle: Pregunta + Explicación
+            // Contenido del detalle
             detailDiv.innerHTML = `
-                <div style="margin-bottom:15px; font-weight:600; color:white;">${q.question_text}</div>
-                <div style="background:rgba(250, 204, 21, 0.1); border-left:3px solid #facc15; padding:15px; border-radius:4px;">
-                    <strong style="color:#facc15;">Explanation:</strong><br>
-                    ${q.explanation || 'No explanation available.'}
+                <div style="margin-bottom:15px; font-weight:700; color:${theme.text}; font-size:1rem;">${q.question_text}</div>
+                
+                <div style="background:${isSim ? '#fffbeb' : 'rgba(250, 204, 21, 0.1)'}; border-left:4px solid ${isSim ? '#d97706' : '#facc15'}; padding:15px; border-radius:4px;">
+                    <strong style="color:${isSim ? '#d97706' : '#facc15'}; text-transform:uppercase; font-size:0.8rem;">Explanation:</strong><br>
+                    <span style="color:${theme.text}">${q.explanation || 'No explanation available.'}</span>
                 </div>
             `;
 
@@ -275,10 +301,10 @@ const QuizEngine = {
                 const isHidden = detailDiv.classList.contains('hidden');
                 if (isHidden) {
                     detailDiv.classList.remove('hidden');
-                    headerDiv.style.background = '#222';
+                    headerDiv.style.background = theme.hoverBg;
                 } else {
                     detailDiv.classList.add('hidden');
-                    headerDiv.style.background = '#18181b';
+                    headerDiv.style.background = theme.headerBg;
                 }
             };
 
@@ -308,6 +334,8 @@ const QuizEngine = {
             }
             // Mantenemos los gráficos para Simulación
             this.calculateAndRenderCharts('sim'); 
+            // Llamamos a la nueva función de lista de revisión
+            this.renderFinalReview('sim');
 
         } else {
             // --- MODO PRÁCTICA (NUEVA LISTA) ---
@@ -317,8 +345,8 @@ const QuizEngine = {
                 // Aseguramos que se muestre, el display lo maneja CSS o flex
                 el.style.display = 'flex'; 
             }
-            // Llamamos a la nueva función de lista
-            this.renderPracticeReview();
+            // Llamamos a la nueva función de lista de revisión
+            this.renderFinalReview('prac');
         }
     },
     
@@ -426,7 +454,8 @@ const QuizEngine = {
             if (!opt) return;
             const div = document.createElement('div');
             div.className = 'sim-option';
-            if (this.userAnswers[q.id] === idx) div.classList.add('selected');
+            // Simulación guarda el índice de la opción
+            if (this.userAnswers[q.id] === idx) div.classList.add('selected'); 
             
             div.innerHTML = `<div class="sim-radio"></div> ${opt}`;
             div.onclick = () => {
