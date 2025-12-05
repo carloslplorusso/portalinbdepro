@@ -496,94 +496,25 @@
     </div>
 
     <script src="app.js"></script>
+    <script src="quiz_engine.js"></script> 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const mode = urlParams.get('mode') || 'practice'; 
-        const urlCountParam = urlParams.get('count');
-        const count = urlCountParam ? parseInt(urlCountParam) : null; 
-        
-        // SOLUCIÓN PUNTOS 4 y 5: Activación de clases en body
-        const isSimulation = (mode.includes('simulation') || mode === 'itemsets');
-        
-        let quizData = [];
-        let currentIndex = 0;
-        let userAnswers = {}; 
-        let practiceStats = { easy: 0, medium: 0, hard: 0 };
-        let markedQuestions = new Set();
-        let simTimerInterval;
-        let simTotalTime = 0; 
-        const searchTerm = urlParams.get('term');
-        
-        // --- VARIABLE GLOBAL NUEVA: CATEGORÍAS SELECCIONADAS ---
-        let selectedCategories = new Set();
+        // Función específica de UI para Desktop (Barras de progreso)
+        // QuizEngine la llamará automáticamente si mode = 'standalone'
+        async function loadCategoriesUI() {
+            if(typeof _supabase === 'undefined') return;
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const body = document.body;
-            
-            // Lógica de Modos (MODIFICADA PARA ACEPTAR 'CATS' EN URL)
-            if (isSimulation) {
-                body.classList.add('mode-simulation');
-                document.getElementById('root-simulation').classList.remove('hidden');
-                simTotalTime = count ? count * 90 : 50 * 90; 
-                startSimTimer();
-                await fetchQuestions(); 
-            } else {
-                body.classList.add('mode-practice');
-                document.getElementById('root-practice').classList.remove('hidden');
-                
-                // --- NUEVA LÓGICA DE DETECCIÓN DE URL ---
-                const urlCats = urlParams.get('cats'); // Verificamos si vienen categorías de app.js
-
-                if (urlCats) {
-                    // SI VIENEN CATEGORÍAS:
-                    console.log("Categoría detectada desde Dashboard:", urlCats);
-                    
-                    // 1. Agregamos la categoría al Set de seleccionadas
-                    urlCats.split(',').forEach(c => selectedCategories.add(decodeURIComponent(c)));
-                    
-                    // 2. Ocultamos la pantalla de selección interna inmediatamente
-                    document.getElementById('prac-start-screen').classList.add('hidden');
-                    
-                    // 3. Iniciamos la práctica directamente
-                    await startSelectedPractice();
-
-                } else if (mode === 'random' || mode === 'daily' || mode === 'search') {
-                    // Modos aleatorios o búsqueda
-                    await fetchQuestions();
-                } else {
-                    // SOLO si NO hay datos en la URL, mostramos la selección interna (fallback)
-                    await loadCategories();
-                }
-            }
-        });
-
-        // --- NUEVAS FUNCIONES PARA SELECCIÓN DE CATEGORÍAS ---
-
-        async function loadCategories() {
-            if(typeof _supabase === 'undefined') {
-                document.getElementById('category-list-container').innerHTML = '<p style="color:red">Error: Supabase not found.</p>';
-                return;
-            }
-
-            // 2. Obtener datos de Supabase
             await _supabase.auth.getUser(); 
             const { data, error } = await _supabase.rpc('get_category_progress');
-
             const container = document.getElementById('category-list-container');
             container.innerHTML = '';
 
-            if (error) {
-                console.error(error);
-                container.innerHTML = '<p style="color:red">Error loading categories.</p>';
-                return;
-            }
-
-            if (!data || data.length === 0) {
+            if (error || !data || data.length === 0) {
                 container.innerHTML = '<p style="color:#666">No categories found.</p>';
                 return;
             }
 
-            // === VERSIÓN DESKTOP: BARRAS DE PROGRESO ===
+            let selectedCategories = new Set();
+
             data.forEach(cat => {
                 const total = cat.total_questions || 0;
                 const answered = cat.answered_questions || 0;
@@ -591,7 +522,28 @@
 
                 const btn = document.createElement('div');
                 btn.className = 'btn-cat-select';
-                btn.onclick = () => toggleCategorySelection(btn, cat.category);
+                // Lógica visual local
+                btn.onclick = () => {
+                    btn.classList.toggle('selected');
+                    if(selectedCategories.has(cat.category)) selectedCategories.delete(cat.category);
+                    else selectedCategories.add(cat.category);
+                    
+                    const startBtn = document.getElementById('btn-start-selected');
+                    if (selectedCategories.size > 0) {
+                        startBtn.classList.add('ready');
+                        startBtn.innerText = `Start Practice (${selectedCategories.size})`;
+                        // Pasamos al QuizEngine las categorías vía URL recargando o usando una función interna
+                        startBtn.onclick = () => {
+                             const catsParam = Array.from(selectedCategories).map(encodeURIComponent).join(',');
+                             // Reiniciamos el engine con las categorías
+                             QuizEngine.fetchQuestions(null, null, catsParam);
+                        };
+                    } else {
+                        startBtn.classList.remove('ready');
+                        startBtn.innerText = 'Start Practice';
+                    }
+                };
+                
                 btn.innerHTML = `
                     <div class="cat-progress-bg" style="width: ${pct}%"></div>
                     <div class="cat-content-wrapper">
@@ -601,463 +553,6 @@
                 `;
                 container.appendChild(btn);
             });
-        }
-
-        function toggleCategorySelection(element, categoryName) {
-            element.classList.toggle('selected');
-            if (selectedCategories.has(categoryName)) {
-                selectedCategories.delete(categoryName);
-            } else {
-                selectedCategories.add(categoryName);
-            }
-
-            // Activar botón Start si hay al menos 1 seleccionado
-            const startBtn = document.getElementById('btn-start-selected');
-            if (selectedCategories.size > 0) {
-                startBtn.classList.add('ready');
-                startBtn.innerText = `Start Practice (${selectedCategories.size})`;
-            } else {
-                startBtn.classList.remove('ready');
-                startBtn.innerText = 'Start Practice';
-            }
-        }
-
-        async function startSelectedPractice() {
-            if (selectedCategories.size === 0) return;
-            
-            const btn = document.getElementById('btn-start-selected');
-            btn.innerText = "Loading...";
-
-            const catsArray = Array.from(selectedCategories);
-            
-            // Consulta filtrando por categorías seleccionadas y solo Standalone (case_id es null)
-            const { data, error } = await _supabase
-                .from('questions_bank')
-                .select('*, clinical_cases (*)')
-                .in('category', catsArray)
-                .is('case_id', null); 
-
-            if (error) {
-                alert("Error fetching questions.");
-                return;
-            }
-
-            if (!data || data.length === 0) {
-                alert("No questions available for selected categories.");
-                window.location.reload();
-                return;
-            }
-
-            // Preparar y mostrar Quiz
-            quizData = data.sort(() => Math.random() - 0.5);
-            currentIndex = 0;
-            
-            document.getElementById('prac-start-screen').classList.add('hidden');
-            document.getElementById('prac-quiz-screen').classList.remove('hidden');
-            renderPracticeQuestion();
-        }
-        // --- FIN NUEVAS FUNCIONES ---
-
-
-        async function fetchQuestions() {
-            if(typeof _supabase === 'undefined') { alert("Database error: Supabase not found."); return; }
-
-            let data = [];
-            
-            // CASO 1: RANDOM RUN (O DAILY) - 10 PREGUNTAS ALEATORIAS DE TODO EL BANCO
-            if (mode === 'random' || mode === 'daily') {
-                // 1. Traemos TODOS los IDs de la tabla (es una consulta ligera)
-                const { data: allIds } = await _supabase.from('questions_bank').select('id');
-                
-                if(allIds && allIds.length > 0) {
-                   // 2. Los mezclamos aleatoriamente (Shuffle)
-                   const shuffled = allIds.sort(() => 0.5 - Math.random());
-                   
-                   // 3. Tomamos solo los primeros 10
-                   const selectedIds = shuffled.slice(0, 10).map(x => x.id);
-                   
-                   // 4. Traemos la información completa de ESOS 10 IDs
-                   const res = await _supabase
-                       .from('questions_bank')
-                       .select('*, clinical_cases (*)')
-                       .in('id', selectedIds);
-                       
-                   data = res.data;
-                }
-            } 
-            // CASO 2: BÚSQUEDA
-            else if (mode === 'search' && searchTerm) {
-                 const res = await _supabase.from('questions_bank').select('*, clinical_cases (*)').ilike('question_text', `%${searchTerm}%`);
-                 data = res.data;
-            } 
-            // CASO 3: STANDARD / SIMULATION (Lógica normal)
-            else {
-                let query = _supabase.from('questions_bank').select('*, clinical_cases (*)');
-                if (isSimulation) query = query.not('case_id', 'is', null);
-                else query = query.is('case_id', null);
-                
-                query = query.limit(count || 150);
-                const res = await query;
-                data = res.data;
-            }
-
-            if (!data || data.length === 0) {
-                quizData = [{id:0, question_text: "No questions found.", option_a:"-", option_b:"-", correct_answer:"-", explanation:""}];
-            } else {
-                quizData = data;
-                // Si no es random (que ya viene mezclado por IDs), mezclamos aquí por seguridad
-                if(mode !== 'random' && mode !== 'daily') quizData.sort(() => Math.random() - 0.5);
-            }
-            
-            if (isSimulation) {
-                initSimQuiz();
-            } else {
-                // Si llegamos aquí es porque venimos de daily/search o count directo o random
-                document.getElementById('prac-start-screen').classList.add('hidden');
-                document.getElementById('prac-quiz-screen').classList.remove('hidden');
-                renderPracticeQuestion();
-            }
-        }
-
-        // --- FUNCIONES MODO PRÁCTICA ---
-
-        function initPracticeQuiz(selectedCount) {
-           // Fallback obsoleto, reemplazado por startSelectedPractice
-        }
-
-        function renderPracticeQuestion() {
-            const q = quizData[currentIndex]            
-            document.getElementById('prac-q-text').innerText = q.question_text;
-            
-            document.getElementById('prac-review-area').classList.add('hidden');
-            document.getElementById('prac-error-msg').classList.add('hidden');
-            document.getElementById('btn-prac-next').classList.add('hidden');
-            
-            const optsContainer = document.getElementById('prac-options-list');
-            optsContainer.innerHTML = '';
-
-            [q.option_a, q.option_b, q.option_c, q.option_d].forEach((opt, idx) => {
-                if(!opt) return;
-                const letter = String.fromCharCode(65 + idx);
-                const div = document.createElement('div');
-                div.className = 'prac-option';
-                div.id = `prac-opt-${idx}`;
-                div.innerHTML = `<div class="prac-radio"></div><span>${opt}</span>`;
-                div.onclick = () => handlePracticeOptionClick(idx, letter, q);
-                optsContainer.appendChild(div);
-            });
-        }
-
-        function handlePracticeOptionClick(idx, letter, q) {
-            if(userAnswers[q.id]) return;
-            userAnswers[q.id] = letter;
-            
-            const selectedDiv = document.getElementById(`prac-opt-${idx}`);
-            selectedDiv.classList.add('selected');
-            
-            // Revelar
-            const allOpts = document.getElementById('prac-options-list').children;
-            Array.from(allOpts).forEach((div, i) => {
-                div.classList.add('answered');
-                const optText = [q.option_a, q.option_b, q.option_c, q.option_d][i];
-                const optLet = String.fromCharCode(65+i);
-                if (optText === q.correct_answer || optLet === q.correct_answer) div.classList.add('correct');
-                else if (i === idx) div.classList.add('incorrect');
-            });
-
-            document.getElementById('prac-review-area').classList.remove('hidden');
-            document.getElementById('prac-explanation').innerHTML = q.explanation ? `<strong>Explanation:</strong><br>${q.explanation}` : "No explanation.";
-            document.getElementById('prac-explanation').classList.remove('hidden');
-        }
-
-        async function classifyPractice(status) {
-            // Guardar Stats Locales
-            if(status==='learning') practiceStats.hard++;
-            if(status==='reviewing') practiceStats.medium++;
-            if(status==='mastered') practiceStats.easy++;
-            
-            // Guardar en DB
-            const q = quizData[currentIndex];
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (session) {
-                 await _supabase.from('user_progress').insert([{ 
-                     user_id: session.user.id, question_id: q.id, status: status, quiz_mode: mode, timestamp: new Date() 
-                 }]);
-            }
-
-            document.getElementById('btn-prac-next').classList.remove('hidden');
-            document.getElementById('prac-error-msg').classList.add('hidden');
-            
-            // Visual Feedback Buttons
-            const btns = document.querySelectorAll('.btn-classify');
-            btns.forEach(b => b.classList.remove('active'));
-            if(status==='learning') document.querySelector('.btn-hard').classList.add('active');
-            if(status==='reviewing') document.querySelector('.btn-medium').classList.add('active');
-            if(status==='mastered') document.querySelector('.btn-easy').classList.add('active');
-        }
-
-        function nextPracticeQuestion() {
-            if (currentIndex < quizData.length - 1) {
-                currentIndex++;
-                renderPracticeQuestion();
-            } else {
-                finishPracticeQuiz();
-            }
-        }
-
-        // --- RESULTADOS PRÁCTICA (Updated Layout) ---
-        function finishPracticeQuiz() {
-            document.getElementById('prac-quiz-screen').classList.add('hidden');
-            document.getElementById('prac-results-screen').classList.remove('hidden');
-
-            // Cálculos
-            let correct = 0;
-            let catMap = {};
-
-            quizData.forEach(q => {
-                const ans = userAnswers[q.id];
-                let isCorr = false;
-                if(ans) {
-                        const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
-                        if(ans === q.correct_answer || opts[ans.charCodeAt(0)-65] === q.correct_answer) isCorr = true;
-                }
-                if(isCorr) correct++;
-                
-                const cat = q.subject || "General";
-                if(!catMap[cat]) catMap[cat] = {c:0, t:0};
-                catMap[cat].t++;
-                if(isCorr) catMap[cat].c++;
-            });
-
-            const total = quizData.length;
-            const acc = total > 0 ? Math.round((correct/total)*100) : 0;
-
-            // DOM Updates
-            document.getElementById('prac-acc-val').innerText = acc + "%";
-            document.getElementById('prac-correct-val').innerText = correct;
-            document.getElementById('prac-incorrect-val').innerText = total - correct;
-
-            // Pie Chart (EASY(Green), MED(Yellow), HARD(Red)) - Usamos los colores del Performance Practice
-            const deg = Math.round((acc / 100) * 360);
-            
-            // Calculamos porcentajes de difficulty:
-            const totDif = practiceStats.easy + practiceStats.medium + practiceStats.hard || 1;
-            const pEasy = (practiceStats.easy / totDif) * 360;
-            const pMed = (practiceStats.medium / totDif) * 360;
-            
-            // Sobrescribimos con el estilo 3 colores
-            document.getElementById('prac-perf-pie').style.background = `conic-gradient(
-                #28a745 0deg ${pEasy}deg, 
-                #ffc107 ${pEasy}deg ${pEasy + pMed}deg, 
-                #dc3545 ${pEasy + pMed}deg 360deg
-            )`;
-
-
-            // Landscape Bar (Easy, Medium, Hard)
-            const totRated = practiceStats.easy + practiceStats.medium + practiceStats.hard || 1;
-            const pctEasy = Math.round((practiceStats.easy/totRated)*100);
-            const pctMed = Math.round((practiceStats.medium/totRated)*100);
-            const pctHard = Math.round((practiceStats.hard/totRated)*100); // Lo que sobra es Hard visualmente
-
-            document.getElementById('prac-landscape-bar').innerHTML = `
-                <div class="landscape-seg bg-easy" style="width:${pctEasy}%">
-                    <span style="font-size:18px;">${practiceStats.easy}</span><span style="font-size:10px;">EASY</span>
-                </div>
-                <div class="landscape-seg bg-med" style="width:${pctMed}%">
-                    <span style="font-size:18px;">${practiceStats.medium}</span><span style="font-size:10px;">MED</span>
-                </div>
-                <div class="landscape-seg bg-hard seg-text-white" style="width:${100 - pctEasy - pctMed}%">
-                    <span style="font-size:18px;">${practiceStats.hard}</span><span style="font-size:10px;">HARD</span>
-                </div>
-            `;
-
-            // Categories
-            const catDiv = document.getElementById('prac-cat-list');
-            catDiv.innerHTML = '';
-            for(const [name, d] of Object.entries(catMap)) {
-                catDiv.innerHTML += `
-                    <div class="cat-item">
-                        <span>${name}</span>
-                        <span class="cat-scores">
-                            <span style="color:#28a745">${d.c}</span> / <span style="color:#dc3545">${d.t - d.c}</span>
-                        </span>
-                    </div>`;
-            }
-        }
-
-        // --- FUNCIONES MODO SIMULACIÓN ---
-        function startSimTimer() {
-            simTimerInterval = setInterval(() => {
-                simTotalTime--;
-                const h = Math.floor(simTotalTime/3600);
-                const m = Math.floor((simTotalTime%3600)/60);
-                const s = simTotalTime%60;
-                const tStr = `${h>0?h+':':''}${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-                document.getElementById('sim-timer').innerText = `Time: ${tStr}`;
-                document.getElementById('sim-timer-rev').innerText = `Time: ${tStr}`;
-                if(simTotalTime <= 0) finishSimExam();
-            }, 1000);
-        }
-
-        function initSimQuiz() { renderSimQuestion(); }
-
-        function renderSimQuestion() {
-            const q = quizData[currentIndex];
-            document.getElementById('sim-q-counter').innerText = `Question ${currentIndex + 1} of ${quizData.length}`;
-            document.getElementById('sim-q-text').innerText = q.question_text;
-            
-            // Paciente data
-            let pData = {patient:"N/A", cc:"-", history:"-", findings:"-"};
-            if(q.clinical_cases) {
-                 const c = Array.isArray(q.clinical_cases) ? q.clinical_cases[0] : q.clinical_cases;
-                 if(c && c.patient_data) {
-                        try {
-                            const parsed = typeof c.patient_data === 'string' ? JSON.parse(c.patient_data) : c.patient_data;
-                            pData = {
-                                patient: parsed.patient || parsed.age || "N/A",
-                                cc: parsed.cc || parsed.complaint || "-",
-                                history: parsed.history || "-",
-                                findings: parsed.findings || "-"
-                            };
-                        } catch(e){}
-                 }
-            }
-            document.getElementById('sim-pat-demo').innerHTML = `<tr><td>${pData.patient}</td></tr>`;
-            document.getElementById('sim-pat-cc').innerHTML = `<tr><td>${pData.cc}</td></tr>`;
-            document.getElementById('sim-pat-hist').innerHTML = `<tr><td>${pData.history}</td></tr>`;
-            document.getElementById('sim-pat-find').innerHTML = `<tr><td>${pData.findings}</td></tr>`;
-
-            const container = document.getElementById('sim-options-container');
-            container.innerHTML = '';
-            [q.option_a, q.option_b, q.option_c, q.option_d].forEach((opt, idx) => {
-                if(!opt) return;
-                const div = document.createElement('div');
-                div.className = 'sim-option';
-                if(userAnswers[q.id] === idx) div.classList.add('selected');
-                div.innerHTML = `<div class="sim-radio"></div> ${opt}`;
-                div.onclick = () => {
-                    userAnswers[q.id] = idx;
-                    renderSimQuestion(); 
-                };
-                container.appendChild(div);
-            });
-
-            // Mark btn
-            const btnMark = document.getElementById('btn-sim-mark');
-            if(markedQuestions.has(currentIndex)) {
-                btnMark.classList.add('active'); btnMark.innerText = "UNMARK";
-            } else {
-                btnMark.classList.remove('active'); btnMark.innerText = "MARK";
-            }
-        }
-
-        function nextSimQuestion() {
-            if(currentIndex < quizData.length-1) { currentIndex++; renderSimQuestion(); }
-            else goToSimReview();
-        }
-
-        function toggleSimMark() {
-            if(markedQuestions.has(currentIndex)) markedQuestions.delete(currentIndex);
-            else markedQuestions.add(currentIndex);
-            renderSimQuestion();
-        }
-
-        function goToSimReview() {
-            document.getElementById('sim-screen-quiz').classList.remove('active');
-            document.getElementById('sim-screen-review').classList.add('active');
-            const body = document.getElementById('sim-review-body');
-            body.innerHTML = '';
-            quizData.forEach((q, i) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>Question ${i+1}</td>
-                    <td style="text-align:center; color:#235d88; font-weight:bold;">${markedQuestions.has(i)?'✓':''}</td>
-                    <td style="text-align:center;">${userAnswers[q.id] !== undefined ? 'Answered' : '-'}</td>
-                `;
-                tr.onclick = () => { currentIndex = i; returnToSimQuiz(); };
-                body.appendChild(tr);
-            });
-        }
-
-        function returnToSimQuiz() {
-            document.getElementById('sim-screen-review').classList.remove('active');
-            document.getElementById('sim-screen-quiz').classList.add('active');
-            renderSimQuestion();
-        }
-
-        async function finishSimExam() {
-            clearInterval(simTimerInterval);
-            document.getElementById('sim-screen-review').classList.remove('active');
-            document.getElementById('sim-screen-perf').style.display = 'flex'; // Activar flex para centrar
-
-            let correct = 0;
-            let catMap = {};
-            const { data: { session } } = await _supabase.auth.getSession();
-            const updates = [];
-
-            quizData.forEach(q => {
-                const idx = userAnswers[q.id];
-                let isCorr = false;
-                if(idx !== undefined) {
-                    const txt = [q.option_a, q.option_b, q.option_c, q.option_d][idx];
-                    const lettr = String.fromCharCode(65+idx);
-                    if(txt === q.correct_answer || lettr === q.correct_answer) isCorr = true;
-                }
-                if(isCorr) correct++;
-                
-                const cat = q.subject || "General";
-                if(!catMap[cat]) catMap[cat] = {c:0, t:0};
-                catMap[cat].t++;
-                if(isCorr) catMap[cat].c++;
-
-                if(session && idx !== undefined) {
-                    updates.push({
-                        user_id: session.user.id, question_id: q.id, status: isCorr?'mastered':'learning', quiz_mode:mode, timestamp: new Date()
-                    });
-                }
-            });
-
-            if(updates.length > 0 && session) await _supabase.from('user_progress').insert(updates);
-
-            const total = quizData.length;
-            const acc = total>0 ? Math.round((correct/total)*100) : 0;
-
-            document.getElementById('sim-acc-val').innerText = acc+"%";
-            document.getElementById('sim-correct-val').innerText = correct;
-            document.getElementById('sim-incorrect-val').innerText = total - correct;
-
-            // Pie Chart (Verde/Rojo)
-            const deg = Math.round((acc/100)*360);
-            document.getElementById('sim-perf-pie').style.background = `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
-
-            // Bar (Correct/Incorrect)
-            const pctCorr = Math.round((correct/total)*100);
-            document.getElementById('sim-landscape-bar').innerHTML = `
-                <div class="landscape-seg bg-easy" style="width:${pctCorr}%">
-                    <span style="font-size:18px;">${correct}</span><span style="font-size:10px;">CORRECT</span>
-                </div>
-                <div class="landscape-seg bg-hard seg-text-white" style="width:${100-pctCorr}%">
-                    <span style="font-size:18px;">${total-correct}</span><span style="font-size:10px;">INCORRECT</span>
-                </div>
-            `;
-
-            // Cats
-            const catDiv = document.getElementById('sim-cat-list');
-            catDiv.innerHTML = '';
-            for(const [name, d] of Object.entries(catMap)) {
-                catDiv.innerHTML += `
-                    <div class="cat-item">
-                        <span>${name}</span>
-                        <span class="cat-scores">
-                            <span style="color:#22c55e">${d.c}</span> / <span style="color:#ef4444">${d.t - d.c}</span>
-                        </span>
-                    </div>`;
-            }
-        }
-
-        function goToDashboard() {
-            // Siempre dashboard de escritorio
-            window.location.href = 'dashboard.html';
         }
     </script>
 </body>
