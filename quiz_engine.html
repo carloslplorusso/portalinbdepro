@@ -219,14 +219,17 @@
             padding: 40px;
             align-items: start;
         }
+        /* NOTA: Estos estilos son antiguos y no se usan en el nuevo layout de 'sim-screen-perf' */
 
         .perf-title {
             font-size: 32px; font-weight: bold; text-align: center;
             color: #f0f0f0; margin-bottom: 30px; grid-column: 1 / -1;
         }
+        /* NOTA: Estos estilos son antiguos y no se usan en el nuevo layout de 'sim-screen-perf' */
 
         /* Chart Section */
         .chart-section { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; }
+        /* NOTA: Estos estilos son antiguos y no se usan en el nuevo layout de 'sim-screen-perf' */
         
         .pie-chart {
             width: 220px; height: 220px; border-radius: 50%; position: relative;
@@ -452,35 +455,21 @@
             </div>
         </div>
 
-        <div id="sim-screen-perf" class="sim-screen" style="background:#111; justify-content:center; align-items:center;">
-             <div class="perf-container" style="background:#1c1c1c;">
-                <div class="perf-title">Performance Report</div>
+        <div id="sim-screen-perf" class="sim-screen" style="background:#f2f2f2; justify-content:flex-start; align-items:center; padding-top:50px;">
+             <div class="perf-container" style="background:#ffffff; color:#333; display:flex; flex-direction:column; width:100%; max-width:800px; padding:40px; gap:0; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+                
+                <h2 style="color:#235d88; text-align:center; margin-bottom:30px; text-transform:uppercase; font-size:1.8rem;">Exam Review</h2>
 
-                <div class="chart-section">
-                    <div class="pie-chart" id="sim-perf-pie">
-                        <div class="pie-center">
-                            <span class="acc-text" id="sim-acc-val">0%</span>
-                            <span class="acc-label">Accuracy</span>
-                        </div>
+                <div id="sim-review-list" style="width:100%; display:flex; flex-direction:column; gap:15px;">
                     </div>
-                    <div class="data-row">
-                        <span class="col-green" id="sim-correct-val">0</span> <span style="color:#555">/</span> <span class="col-red" id="sim-incorrect-val">0</span>
-                    </div>
-                    <button onclick="goToDashboard()" style="margin-top:30px; background:transparent; border:1px solid #555; color:white; padding:10px 30px; border-radius:8px; cursor:pointer;">EXIT EXAM</button>
-                </div>
 
-                <div class="stats-section">
-                    <div class="landscape-bar" id="sim-landscape-bar">
-                        </div>
-                    <div class="cat-list-box">
-                        <div style="text-align:center; color:#aaa; font-weight:bold; margin-bottom:15px; font-size:14px;">CATEGORIES PERFORMANCE</div>
-                        <div id="sim-cat-list"></div>
-                    </div>
-                </div>
+                <button onclick="window.location.href='stats.html'" 
+                    style="margin-top:40px; background:#235d88; color:#fff; padding:18px; border-radius:8px; font-weight:800; font-size:1rem; border:none; cursor:pointer; width:100%; text-transform:uppercase; transition:0.2s;">
+                    View Full Statistics
+                </button>
             </div>
         </div>
-
-    </div>
+        </div>
 
     <script src="app.js"></script>
     <script src="quiz_engine.js"></script> 
