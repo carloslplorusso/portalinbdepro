@@ -478,35 +478,21 @@
             </div>
         </div>
 
-        <div id="sim-screen-perf" class="sim-screen" style="background:#111; padding:20px;">
-             <div class="perf-container" style="background:#1c1c1c;">
-                <div class="perf-title">Exam Results</div>
-
-                <div class="chart-section">
-                    <div class="pie-chart" id="sim-perf-pie">
-                        <div class="pie-center">
-                            <span class="acc-text" id="sim-acc-val">0%</span>
-                            <span class="acc-label">Score</span>
-                        </div>
-                    </div>
-                    <div class="data-row">
-                        <span class="col-green" id="sim-correct-val">0</span> <span style="color:#555">/</span> <span class="col-red" id="sim-incorrect-val">0</span>
-                    </div>
-                </div>
-
-                <div class="stats-section">
-                    <div class="landscape-bar" id="sim-landscape-bar"></div>
-                    <div class="cat-list-box">
-                        <div style="text-align:center; color:#aaa; font-weight:bold; margin-bottom:10px; font-size:0.8rem;">CATEGORY BREAKDOWN</div>
-                        <div id="sim-cat-list"></div>
-                    </div>
-                </div>
+        <div id="sim-screen-perf" class="sim-screen" style="background:#f2f2f2; padding:20px;">
+             <div class="perf-container" style="background:#ffffff; color:#333; padding:25px; display:flex; flex-direction:column; gap:0; box-shadow: 0 5px 20px rgba(0,0,0,0.05);">
                 
-                <button onclick="goToDashboard()" style="width:100%; padding:15px; background:#fff; color:#000; border:none; border-radius:10px; font-weight:800; text-transform:uppercase;">Exit Exam</button>
+                <h2 style="color:#235d88; text-align:center; margin-bottom:20px; font-size:1.5rem;">Exam Review</h2>
+
+                <div id="sim-review-list" style="width:100%; display:flex; flex-direction:column; gap:10px;">
+                    </div>
+                
+                <button onclick="window.location.href='stats.html'" 
+                    style="margin-top:25px; width:100%; padding:15px; background:#235d88; color:#fff; border:none; border-radius:10px; font-weight:800; text-transform:uppercase; font-size:1rem;">
+                    View Statistics
+                </button>
             </div>
         </div>
-
-    </div>
+        </div>
 
     <script src="app.js"></script>
     <script src="quiz_engine.js"></script> 
