@@ -346,25 +346,28 @@ const QuizEngine = {
         }
     },
 
-    // Helper para mantener compatibilidad de gráficos con Simulación
+    // --- LÓGICA DE GRÁFICOS Y ESTADÍSTICAS (DIFERENCIADA) ---
     calculateAndRenderCharts(prefix) {
         let correct = 0;
         let catMap = {};
 
+        // 1. Cálculo base de aciertos y categorías (Común para ambos)
         this.data.forEach(q => {
-            const ans = this.userAnswers[q.id];
+            const userAns = this.userAnswers[q.id];
             let isCorr = false;
             
-            // Lógica de corrección unificada (Soporta indice o letra)
-            const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
-            // Normalizar a letra o texto para comparar
-            const ansChar = typeof ans === 'number' ? String.fromCharCode(65 + ans) : ans;
-            const ansText = typeof ans === 'number' ? opts[ans] : (ansChar ? opts[ansChar.charCodeAt(0) - 65] : null);
-            
-            if (ansChar === q.correct_answer || ansText === q.correct_answer) isCorr = true;
+            // Normalizar y verificar respuesta
+            if (userAns !== undefined && userAns !== null) {
+                const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
+                const ansChar = typeof userAns === 'number' ? String.fromCharCode(65 + userAns) : userAns;
+                const ansText = typeof userAns === 'number' ? opts[userAns] : (userAns.length > 1 ? userAns : opts[ansChar?.charCodeAt(0) - 65]);
+                
+                if (ansChar === q.correct_answer || ansText === q.correct_answer) isCorr = true;
+            }
+
             if (isCorr) correct++;
 
-            const cat = q.subject || "General";
+            const cat = q.category || "General"; // Aseguramos que use 'category' o 'subject' según tu DB
             if (!catMap[cat]) catMap[cat] = { c: 0, t: 0 };
             catMap[cat].t++;
             if (isCorr) catMap[cat].c++;
@@ -372,19 +375,44 @@ const QuizEngine = {
 
         const total = this.data.length;
         const acc = total > 0 ? Math.round((correct / total) * 100) : 0;
-        
+
+        // Renderizar textos básicos (Precisión y conteos numéricos)
         this.setText(`${prefix}-acc-val`, acc + "%");
         this.setText(`${prefix}-correct-val`, correct);
         this.setText(`${prefix}-incorrect-val`, total - correct);
-        
-        // Render Pie solo si existe el elemento (Simulación)
+
+        // 2. LOGICA DEL PIE CHART (ESPECÍFICA POR MODO)
         const pie = document.getElementById(`${prefix}-perf-pie`);
-        if (pie) {
-            const deg = Math.round((acc / 100) * 360);
-            pie.style.background = `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
-        }
         
-        // Render Categorías
+        if (pie) {
+            if (prefix === 'sim') {
+                // --- MODO SIMULACIÓN (LIGHT): CORRECTO vs INCORRECTO ---
+                // Gráfico Bicolor: Verde (Correcto) / Rojo (Incorrecto)
+                const deg = Math.round((acc / 100) * 360);
+                pie.style.background = `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
+            
+            } else {
+                // --- MODO PRÁCTICA (DARK): EASY / MEDIUM / HARD ---
+                // Gráfico Tricolor basado en la clasificación del usuario (this.stats)
+                const s = this.stats;
+                const totalRated = (s.easy + s.medium + s.hard) || 1; // Evitar división por 0
+
+                // Calcular grados para cada segmento
+                const degEasy = (s.easy / totalRated) * 360;
+                const degMed = (s.medium / totalRated) * 360;
+                const degHard = (s.hard / totalRated) * 360;
+
+                // Construir el gradiente acumulativo
+                // Verde (Easy) -> Amarillo (Medium) -> Rojo (Hard)
+                pie.style.background = `conic-gradient(
+                    #22c55e 0deg ${degEasy}deg, 
+                    #facc15 ${degEasy}deg ${degEasy + degMed}deg, 
+                    #ef4444 ${degEasy + degMed}deg 360deg
+                )`;
+            }
+        }
+
+        // 3. Renderizar Lista de Categorías (Común, ajusta estilos por CSS)
         const catDiv = document.getElementById(`${prefix}-cat-list`);
         if (catDiv) {
             catDiv.innerHTML = '';
@@ -392,7 +420,9 @@ const QuizEngine = {
                 catDiv.innerHTML += `
                     <div class="cat-item">
                         <span>${name}</span>
-                        <span style="font-family:monospace;">${d.c}/${d.t}</span>
+                        <span style="font-family:monospace; font-weight:bold;">
+                            <span style="color:#22c55e">${d.c}</span> / <span style="color:#ef4444">${d.t - d.c}</span>
+                        </span>
                     </div>`;
             }
         }
