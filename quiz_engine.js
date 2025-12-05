@@ -23,17 +23,19 @@ const QuizEngine = {
         
         console.log(`QuizEngine iniciado. Modo: ${this.mode}, Mobile: ${this.isMobile}`);
 
+        // Configurar clases en el Body para CSS específico
         const isSimulation = (this.mode.includes('simulation') || this.mode === 'itemsets');
         if (isSimulation) {
             document.body.classList.add('mode-simulation');
             document.getElementById('root-simulation')?.classList.remove('hidden');
-            this.simTotalTime = count ? count * 90 : 100 * 90; 
+            this.simTotalTime = count ? count * 90 : 100 * 90; // 90 segs por pregunta aprox
             this.startSimTimer();
         } else {
             document.body.classList.add('mode-practice');
             document.getElementById('root-practice')?.classList.remove('hidden');
         }
 
+        // Decidir si cargar preguntas o mostrar selección
         if (this.mode === 'random' || this.mode === 'daily' || this.mode === 'search' || cats) {
             await this.fetchQuestions(count, term, cats);
         } else if (this.mode === 'simulation') {
@@ -54,6 +56,7 @@ const QuizEngine = {
         let query = _supabase.from('questions_bank').select('*, clinical_cases (*)');
         let data = [];
 
+        // Lógica de Filtros
         if (this.mode === 'random' || this.mode === 'daily') {
             const { data: allIds } = await _supabase.from('questions_bank').select('id');
             if (allIds) {
@@ -198,7 +201,7 @@ const QuizEngine = {
         }
     },
 
-    // --- 5. RENDERIZAR LISTA DE REVISIÓN ---
+    // --- 5. RENDERIZAR LISTA DE REVISIÓN (SOLO RESPONDIDAS) ---
     renderFinalReview(prefix) {
         const listContainer = document.getElementById(`${prefix}-final-list-content`);
         if (!listContainer) return;
@@ -216,13 +219,13 @@ const QuizEngine = {
 
         this.data.forEach((q, index) => {
             const userAns = this.userAnswers[q.id];
-            // Filtro: Solo mostrar si fue respondida
+            // --- FILTRO: Solo mostrar si fue respondida ---
             if (userAns === undefined || userAns === null) return; 
             questionsShown++;
 
             const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
             const ansChar = typeof userAns === 'number' ? String.fromCharCode(65 + userAns) : userAns;
-            const ansText = typeof userAns === 'number' ? opts[userAns] : (userAns.length > 1 ? userAns : opts[ansChar?.charCodeAt(0) - 65]);
+            const ansText = typeof userAns === 'number' ? opts[userAns] : (userAns.length > 1 ? userAns : opts[ansChar?.charCodeAt(0) - 65] || null);
             const isCorrect = (ansChar === q.correct_answer || ansText === q.correct_answer);
             
             const statusText = isCorrect ? 'Correct' : 'Incorrect';
@@ -272,7 +275,7 @@ const QuizEngine = {
         }
     },
     
-    // --- 6. FUNCIÓN DE FINALIZACIÓN (FLUJO: QUIZ -> LISTA) ---
+    // --- 6. FUNCIÓN DE FINALIZACIÓN (FLUJO: QUIZ -> LISTA DE REVISIÓN) ---
     finishQuiz() {
         if (this.simTimerInterval) clearInterval(this.simTimerInterval);
 
@@ -293,28 +296,35 @@ const QuizEngine = {
         if (prefix === 'sim') {
             document.getElementById('sim-final-review-screen').classList.add('active');
             document.getElementById('sim-final-review-screen').style.display = 'flex';
-            // Asegurar stats oculto
+            // Asegurar que la pantalla de stats esté oculta inicialmente
             document.getElementById('sim-screen-perf').classList.remove('active');
             document.getElementById('sim-screen-perf').style.display = 'none';
         } else {
+            // En modo práctica, la pantalla de revisión es 'prac-review-screen'
             document.getElementById('prac-review-screen').classList.remove('hidden');
-            // Asegurar stats oculto
+            // Asegurar que la pantalla de stats esté oculta inicialmente
             document.getElementById('prac-results-screen').classList.add('hidden');
         }
     },
 
-    // --- 7. PASAR DE LISTA A ESTADÍSTICAS ---
+    // --- 7. PASAR DE LISTA A ESTADÍSTICAS (SE LLAMA DESDE EL BOTÓN) ---
     showSessionResults(prefix) {
         if (prefix === 'sim') {
+            // Ocultar Lista
             document.getElementById('sim-final-review-screen').classList.remove('active');
             document.getElementById('sim-final-review-screen').style.display = 'none';
             
+            // Mostrar Stats Simulación (Correct/Incorrect)
             const statsScreen = document.getElementById('sim-screen-perf');
             statsScreen.classList.add('active');
             statsScreen.style.display = 'flex';
         } else {
+            // Ocultar Lista
             document.getElementById('prac-review-screen').classList.add('hidden');
+            
+            // Mostrar Stats Práctica (Easy/Med/Hard)
             document.getElementById('prac-results-screen').classList.remove('hidden');
+            document.getElementById('prac-results-screen').style.display = 'flex';
         }
     },
 
@@ -323,6 +333,7 @@ const QuizEngine = {
         let correct = 0;
         let catMap = {};
 
+        // 1. Cálculo base
         this.data.forEach(q => {
             const userAns = this.userAnswers[q.id];
             let isCorr = false;
@@ -351,15 +362,18 @@ const QuizEngine = {
         this.setText(`${prefix}-correct-val`, correct);
         this.setText(`${prefix}-incorrect-val`, total - correct);
 
-        // Renderizar Pie Chart (Lógica Específica)
+        // 2. PIE CHART (LÓGICA ESPECÍFICA)
         const pie = document.getElementById(`${prefix}-perf-pie`);
+        
         if (pie) {
             if (prefix === 'sim') {
                 // MODO SIMULACIÓN (LIGHT): CORRECTO vs INCORRECTO
                 const deg = Math.round((acc / 100) * 360);
                 pie.style.background = `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
+            
             } else {
                 // MODO PRÁCTICA (DARK): EASY / MEDIUM / HARD
+                // Usamos this.stats para colorear el gráfico
                 const s = this.stats;
                 const totalRated = (s.easy + s.medium + s.hard) || 1; 
 
@@ -375,7 +389,7 @@ const QuizEngine = {
             }
         }
 
-        // Renderizar Categorías
+        // 3. Renderizar Lista de Categorías
         const catDiv = document.getElementById(`${prefix}-cat-list`);
         if (catDiv) {
             catDiv.innerHTML = '';
