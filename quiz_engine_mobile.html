@@ -403,21 +403,42 @@
             </div>
         </div>
 
-        <div id="prac-results-screen" class="hidden fade-in" style="min-height:100vh; padding:20px 0 50px 0;">
+        <div id="prac-review-screen" class="hidden fade-in" style="min-height:100vh; padding:20px 0 50px 0;">
             <div class="perf-container" style="padding:20px; display:flex; flex-direction:column; gap:0;">
-                
                 <h2 style="color:#facc15; text-align:center; margin-bottom:20px; font-size:1.5rem;">Session Review</h2>
-
-                <div id="prac-review-list" style="width:100%; display:flex; flex-direction:column; gap:10px;">
-                    </div>
-                
-                <button onclick="window.location.href='stats.html'" 
+                <div id="prac-final-list-content" style="width:100%; display:flex; flex-direction:column; gap:10px;"></div>
+                <button onclick="QuizEngine.showSessionResults('prac')" 
                     style="margin-top:25px; width:100%; padding:15px; background:#facc15; color:#000; border:none; border-radius:10px; font-weight:800; text-transform:uppercase; font-size:1rem;">
                     View Statistics
                 </button>
             </div>
         </div>
-    </div>
+
+        <div id="prac-results-screen" class="hidden fade-in" style="min-height:100vh; padding-top:20px;">
+            <div class="perf-container">
+                <div class="perf-title">Session Report</div>
+                <div class="chart-section">
+                    <div class="pie-chart" id="prac-perf-pie">
+                        <div class="pie-center">
+                            <span class="acc-text" id="prac-acc-val">0%</span>
+                            <span class="acc-label">Accuracy</span>
+                        </div>
+                    </div>
+                    <div class="data-row">
+                        <span class="col-green" id="prac-correct-val">0</span> / <span class="col-red" id="prac-incorrect-val">0</span>
+                    </div>
+                </div>
+                <div class="stats-section">
+                    <div class="landscape-bar" id="prac-landscape-bar"></div>
+                    <div class="cat-list-box">
+                        <div style="text-align:center; color:#aaa; font-weight:bold; margin-bottom:10px; font-size:0.8rem;">TOPIC BREAKDOWN</div>
+                        <div id="prac-cat-list"></div>
+                    </div>
+                </div>
+                <button onclick="goToDashboard()" style="width:100%; padding:15px; background:#fff; color:#000; border:none; border-radius:10px; font-weight:800; text-transform:uppercase;">Back to Dashboard</button>
+            </div>
+        </div>
+        </div>
 
     <div id="root-simulation" class="hidden">
         
@@ -478,18 +499,39 @@
             </div>
         </div>
 
-        <div id="sim-screen-perf" class="sim-screen" style="background:#f2f2f2; padding:20px;">
-             <div class="perf-container" style="background:#ffffff; color:#333; padding:25px; display:flex; flex-direction:column; gap:0; box-shadow: 0 5px 20px rgba(0,0,0,0.05);">
-                
+        <div id="sim-final-review-screen" class="sim-screen" style="background:#f2f2f2; padding:20px; display:none;">
+            <div class="perf-container" style="background:#ffffff; color:#333; padding:25px; display:flex; flex-direction:column; gap:0; box-shadow: 0 5px 20px rgba(0,0,0,0.05);">
                 <h2 style="color:#235d88; text-align:center; margin-bottom:20px; font-size:1.5rem;">Exam Review</h2>
-
-                <div id="sim-review-list" style="width:100%; display:flex; flex-direction:column; gap:10px;">
-                    </div>
-                
-                <button onclick="window.location.href='stats.html'" 
+                <div id="sim-final-list-content" style="width:100%; display:flex; flex-direction:column; gap:10px;"></div>
+                <button onclick="QuizEngine.showSessionResults('sim')" 
                     style="margin-top:25px; width:100%; padding:15px; background:#235d88; color:#fff; border:none; border-radius:10px; font-weight:800; text-transform:uppercase; font-size:1rem;">
                     View Statistics
                 </button>
+            </div>
+        </div>
+
+        <div id="sim-screen-perf" class="sim-screen" style="background:#111; padding:20px; display:none;">
+            <div class="perf-container" style="background:#1c1c1c;">
+                <div class="perf-title">Exam Results</div>
+                <div class="chart-section">
+                    <div class="pie-chart" id="sim-perf-pie">
+                        <div class="pie-center">
+                            <span class="acc-text" id="sim-acc-val">0%</span>
+                            <span class="acc-label">Score</span>
+                        </div>
+                    </div>
+                    <div class="data-row">
+                        <span class="col-green" id="sim-correct-val">0</span> / <span class="col-red" id="sim-incorrect-val">0</span>
+                    </div>
+                </div>
+                <div class="stats-section">
+                    <div class="landscape-bar" id="sim-landscape-bar"></div>
+                    <div class="cat-list-box">
+                        <div style="text-align:center; color:#aaa; font-weight:bold; margin-bottom:10px; font-size:0.8rem;">CATEGORY BREAKDOWN</div>
+                        <div id="sim-cat-list"></div>
+                    </div>
+                </div>
+                <button onclick="goToDashboard()" style="width:100%; padding:15px; background:#fff; color:#000; border:none; border-radius:10px; font-weight:800; text-transform:uppercase;">Exit Exam</button>
             </div>
         </div>
         </div>
@@ -502,9 +544,15 @@
             const container = document.getElementById('category-list-container');
             container.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">Loading categories...</div>';
 
+            // Nota: Se asume que _supabase y la tabla 'questions_bank' están definidos y accesibles
+            if (typeof _supabase === 'undefined') {
+                 container.innerHTML = '<div style="padding:20px; text-align:center; color:#ef4444;">Supabase not initialized.</div>';
+                 return;
+            }
+
             const { data, error } = await _supabase.from('questions_bank').select('category');
             
-            if (error || !data) { container.innerHTML = 'Error'; return; }
+            if (error || !data) { container.innerHTML = 'Error loading data.'; return; }
 
             const uniqueCategories = [...new Set(data.map(item => item.category))]
                 .filter(c => c && c.trim() !== '').sort();
@@ -525,12 +573,18 @@
                         startBtn.classList.add('ready');
                         startBtn.innerText = `START (${selectedCategories.size})`;
                         startBtn.onclick = () => {
-                             const catsParam = Array.from(selectedCategories).map(encodeURIComponent).join(',');
-                             QuizEngine.fetchQuestions(null, null, catsParam);
+                            const catsParam = Array.from(selectedCategories).map(encodeURIComponent).join(',');
+                            // Llama directamente a la función del QuizEngine para iniciar
+                            if (typeof QuizEngine !== 'undefined' && typeof QuizEngine.fetchQuestions === 'function') {
+                                QuizEngine.fetchQuestions(null, null, catsParam);
+                            } else {
+                                console.error("QuizEngine not available.");
+                            }
                         };
                     } else {
                         startBtn.classList.remove('ready');
                         startBtn.innerText = 'START PRACTICE';
+                        startBtn.onclick = startSelectedPractice; // Restaurar onclick por defecto si es necesario
                     }
                 };
                 
@@ -544,6 +598,11 @@
             window.goToDashboard = function() {
                 window.location.href = 'mobile.html';
             };
+        }
+        // Placeholder para startSelectedPractice si no está en app.js
+        function startSelectedPractice() {
+             // Esta función es manejada por el event listener dentro de loadCategoriesUI
+             console.log("Starting practice...");
         }
     </script>
 </body>
