@@ -403,31 +403,18 @@
             </div>
         </div>
 
-        <div id="prac-results-screen" class="hidden fade-in" style="min-height:100vh; padding-top:20px;">
-            <div class="perf-container">
-                <div class="perf-title">Session Report</div>
-
-                <div class="chart-section">
-                    <div class="pie-chart" id="prac-perf-pie">
-                        <div class="pie-center">
-                            <span class="acc-text" id="prac-acc-val">0%</span>
-                            <span class="acc-label">Accuracy</span>
-                        </div>
-                    </div>
-                    <div class="data-row">
-                        <span class="col-green" id="prac-correct-val">0</span> <span style="color:#555">/</span> <span class="col-red" id="prac-incorrect-val">0</span>
-                    </div>
-                </div>
-
-                <div class="stats-section">
-                    <div class="landscape-bar" id="prac-landscape-bar"></div>
-                    <div class="cat-list-box">
-                        <div style="text-align:center; color:#aaa; font-weight:bold; margin-bottom:10px; font-size:0.8rem;">TOPIC BREAKDOWN</div>
-                        <div id="prac-cat-list"></div>
-                    </div>
-                </div>
+        <div id="prac-results-screen" class="hidden fade-in" style="min-height:100vh; padding:20px 0 50px 0;">
+            <div class="perf-container" style="padding:20px; display:flex; flex-direction:column; gap:0;">
                 
-                <button onclick="goToDashboard()" style="width:100%; padding:15px; background:#fff; color:#000; border:none; border-radius:10px; font-weight:800; text-transform:uppercase;">Back to Dashboard</button>
+                <h2 style="color:#facc15; text-align:center; margin-bottom:20px; font-size:1.5rem;">Session Review</h2>
+
+                <div id="prac-review-list" style="width:100%; display:flex; flex-direction:column; gap:10px;">
+                    </div>
+                
+                <button onclick="window.location.href='stats.html'" 
+                    style="margin-top:25px; width:100%; padding:15px; background:#facc15; color:#000; border:none; border-radius:10px; font-weight:800; text-transform:uppercase; font-size:1rem;">
+                    View Statistics
+                </button>
             </div>
         </div>
     </div>
