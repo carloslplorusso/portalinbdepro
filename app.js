@@ -1,250 +1,255 @@
-// --- CONFIGURACIÓN CENTRAL DE SUPABASE ---
-// La URL y la clave ANÓNIMA se definen una sola vez aquí
+// app.js
+
+// =========================================================
+// 1. CONFIGURACIÓN CENTRAL Y VARIABLES GLOBALES
+// =========================================================
 const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydW1pbG9panFzeHRobHN3b2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MzUzNTEsImV4cCI6MjA3OTAxMTM1MX0.5EaB81wglbbtNi8FOzJoDMNd_aOmMULzm27pDClJDSg';
 
-// Inicialización del cliente Supabase (Se hará globalmente accesible)
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- FUNCIONES Y VARIABLES GLOBALES ---
-
-// 1. VARIABLE GLOBAL PARA EL MODO (NUEVO)
-// Esta variable recordará qué botón pulsó el usuario (Standalone, Item Sets, Simulation, etc.)
+// Variables de Navegación y Quiz
 let currentSelectionMode = 'practice';
+if (typeof userStatus === 'undefined') var userStatus = { learning: 0, reviewing: 0, mastered: 0 };
 
-// 2. FUNCIÓN PARA EL DAILY RUN
-function startDailyRun() {
-    console.log("Starting Daily Run...");
-    window.location.href = 'quiz_engine.html?mode=daily&count=10';
+// Variables de Calendario y Actividad
+let currentCalMonth = new Date().getMonth();
+let currentCalYear = new Date().getFullYear();
+let userActivityDates = new Set(); // Almacena fechas formato 'YYYY-MM-DD'
+
+// Variables Pomodoro
+let pomoInterval; 
+let pomoTime = 25 * 60; 
+let isPomoRunning = false;
+
+// =========================================================
+// 2. FUNCIONES AUXILIARES Y AUTH
+// =========================================================
+function safeSetText(elementId, text) {
+    const el = document.getElementById(elementId);
+    if (el) el.innerText = text;
 }
 
-// 3. MANEJO DE ESTADO (SEMÁFORO)
-function handleStatus(status) {
-    if (typeof userStatus !== 'undefined' && userStatus[status] !== undefined) {
-        userStatus[status]++;
-    }
-    console.log(`Question marked as: ${status}`);
-    
-    if (typeof nextQuestion === 'function') {
-        nextQuestion();
-    } else {
-        console.warn("nextQuestion() not found. Ensure app.js is loaded in the correct context.");
-    }
+async function getCurrentUserId() {
+    const { data: { session } } = await _supabase.auth.getSession();
+    return session ? session.user.id : null;
 }
 
-// 4. FUNCIÓN FINISHQUIZ (Lógica de resultados)
-function finishQuiz() {
-    if (typeof timerInterval !== 'undefined') {
-        clearInterval(timerInterval);
-    }
-    
-    // Ocultar elementos de la interfaz
-    const inbdeHeader = document.querySelector('.inbde-header');
-    const inbdeFooter = document.querySelector('.inbde-footer');
-    const mainContainer = document.getElementById('main-container');
-    const leftPanel = document.getElementById('left-panel');
-    const rightPanel = document.getElementById('right-panel');
-    const quizContent = document.getElementById('quiz-content');
-    const reviewModal = document.getElementById('review-modal');
+async function logout() { 
+    await _supabase.auth.signOut(); 
+    window.location.href = 'index.html'; 
+}
 
-    if (inbdeHeader) inbdeHeader.classList.add('hidden');
-    if (inbdeFooter) inbdeFooter.classList.add('hidden');
-    
-    if (mainContainer) mainContainer.style.display = 'block';
-    if (leftPanel) leftPanel.classList.add('hidden');
-    if (rightPanel) rightPanel.style.width = '100%'; 
-    if (quizContent) quizContent.classList.add('hidden');
-    if (reviewModal) reviewModal.style.display = 'none';
-    
-    // Cálculos
-    let correct = 0;
-    const total = typeof quizData !== 'undefined' ? quizData.length : 0;
-    
-    let listHTML = '';
-    if (typeof quizData !== 'undefined' && quizData.length > 0) {
-        quizData.forEach((q, idx) => {
-            const userAns = userAnswers[q.id];
-            const isCorrect = userAns && q.correct_answer && userAns.trim().includes(q.correct_answer.trim());
-            if(isCorrect) correct++;
-
-            listHTML += `
-                <div class="bg-gray-800 p-4 rounded border border-gray-700 mb-3">
-                    <div class="font-bold text-white mb-1">Q${idx+1}: ${q.question_text}</div>
-                    <div class="text-sm text-gray-400 mb-2">Correct Answer: <span class="text-green-400">${q.correct_answer}</span></div>
-                    <button class="ai-btn text-xs" onclick="askGemini(this, '${q.question_text.replace(/'/g, "\\'")}', '${q.correct_answer.replace(/'/g, "\\'")}')">✨ Why?</button>
-                    <div class="ai-response mt-2 text-gray-300 text-sm hidden bg-black p-2 rounded"></div>
-                </div>
-            `;
-        });
-    }
-
-    const totalStatus = typeof userStatus !== 'undefined' ? userStatus.learning + userStatus.reviewing + userStatus.mastered : 0; 
-    const safeTotal = totalStatus > 0 ? totalStatus : 1; 
-    
-    const pctLearning = Math.round((userStatus.learning / safeTotal) * 100);
-    const pctReviewing = Math.round((userStatus.reviewing / safeTotal) * 100);
-    const pctMastered = Math.round((userStatus.mastered / safeTotal) * 100);
-
-    const resultsHTML = `
-        <h1 class="text-3xl font-bold mb-6 text-yellow-400">Session Complete</h1>
-        
-        <div class="flex justify-center gap-4 mb-8">
-            <div class="text-center bg-gray-800 p-4 rounded-lg border border-gray-700 w-32">
-                <div class="text-4xl font-bold text-green-500">${correct}</div>
-                <div class="text-xs text-gray-400 uppercase">Correct</div>
-            </div>
-            <div class="text-center bg-gray-800 p-4 rounded-lg border border-gray-700 w-32">
-                <div class="text-4xl font-bold text-red-500">${total - correct}</div>
-                <div class="text-xs text-gray-400 uppercase">Incorrect</div>
-            </div>
-            <div class="text-center bg-gray-800 p-4 rounded-lg border border-yellow-500 w-32">
-                <div class="text-4xl font-bold text-yellow-400">${Math.round((correct/total)*100)}%</div>
-                <div class="text-xs text-gray-400 uppercase">Score</div>
-            </div>
-        </div>
-
-        <div class="mb-8 bg-gray-900 p-5 rounded-xl border border-gray-700">
-            <h3 class="text-white font-bold mb-4 uppercase text-sm tracking-wider">Knowledge Confidence</h3>
-            <div class="flex justify-between gap-2 text-center">
-                <div class="flex-1">
-                    <div class="text-2xl font-bold text-red-500">${userStatus.learning}</div>
-                    <div class="text-xs text-red-400">Learning (${pctLearning}%)</div>
-                    <div class="w-full bg-gray-700 h-2 mt-2 rounded"><div class="bg-red-500 h-2 rounded" style="width:${pctLearning}%"></div></div>
-                </div>
-                <div class="flex-1">
-                    <div class="text-2xl font-bold text-yellow-400">${userStatus.reviewing}</div>
-                    <div class="text-xs text-yellow-300">Reviewing (${pctReviewing}%)</div>
-                    <div class="w-full bg-gray-700 h-2 mt-2 rounded"><div class="bg-yellow-400 h-2 rounded" style="width:${pctReviewing}%"></div></div>
-                </div>
-                <div class="flex-1">
-                    <div class="text-2xl font-bold text-green-500">${userStatus.mastered}</div>
-                    <div class="text-xs text-green-400">Mastered (${pctMastered}%)</div>
-                    <div class="w-full bg-gray-700 h-2 mt-2 rounded"><div class="bg-green-500 h-2 rounded" style="width:${pctMastered}%"></div></div>
-                </div>
-            </div>
-        </div>
-
-        <button onclick="goBackToHome()" class="bg-yellow-400 text-black font-bold py-3 px-8 rounded-lg hover:bg-yellow-300 w-full max-w-md mb-8 transition-transform transform hover:scale-105">BACK TO DASHBOARD</button>
-        
-        <h3 class="text-left text-white font-bold mb-4 border-b border-gray-700 pb-2">Detailed Review</h3>
-        <div id="detailed-review" class="text-left space-y-4">
-            ${listHTML}
-        </div>
-    `;
-
-    const resultContainer = document.getElementById('result-screen');
-    if (resultContainer) {
-        resultContainer.innerHTML = resultsHTML;
-        resultContainer.classList.remove('hidden');
+async function loadUserData() {
+    const { data: { user } } = await _supabase.auth.getUser();
+    if (user && user.email) {
+        const name = user.email.split('@')[0];
+        safeSetText('user-name-display', name.charAt(0).toUpperCase() + name.slice(1));
+        initCountdown();
     }
 }
 
-// --- LÓGICA DE ACTIVIDAD (DASHBOARD) ---
-function getDaysInMonth(year, month) {
-    return new Date(year, month + 1, 0).getDate();
+// =========================================================
+// 3. LÓGICA DE ACTIVIDAD Y CALENDARIO (NUEVO)
+// =========================================================
+
+// 3.1 Registrar Login Diario
+async function trackDailyLogin() {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Upsert: Inserta si no existe conflicto con la restricción UNIQUE (user_id, login_date)
+    await _supabase.from('user_activity_logs').upsert(
+        { user_id: userId, login_date: today }, 
+        { onConflict: 'user_id, login_date', ignoreDuplicates: true }
+    );
+    
+    // Recargar datos para actualizar UI inmediatamente
+    await loadActivityData();
 }
 
-const mockUserActivity = {
-    '2023-10-01': true, '2023-10-02': true, '2023-10-05': true,
-    '2023-10-10': true, '2023-10-11': true, '2023-10-12': true,
-    '2023-10-25': true,
-    '2025-11-25': true 
-};
+// 3.2 Cargar datos históricos
+async function loadActivityData() {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
 
-function renderMiniActivity() {
-    const container = document.getElementById('activity-dots-container'); 
-    if(!container) return;
-    
-    container.innerHTML = '';
-    const today = new Date();
-    const daysToShow = 9; 
-    
-    for (let i = daysToShow - 1; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(today.getDate() - i);
-        const monthStr = (d.getMonth() + 1).toString().padStart(2, '0');
-        const dayStr = d.getDate().toString().padStart(2, '0');
-        const dateStr = `${d.getFullYear()}-${monthStr}-${dayStr}`;
-        
-        const dot = document.createElement('div');
-        dot.className = 'dot';
-        if (mockUserActivity[dateStr]) dot.classList.add('active'); 
-        container.appendChild(dot);
+    const { data, error } = await _supabase
+        .from('user_activity_logs')
+        .select('login_date')
+        .eq('user_id', userId);
+
+    if (!error && data) {
+        userActivityDates.clear();
+        data.forEach(log => userActivityDates.add(log.login_date));
+        updateActivityCard(); // Actualizar gráfico circular en el Dashboard
     }
 }
 
-function openActivityModal() {
-    const modal = document.getElementById('activity-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('active');
-        renderFullCalendar();
-    }
-}
-
-function closeActivityModal() {
-    const modal = document.getElementById('activity-modal');
-    if (modal) {
-        modal.classList.remove('active');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    }
-}
-
-function renderFullCalendar() {
-    const container = document.getElementById('full-calendar-container');
-    if(!container) return;
-    
+// 3.3 Actualizar Gráfico Circular (Card del Dashboard)
+function updateActivityCard() {
     const now = new Date();
     const year = now.getFullYear();
-    const month = now.getMonth(); 
-    const daysInMonth = getDaysInMonth(year, month);
+    const month = now.getMonth(); // 0-11
+    // const daysInMonth = new Date(year, month + 1, 0).getDate(); // Opcional si queremos % del mes total
+    const todayDate = now.getDate(); // Día actual (ej: 15)
     
-    let html = `
-        <h4 style="text-align:center; color:var(--accent); margin-bottom:10px; font-weight:bold;">${new Date(year, month).toLocaleString('en-US', { month: 'long', year: 'numeric' })}</h4>
-        <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:5px; text-align:center;">`;
-    
-    ['S','M','T','W','T','F','S'].forEach(d => {
-        html += `<div style="color:#666; font-size:0.8rem; font-weight:bold;">${d}</div>`;
+    // Contar cuántos días de ESTE mes y año ha entrado el usuario
+    let loginsThisMonth = 0;
+    userActivityDates.forEach(dateStr => {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        if (y === year && (m - 1) === month) {
+            loginsThisMonth++;
+        }
     });
 
-    const firstDay = new Date(year, month, 1).getDay();
-    for (let i = 0; i < firstDay; i++) {
-        html += `<div></div>`;
-    }
+    // Porcentaje basado en los días transcurridos hasta hoy
+    // (Logins / Días transcurridos) * 100
+    const percentage = todayDate === 0 ? 0 : Math.round((loginsThisMonth / todayDate) * 100);
+    const finalPercent = percentage > 100 ? 100 : percentage;
 
-    for (let i = 1; i <= daysInMonth; i++) {
-        const d = new Date(year, month, i);
-        const monthStr = (month + 1).toString().padStart(2, '0');
-        const dayStr = i.toString().padStart(2, '0');
-        const dateStr = `${year}-${monthStr}-${dayStr}`;
-
-        const isActive = mockUserActivity[dateStr] === true;
-        const isCurrentDay = d.toDateString() === now.toDateString();
-        
-        let color = 'background:#222; color:#555;';
-        let border = 'border:1px solid #333;';
-        
-        if(isActive) { color = 'background:#10b981; color:black; font-weight:bold;'; border = 'border:1px solid #10b981;'; }
-        if(isCurrentDay) { border = 'border:2px solid var(--accent); box-shadow:0 0 5px var(--accent);'; }
-        
-        html += `<div style="${color} ${border} border-radius:4px; padding:8px 0; font-size:0.9rem;">${i}</div>`;
+    // Actualizar UI
+    const pie = document.getElementById('activity-pie-chart');
+    const text = document.getElementById('activity-percent-text');
+    
+    if(pie && text) {
+        text.innerText = `${finalPercent}%`;
+        // Conic gradient para efecto de dona/progreso
+        pie.style.background = `conic-gradient(#10b981 0% ${finalPercent}%, #222 ${finalPercent}% 100%)`;
     }
-    html += `</div>`;
-    container.innerHTML = html;
 }
 
-/* =========================================
-   CORE NAVIGATION & UI LOGIC
-   ========================================= */
+// 3.4 Renderizar Calendario Completo (En Modal)
+function renderFullCalendar() {
+    const container = document.getElementById('full-calendar-container');
+    const title = document.getElementById('calendar-month-year');
+    if (!container || !title) return;
 
-// --- GESTIÓN DE VISTAS (Navegación) ---
+    container.innerHTML = '';
+
+    // Nombres de meses
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+    title.innerText = `${monthNames[currentCalMonth]} ${currentCalYear}`;
+
+    // Headers de días
+    const days = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+    days.forEach(day => {
+        container.innerHTML += `<div class="cal-day-header">${day}</div>`;
+    });
+
+    // Cálculos de fechas
+    const firstDayIndex = new Date(currentCalYear, currentCalMonth, 1).getDay();
+    const daysInMonth = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
+    
+    // Fecha actual real para comparaciones
+    const now = new Date();
+    // Usamos local date string para comparar visualmente con lo guardado (YYYY-MM-DD)
+    // Ojo: toISOString usa UTC, asegúrate que coincida con cómo guardas. 
+    // Aquí construimos manual para evitar problemas de zona horaria.
+    const todayYear = now.getFullYear();
+    const todayMonth = now.getMonth();
+    const todayDay = now.getDate();
+    const todayKey = `${todayYear}-${(todayMonth+1).toString().padStart(2,'0')}-${todayDay.toString().padStart(2,'0')}`;
+
+    // Celdas vacías previas al día 1
+    for (let i = 0; i < firstDayIndex; i++) {
+        container.innerHTML += `<div></div>`;
+    }
+
+    // Días del mes
+    for (let i = 1; i <= daysInMonth; i++) {
+        // Construir string YYYY-MM-DD (ojo con el +1 en month y padding)
+        const currentMonthStr = (currentCalMonth + 1).toString().padStart(2, '0');
+        const dayStr = i.toString().padStart(2, '0');
+        const dateKey = `${currentCalYear}-${currentMonthStr}-${dayStr}`;
+        
+        // Determinar estado visual (CSS class)
+        let className = 'cal-day';
+        
+        // Objeto fecha para comparar si es futuro
+        const checkDate = new Date(currentCalYear, currentCalMonth, i);
+        checkDate.setHours(0,0,0,0);
+        
+        const realTodayDate = new Date();
+        realTodayDate.setHours(0,0,0,0);
+
+        if (checkDate > realTodayDate) {
+            className += ' future-day'; // Días futuros
+        } else {
+            // Es pasado o hoy. ¿Hubo actividad?
+            if (userActivityDates.has(dateKey)) {
+                className += ' active-day'; // Login registrado
+            } else {
+                className += ' missed-day'; // No hubo login
+            }
+        }
+
+        // Borde especial para "HOY"
+        if (dateKey === todayKey) {
+            className += ' today';
+        }
+
+        container.innerHTML += `<div class="${className}">${i}</div>`;
+    }
+}
+
+// 3.5 Navegación del Calendario
+function prevMonth() {
+    currentCalMonth--;
+    if(currentCalMonth < 0) {
+        currentCalMonth = 11;
+        currentCalYear--;
+    }
+    renderFullCalendar();
+}
+
+function nextMonth() {
+    currentCalMonth++;
+    if(currentCalMonth > 11) {
+        currentCalMonth = 0;
+        currentCalYear++;
+    }
+    renderFullCalendar();
+}
+
+// 3.6 Modales de Actividad
+function openActivityModal() { 
+    const modal = document.getElementById('activity-modal'); 
+    if (modal) { 
+        modal.classList.remove('hidden'); 
+        modal.classList.add('active'); 
+        
+        // Resetear a mes actual al abrir
+        const now = new Date();
+        currentCalMonth = now.getMonth();
+        currentCalYear = now.getFullYear();
+        
+        renderFullCalendar(); 
+    } 
+}
+
+function closeActivityModal() { 
+    const modal = document.getElementById('activity-modal'); 
+    if (modal) { 
+        modal.classList.remove('active'); 
+        setTimeout(() => modal.classList.add('hidden'), 300); 
+    } 
+}
+
+// =========================================================
+// 4. NAVEGACIÓN Y VISTAS
+// =========================================================
 function switchView(targetId) {
     const dashboard = document.getElementById('dashboard-content');
     if (dashboard) dashboard.classList.add('hidden');
 
     const views = [
         'learning-view', 'simulation-view', 'pomodoro-view', 
-        'selection-view', 'pomodoro-timer-view', 'quiz-settings-modal'
+        'selection-view', 'pomodoro-timer-view', 'quiz-settings-modal',
+        'stats-view', 'profile-view'
     ];
     
     views.forEach(id => {
@@ -264,7 +269,11 @@ function showSimulationLab() { switchView('simulation-view'); }
 function showPomodoro() { switchView('pomodoro-view'); }
 
 function goBackToDashboard() {
-    const views = ['learning-view', 'simulation-view', 'pomodoro-view', 'selection-view', 'pomodoro-timer-view'];
+    const views = [
+        'learning-view', 'simulation-view', 'pomodoro-view', 
+        'selection-view', 'pomodoro-timer-view', 'quiz-settings-modal',
+        'stats-view', 'profile-view'
+    ];
     views.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
@@ -275,213 +284,191 @@ function goBackToDashboard() {
         dbContent.classList.remove('hidden');
         dbContent.classList.add('fade-in');
     }
+    
+    // Resetear navegación móvil visualmente
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('nav-home-mobile')?.classList.add('active');
+    
+    // Actualizar stats del dashboard al volver
+    loadDashboardStats();
+    loadActivityData();
 }
 
-function goBackToLearning() { switchView('learning-view'); }
-function goBackToPomodoro() { switchView('pomodoro-view'); }
+// =========================================================
+// 5. SELECCIÓN DE CATEGORÍAS Y QUIZ
+// =========================================================
+async function renderCategoriesWithProgress() {
+    const list = document.getElementById('dynamic-cat-list');
+    if (!list) return;
 
+    list.innerHTML = '<div style="padding:20px; color:#666;">Cargando progreso...</div>';
 
-// --- SELECTION VIEW LOGIC (MODIFICADO) ---
+    try {
+        const userId = await getCurrentUserId();
+        if (!userId) { list.innerHTML = 'Inicia sesión.'; return; }
+
+        const [questionsRes, progressRes] = await Promise.all([
+            _supabase.from('questions_bank').select('id, category').eq('is_active', true),
+            _supabase.from('user_progress').select('question_id').eq('user_id', userId)
+        ]);
+
+        if (questionsRes.error) throw questionsRes.error;
+        if (progressRes.error) throw progressRes.error;
+
+        const stats = {};
+        const answeredIds = new Set(progressRes.data.map(p => p.question_id));
+
+        questionsRes.data.forEach(q => {
+            const cat = q.category || 'General';
+            if (!stats[cat]) stats[cat] = { total: 0, answered: 0 };
+            stats[cat].total++;
+            if (answeredIds.has(q.id)) stats[cat].answered++;
+        });
+
+        list.innerHTML = '';
+        const sortedCategories = Object.keys(stats).sort();
+
+        if (sortedCategories.length === 0) {
+            list.innerHTML = '<div style="padding:20px;">No se encontraron categorías.</div>';
+            return;
+        }
+
+        sortedCategories.forEach(cat => {
+            const data = stats[cat];
+            const percent = data.total === 0 ? 0 : Math.round((data.answered / data.total) * 100);
+
+            const card = document.createElement('div');
+            card.className = 'category-card';
+            
+            // Selección Múltiple (toggle)
+            card.onclick = () => {
+                card.classList.toggle('selected');
+            };
+
+            card.innerHTML = `
+                <div class="cat-header-flex">
+                    <span class="cat-name">${cat}</span>
+                    <span class="cat-percent">${percent}%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: ${percent}%"></div>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error('Error cargando categorías:', error);
+        list.innerHTML = '<div style="color:red; padding:20px;">Error.</div>';
+    }
+}
+
 function openSelectionView(mode) {
-    // 1. Guardamos el modo seleccionado ('standalone', 'itemsets', 'simulation') [NUEVO]
     currentSelectionMode = mode;
-
     const titleEl = document.getElementById('selection-mode-title');
     if (titleEl) {
         if (mode === 'standalone') titleEl.innerText = 'Stand Alone Practice';
         else if (mode === 'itemsets') titleEl.innerText = 'Item Sets';
         else if (mode === 'simulation') titleEl.innerText = 'Customize Simulation';
     }
-
-    const list = document.getElementById('dynamic-cat-list');
-    if (list) {
-        list.innerHTML = `
-            <div class="subject-item active" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Oral Pathology</div>
-            <div class="subject-item" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Pharmacology</div>
-            <div class="subject-item" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Anatomy</div>
-            <div class="subject-item" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Operative Dentistry</div>
-        `;
-    }
-    
     switchView('selection-view');
-}
-
-function openQuizSettings() {
-    const modal = document.getElementById('quiz-settings-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('active');
-        
-        const select = document.getElementById('quiz-count');
-        if(select && select.options.length === 0) {
-            select.innerHTML = `
-                <option value="10">10 Questions</option>
-                <option value="20">20 Questions</option>
-                <option value="50">50 Questions</option>
-            `;
-        }
+    
+    // Solo cargar categorías si estamos en standalone
+    if (mode === 'standalone') {
+        renderCategoriesWithProgress(); 
     }
 }
 
-function closeQuizSettings() {
-    const modal = document.getElementById('quiz-settings-modal');
-    if (modal) {
-        modal.classList.remove('active');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    }
+function startRandomRun() {
+    const isMobile = window.location.href.includes('mobile.html');
+    window.location.href = isMobile ? 'quiz_engine_mobile.html?mode=random&count=10' : 'quiz_engine.html?mode=random&count=10';
 }
 
-// 5. START QUIZ (MODIFICADO)
-function startQuiz() {
-    const count = document.getElementById('quiz-count').value;
-    // Ahora usa la variable global para enviar el modo correcto
-    window.location.href = `quiz_engine.html?mode=${currentSelectionMode}&count=${count}`;
-}
-
-function startQuizEngine(mode) {
-    window.location.href = `quiz_engine.html?mode=${mode}&count=50`; 
-}
-
-
-// --- QUICK NOTES LOGIC ---
-// Función helper para obtener el ID del usuario
-async function getCurrentUserId() {
-    const { data: { session } } = await _supabase.auth.getSession();
-    if (session) {
-        return session.user.id;
-    }
-    // Devolver un ID de prueba para entorno de desarrollo sin login si es necesario
-    return '00000000-0000-0000-0000-000000000000'; 
-}
-
+// =========================================================
+// 6. QUICK NOTES
+// =========================================================
 function openNotesModal() {
     const modal = document.getElementById('notes-modal');
-    if(modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('active'); 
-        loadNotes(); 
-    }
+    if(modal) { modal.classList.remove('hidden'); modal.classList.add('active'); loadNotes(); }
 }
 
 function closeNotesModal() {
     const modal = document.getElementById('notes-modal');
-    if (modal) {
-        modal.classList.remove('active');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    }
+    if (modal) { modal.classList.remove('active'); setTimeout(() => modal.classList.add('hidden'), 300); }
 }
 
 async function saveNote() {
     const input = document.getElementById('new-note-input');
     const text = input.value.trim();
     if (!text) return;
-
     const userId = await getCurrentUserId();
-    if (!userId) {
-        alert("Please log in to save notes.");
-        return;
-    }
+    if (!userId) { alert("Please log in."); return; }
     
-    // --- LÓGICA DE PERSISTENCIA MIGRADA A SUPABASE ---
-    const { error } = await _supabase
-        .from('user_notes')
-        .insert({ user_id: userId, content: text }); // <-- CORREGIDO: Usar 'content' en lugar de 'text'
-        
-    if (error) {
-        console.error('Error saving note to Supabase:', error);
-        alert('Error saving note: ' + error.message);
-    } else {
-        input.value = ''; 
-        loadNotes(); 
-    }
+    const btn = document.getElementById('btn-save-note');
+    btn.innerText = "...";
+    
+    const { error } = await _supabase.from('user_notes').insert({ user_id: userId, content: text });
+    btn.innerText = "SAVE";
+    
+    if (error) console.error(error);
+    else { input.value = ''; loadNotes(); }
 }
 
 async function loadNotes() {
     const container = document.getElementById('notes-list-container');
     if(!container) return;
+    container.innerHTML = 'Loading...';
     
-    container.innerHTML = '<div style="color:var(--accent); text-align:center; padding:20px;">Loading notes from server...</div>';
-
     const userId = await getCurrentUserId();
-    if (!userId) {
-        container.innerHTML = '<div style="color:#666; text-align:center; padding:20px;">Please log in to load notes.</div>';
-        return;
-    }
+    if (!userId) { container.innerHTML = 'Log in to see notes.'; return; }
     
-    // --- LÓGICA DE CARGA MIGRADA DE LOCALSTORAGE A SUPABASE ---
-    const { data: notes, error } = await _supabase
-        .from('user_notes')
-        // CORREGIDO: Seleccionar la columna 'content' para coincidir con la inserción y la DB
-        .select('content, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        console.error('Error loading notes from Supabase:', error);
-        container.innerHTML = '<div style="color:red; text-align:center; padding:20px;">Error loading notes.</div>';
-        return;
-    }
+    const { data: notes } = await _supabase.from('user_notes').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     
-    if (notes.length === 0) {
-        container.innerHTML = '<div style="color:#666; text-align:center; padding:20px;">No notes yet. Start typing above!</div>';
-        return;
-    }
-
+    if (!notes || notes.length === 0) { container.innerHTML = 'No notes yet.'; return; }
+    
     container.innerHTML = notes.map(n => `
         <div style="background:rgba(255,255,255,0.05); padding:12px; border-radius:8px; margin-bottom:8px; border-left:3px solid var(--accent);">
             <div style="color:#eee;">${n.content}</div>
-            <div style="color:#666; font-size:0.7rem; margin-top:5px;">${new Date(n.created_at).toLocaleDateString()} ${new Date(n.created_at).toLocaleTimeString()}</div>
+            <div style="color:#666; font-size:0.7rem; margin-top:5px;">${new Date(n.created_at).toLocaleDateString()}</div>
         </div>
     `).join('');
 }
 
-
-// --- IA LAB LOGIC ---
-function openAIModal(mode) {
+// =========================================================
+// 7. IA LAB
+// =========================================================
+function openAIModal() {
     const modal = document.getElementById('ai-modal');
-    if(modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('active');
-        document.getElementById('ai-input').focus();
-    }
+    if(modal) { modal.classList.remove('hidden'); modal.classList.add('active'); }
 }
 
 function closeAIModal() {
     const modal = document.getElementById('ai-modal');
-    if(modal) {
-        modal.classList.remove('active');
-        setTimeout(() => modal.classList.add('hidden'), 300);
+    if(modal) { modal.classList.remove('active'); setTimeout(() => modal.classList.add('hidden'), 300); }
+}
+
+function callGemini() {
+    const input = document.getElementById('ai-input');
+    if(!input || !input.value.trim()) return;
+    
+    const isMobile = window.location.href.includes('mobile.html');
+    const targetPage = isMobile ? 'quiz_engine_mobile.html' : 'quiz_engine.html';
+
+    const output = document.getElementById('ai-output');
+    if(output) {
+        output.style.display = 'block';
+        output.innerHTML = '<div style="color:var(--accent);">🔍 Searching...</div>';
     }
-}
-
-async function callGemini() {
-    const inputEl = document.getElementById('ai-input');
-    const outputEl = document.getElementById('ai-output');
     
-    if(!inputEl || !inputEl.value.trim()) return;
-    
-    outputEl.style.display = 'block';
-    outputEl.innerHTML = '<div style="color:var(--accent);">🤖 Thinking...</div>';
-
     setTimeout(() => {
-        outputEl.innerHTML = `
-            <strong>AI Result:</strong><br>
-            I found 3 relevant questions related to "<em>${inputEl.value}</em>".<br><br>
-            <button class="btn-start" onclick="startQuizEngine('ai_generated')" style="padding:5px 10px; font-size:0.8rem;">Start Generated Quiz</button>
-        `;
-    }, 1500);
+        window.location.href = `${targetPage}?mode=search&term=${encodeURIComponent(input.value.trim())}`;
+    }, 800);
 }
 
-
-// --- POMODORO TIMER LOGIC ---
-let pomoInterval;
-let pomoTime = 25 * 60; 
-let isPomoRunning = false;
-
-function openPomodoroSession() {
-    switchView('pomodoro-timer-view');
-    resetPomo();
-}
+// =========================================================
+// 8. POMODORO
+// =========================================================
+function openPomodoroSession() { switchView('pomodoro-timer-view'); resetPomo(); }
 
 function updatePomoDisplay() {
     const m = Math.floor(pomoTime / 60).toString().padStart(2, '0');
@@ -491,45 +478,168 @@ function updatePomoDisplay() {
 }
 
 function toggleTimer() {
-    const btn = document.getElementById('play-icon');
-    
+    const btn = document.getElementById('btn-pomo-toggle');
     if(isPomoRunning) {
-        clearInterval(pomoInterval);
-        isPomoRunning = false;
-        if(btn) btn.innerText = "▶";
+        clearInterval(pomoInterval); isPomoRunning = false; if(btn) btn.innerText = "▶";
     } else {
-        isPomoRunning = true;
-        if(btn) btn.innerText = "❚❚";
+        isPomoRunning = true; if(btn) btn.innerText = "❚❚";
         pomoInterval = setInterval(() => {
-            if(pomoTime > 0) {
-                pomoTime--;
-                updatePomoDisplay();
-            } else {
-                clearInterval(pomoInterval);
-                alert("Time is up!");
-                isPomoRunning = false;
-                if(btn) btn.innerText = "▶";
-            }
+            if(pomoTime > 0) { pomoTime--; updatePomoDisplay(); } else { clearInterval(pomoInterval); isPomoRunning = false; }
         }, 1000);
     }
 }
 
-function resetPomo() {
-    clearInterval(pomoInterval);
-    isPomoRunning = false;
-    pomoTime = 25 * 60;
-    updatePomoDisplay();
-    const btn = document.getElementById('play-icon');
-    if(btn) btn.innerText = "▶";
+function resetPomo() { 
+    clearInterval(pomoInterval); 
+    isPomoRunning = false; 
+    pomoTime = 25 * 60; 
+    updatePomoDisplay(); 
+    const btn = document.getElementById('btn-pomo-toggle'); 
+    if(btn) btn.innerText = "▶"; 
 }
 
+// =========================================================
+// 9. EXAM DATE / COUNTDOWN
+// =========================================================
+async function initCountdown() {
+    const badge = document.getElementById('countdown-badge');
+    if (!badge) return;
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (!session) { badge.innerText = "Set Date"; return; }
+    const { data } = await _supabase.from('user_settings').select('exam_date').eq('user_id', session.user.id).single();
+    if (data && data.exam_date) updateDaysLeftUI(data.exam_date);
+}
 
-// --- AUTHENTICATION ---
-async function logout() {
-    if(typeof _supabase !== 'undefined') {
-        await _supabase.auth.signOut();
-        window.location.href = 'index.html';
-    } else {
-        window.location.href = 'index.html';
+function updateDaysLeftUI(dateString) {
+    const target = new Date(dateString); const today = new Date();
+    const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+    const badge = document.getElementById('countdown-badge'); 
+    if(badge) badge.innerText = diff > 0 ? `${diff} Days Left` : "Exam Day!";
+}
+
+function openDateModal() { 
+    const modal = document.getElementById('date-setup-modal');
+    if(modal) { modal.classList.remove('hidden'); modal.classList.add('active'); }
+}
+function closeDateModal() { 
+    const modal = document.getElementById('date-setup-modal');
+    if(modal) { modal.classList.remove('active'); setTimeout(() => modal.classList.add('hidden'), 300); }
+}
+
+async function saveExamDate() {
+    const dateInput = document.getElementById('exam-date-input');
+    if (!dateInput || !dateInput.value) return;
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (session) { 
+        await _supabase.from('user_settings').upsert({ user_id: session.user.id, exam_date: dateInput.value }); 
+        updateDaysLeftUI(dateInput.value); 
+        closeDateModal(); 
     }
 }
+
+// =========================================================
+// 10. UTILS ESTADÍSTICAS DASHBOARD
+// =========================================================
+async function loadDashboardStats() {
+    // Aquí podrías conectar con supabase para traer el conteo real
+    // safeSetText('total-questions', '1,240'); 
+}
+
+// =========================================================
+// 11. INICIALIZACIÓN PRINCIPAL
+// =========================================================
+document.addEventListener('DOMContentLoaded', async () => {
+    
+    const path = window.location.pathname;
+    const isMobilePage = path.includes('mobile.html');
+
+    if (path.includes('dashboard.html') || isMobilePage) {
+        console.log("Inicializando App...");
+        
+        // 1. Cargar usuario y tracking inicial
+        await loadUserData();
+        loadDashboardStats();
+        trackDailyLogin(); // REGISTRO DIARIO IMPORTANTE
+
+        // 2. Listeners Comunes (Logout, Activity, Notas, IA)
+        document.getElementById('btn-logout-desktop')?.addEventListener('click', logout);
+        document.getElementById('card-activity-log')?.addEventListener('click', openActivityModal);
+        document.getElementById('btn-close-activity-modal')?.addEventListener('click', closeActivityModal);
+
+        // Calendario controles
+        document.getElementById('btn-prev-month')?.addEventListener('click', prevMonth);
+        document.getElementById('btn-next-month')?.addEventListener('click', nextMonth);
+        
+        // Notas
+        document.getElementById('card-notes-desktop')?.addEventListener('click', openNotesModal);
+        document.getElementById('nav-notes-mobile')?.addEventListener('click', openNotesModal);
+        document.getElementById('btn-save-note')?.addEventListener('click', saveNote);
+        document.getElementById('btn-close-notes-modal')?.addEventListener('click', closeNotesModal);
+        
+        // IA
+        document.getElementById('btn-ai-submit')?.addEventListener('click', callGemini);
+        document.getElementById('btn-close-ai-modal')?.addEventListener('click', closeAIModal);
+        
+        // Fecha Examen
+        document.getElementById('countdown-badge')?.addEventListener('click', openDateModal);
+        const btnSaveDate = document.querySelector('#date-setup-modal button'); 
+        if(btnSaveDate) btnSaveDate.onclick = saveExamDate;
+        const btnCloseDate = document.querySelector('#date-setup-modal .close-btn');
+        if(btnCloseDate) btnCloseDate.onclick = closeDateModal;
+        
+        // 3. Navegación Desktop Específica
+        if (!isMobilePage) {
+            console.log("Modo Escritorio Detectado.");
+
+            // Navegación principal
+            document.getElementById('card-learning-lab')?.addEventListener('click', showLearningLab);
+            document.getElementById('card-simulation-lab')?.addEventListener('click', showSimulationLab);
+            document.getElementById('card-pomodoro-lab')?.addEventListener('click', showPomodoro);
+            document.getElementById('btn-daily-run')?.addEventListener('click', startRandomRun);
+            document.getElementById('btn-ia-lab-start')?.addEventListener('click', openAIModal);
+
+            // Botones "Back"
+            document.getElementById('btn-back-learning')?.addEventListener('click', goBackToDashboard);
+            document.getElementById('btn-back-simulation')?.addEventListener('click', goBackToDashboard);
+            document.getElementById('btn-back-pomodoro')?.addEventListener('click', goBackToDashboard);
+            document.getElementById('btn-back-selection')?.addEventListener('click', showLearningLab);
+
+            // Opciones Learning/Simulation
+            document.getElementById('btn-learn-standalone')?.addEventListener('click', () => openSelectionView('standalone'));
+            document.getElementById('btn-learn-itemsets')?.addEventListener('click', () => window.location.href = 'quiz_engine.html?mode=itemsets&count=20');
+            document.getElementById('btn-sim-customize')?.addEventListener('click', () => openSelectionView('simulation'));
+            document.getElementById('btn-sim-start')?.addEventListener('click', () => window.location.href = 'quiz_engine.html?mode=simulation');
+
+            // Pomodoro
+            document.getElementById('btn-pomo-session')?.addEventListener('click', openPomodoroSession);
+            document.getElementById('btn-pomo-toggle')?.addEventListener('click', toggleTimer);
+            document.getElementById('btn-pomo-reset')?.addEventListener('click', resetPomo);
+            document.getElementById('btn-back-timer')?.addEventListener('click', () => switchView('pomodoro-view'));
+
+            // START QUIZ con selección múltiple
+            document.getElementById('btn-start-quiz-selection')?.addEventListener('click', () => {
+                
+                if (currentSelectionMode === 'standalone') {
+                    // Capturar múltiples categorías seleccionadas
+                    const selectedCards = document.querySelectorAll('.category-card.selected');
+                    
+                    if (selectedCards.length > 0) {
+                        const selectedCats = Array.from(selectedCards).map(card => 
+                            card.querySelector('.cat-name').innerText.trim()
+                        );
+                        
+                        const catsParam = selectedCats.map(c => encodeURIComponent(c)).join(',');
+                        window.location.href = `quiz_engine.html?mode=standalone&cats=${catsParam}`;
+                    } else {
+                        alert("Please select at least one subject.");
+                    }
+                } else {
+                     window.location.href = `quiz_engine.html?mode=${currentSelectionMode}`;
+                }
+            });
+        } 
+        else {
+            console.log("Modo Móvil Detectado.");
+        }
+    }
+});

@@ -6,7 +6,7 @@
 <title>INBDE Pro - Access</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-    /* --- 1. VARIABLES & BASE (Extraídas de tu CSS) --- */
+    /* --- 1. VARIABLES & BASE --- */
     :root {
         --accent: #facc15; 
         --accent-glow: rgba(250, 204, 21, 0.15);
@@ -31,22 +31,20 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        /* Fondo radial idéntico a tu Dashboard */
         background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%);
         padding: 20px;
     }
 
-    /* --- 2. AUTH CARD (Adaptada al estilo Dashboard) --- */
+    /* --- 2. AUTH CARD --- */
     .auth-card {
         background: var(--card-bg);
         padding: 40px;
-        border-radius: 24px; /* Bordes más redondeados como en learning-card */
+        border-radius: 24px;
         width: 100%;
         max-width: 420px;
         text-align: center;
         border: 1px solid var(--card-border);
         position: relative;
-        /* Sutil resplandor amarillo inspirado en el dashboard */
         box-shadow: 0 0 40px rgba(0,0,0,0.5), 0 0 20px var(--accent-glow);
         transition: all 0.3s ease;
     }
@@ -80,7 +78,7 @@
     .form-view.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* --- 4. INPUTS & LABELS (Estilo Dark) --- */
+    /* --- 4. INPUTS & LABELS --- */
     .input-group { margin-bottom: 20px; text-align: left; }
     
     .input-group label { 
@@ -235,8 +233,12 @@
     // --- MANEJO DE ESTADO DE AUTENTICACIÓN ---
     _supabase.auth.onAuthStateChange((event, session) => {
         if (session) {
+            // El evento PASSWORD_RECOVERY ocurre cuando entras con el link de reset
+            // Pero en este caso, la redirección de handleReset (ver abajo) tendrá prioridad.
             if (event === "PASSWORD_RECOVERY") {
-                window.location.href = './dashboard.html?recovery=true';
+                // Redirigir a reset.html si por alguna razón cayera aquí,
+                // aunque el redirectTo del correo debería encargarse.
+                window.location.href = './reset.html' + window.location.hash;
             } else {
                 window.location.href = './dashboard.html';
             }
@@ -261,22 +263,25 @@
         btn.innerText = 'Verifying...'; 
         btn.disabled = true;
         
-        const { data, error } = await _supabase.auth.signInWithPassword({ email, password: pass });
+        const { data, error } = await _supabase.auth.signInWithPassword({ 
+            email: email, 
+            password: pass 
+        });
 
         if (error) {
+            console.error("Login Error:", error);
             showMsg('Invalid credentials. Please try again.', 'error');
             btn.innerText = 'Sign In'; 
             btn.disabled = false;
         } else {
-            // Éxito: onAuthStateChange manejará la redirección
-            btn.innerText = 'Success!';
+            btn.innerText = 'Success! Redirecting...';
+            // onAuthStateChange redirige
         }
     }
 
-    // --- 2. LOGIN CON GOOGLE (CORREGIDO: URL DINÁMICA) ---
+    // --- 2. LOGIN CON GOOGLE ---
     async function handleGoogleLogin() {
-        // Construye la URL dinámicamente basándose en el origen actual (localhost o producción)
-        // Esto asegura que siempre redirija al dashboard.html en la misma carpeta donde estás.
+        // Para Google Login, SÍ queremos ir al dashboard directamente
         const redirectUrl = new URL('dashboard.html', window.location.href).href;
 
         const { data, error } = await _supabase.auth.signInWithOAuth({
@@ -288,7 +293,7 @@
         if (error) showMsg(error.message, 'error');
     }
 
-    // --- 3. RECUPERAR CONTRASEÑA (CORREGIDO: URL DINÁMICA) ---
+    // --- 3. RECUPERAR CONTRASEÑA (CORREGIDO) ---
     async function handleReset() {
         const email = document.getElementById('reset-email').value;
         const btn = document.getElementById('btn-reset');
@@ -298,8 +303,9 @@
         btn.innerText = 'Sending...'; 
         btn.disabled = true;
 
-        // Construye la URL dinámicamente para el link de reseteo
-        const redirectUrl = new URL('dashboard.html', window.location.href).href;
+        // CORRECCIÓN CRÍTICA: Aquí indicamos que el correo debe llevar a reset.html
+        // Esto asegura que el usuario pueda cambiar su clave antes de entrar al dashboard.
+        const redirectUrl = new URL('reset.html', window.location.href).href;
 
         const { data, error } = await _supabase.auth.resetPasswordForEmail(email, {
             redirectTo: redirectUrl, 
@@ -321,7 +327,6 @@
         box.innerText = text;
         box.className = `msg-box msg-${type}`;
         box.style.display = 'block';
-        // Auto-ocultar solo si es error, el éxito suele requerir lectura
         if(type === 'error') {
             setTimeout(() => { 
                 box.style.display = 'none'; 

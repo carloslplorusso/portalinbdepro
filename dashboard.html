@@ -8,9 +8,8 @@
 <script>
     // Detectar si es dispositivo móvil o pantalla pequeña
     if (window.matchMedia("(max-width: 768px)").matches || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        // Si NO estamos ya en mobile.html, redirigir
         if (!window.location.href.includes("mobile.html")) {
-            window.location.href = "mobile.html"; 
+            window.location.href = "mobile.html" + window.location.search; 
         }
     }
 </script>
@@ -29,8 +28,8 @@
         --card-border: #27272a;
         --text-main: #f4f4f5;
         --text-muted: #71717a;
-        --col-width: 220px; /* Ancho columnas laterales */
-        --sq-size: 200px;   /* Tamaño tarjetas cuadradas */
+        --col-width: 220px;
+        --sq-size: 200px;
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -43,7 +42,10 @@
         min-height: 100vh;
         display: flex;
         justify-content: center;
-        align-items: center;
+        align-items: flex-start; 
+        overflow-y: auto; 
+        padding-top: 20px;
+        padding-bottom: 20px;
         background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 70%);
     }
 
@@ -51,14 +53,14 @@
     .lab-container {
         width: 100%;
         max-width: 1500px;
-        height: 96vh;
+        min-height: 90vh; 
+        height: auto; 
         display: grid;
-        /* Estructura de 3 columnas: Izq Fija | Centro Flexible | Der Fija */
         grid-template-columns: var(--col-width) 1fr var(--col-width);
         grid-template-rows: auto 1fr;
         gap: 25px;
         padding: 20px;
-        overflow: hidden;
+        overflow: visible; 
         position: relative;
     }
 
@@ -93,12 +95,12 @@
     }
     .user-welcome { font-size: 1rem; color: var(--text-muted); font-weight: 400; display: flex; align-items: center; gap: 15px; }
     
-    .header-countdown {
+    .header-countdown, .stat-badge {
         background: rgba(250, 204, 21, 0.1); border: 1px solid rgba(250, 204, 21, 0.3); color: var(--accent);
         padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px;
         display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;
     }
-    .header-countdown:hover { background: rgba(250, 204, 21, 0.2); transform: scale(1.05); }
+    .header-countdown:hover, .stat-badge:hover { background: rgba(250, 204, 21, 0.2); transform: scale(1.05); }
 
     /* --- 4. LAYOUT COLUMNS --- */
     #dashboard-content { display: contents; }
@@ -111,12 +113,10 @@
     /* --- 5. CARDS DESIGN --- */
     .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; position: relative; transition: all 0.3s; cursor: pointer; overflow: hidden; }
     
-    /* Tarjetas Secundarias (Notes/Activity) */
     .square-card-bottom { height: var(--sq-size); margin-top: auto; display: flex; flex-direction: column; }
     .card-notes { background-image: radial-gradient(#333 1px, transparent 1px); background-size: 12px 12px; border: 1px solid #333; }
     .card-notes:hover { border-color: var(--text-muted); }
     
-    /* Tarjetas Promo (Daily Run / IA Lab) */
     .card-promo-style {
         width: 100%; background: linear-gradient(145deg, rgba(250, 204, 21, 0.15), rgba(0,0,0,0) 70%);
         border: 2px solid var(--accent); border-radius: 16px; padding: 20px;
@@ -129,12 +129,10 @@
     .promo-title { font-size: 1rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
     .promo-desc { font-size: 0.8rem; color: #ccc; margin-bottom: 15px; line-height: 1.4; }
     
-    /* Iconos Animados */
     @keyframes pulse-fire { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
     .fire-icon { font-size: 1.5rem; animation: pulse-fire 2s infinite ease-in-out; }
     .ai-icon { font-size: 1.5rem; filter: drop-shadow(0 0 5px var(--accent)); }
 
-    /* Botones Start */
     .btn-start {
         display: block; width: 100%; background: var(--accent); color: #000;
         font-weight: 900; font-size: 0.85rem; padding: 12px 0; border-radius: 8px;
@@ -143,7 +141,6 @@
     }
     .btn-start:hover { transform: scale(1.02); background: #fff; }
 
-    /* Banner Central */
     .card-learn-banner {
         width: 100%; padding: 20px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 15px;
         border: 1px solid var(--accent); background: rgba(250, 204, 21, 0.05); border-radius: 16px;
@@ -151,7 +148,6 @@
     }
     .card-learn-banner h2 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
 
-    /* Hero Cards (Centro) */
     .center-row-hero { width: 100%; display: flex; justify-content: center; gap: 25px; flex: 1; align-items: flex-start; }
     .hero-card {
         flex: 1; max-width: 260px; aspect-ratio: 1 / 1; background: var(--card-bg-hero);
@@ -164,17 +160,12 @@
     .hero-card .title { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 5px; }
     .hero-card .sub { font-size: 0.8rem; color: var(--text-muted); }
 
-    /* Metrics & Activity */
     .card-metrics { background: linear-gradient(180deg, var(--card-bg-hero) 0%, #080808 100%); border-top: 1px solid #333; }
     .metrics-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
     .metrics-title { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
     .pie-chart-main { width: 90px; height: 90px; border-radius: 50%; background: conic-gradient(var(--accent) 0% 0%, #27272a 0% 100%); box-shadow: 0 0 15px rgba(0,0,0,0.5); margin: auto; }
     
-    .activity-dots { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; width: 100%; margin-top: 10px; }
-    .dot { width: 8px; height: 8px; background: #333; border-radius: 2px; }
-    .dot.active { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
-
-    /* --- VISTAS OCULTAS (Learning/Sim/Pomodoro) --- */
+    /* --- VISTAS OCULTAS --- */
     #learning-view, #simulation-view, #pomodoro-view { grid-column: 1 / -1; grid-row: 2 / -1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 30px; height: 100%; }
     .learning-cards-row { display: flex; flex-direction: row; gap: 40px; justify-content: center; align-items: center; width: 100%; }
     
@@ -196,47 +187,124 @@
     }
     .btn-back-small:hover { border-color: var(--accent); color: var(--accent); }
 
-    /* --- SELECTION VIEW (Lista de Temas) --- */
-    #selection-view { grid-column: 1 / -1; grid-row: 2 / -1; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; gap: 20px; height: 100%; padding: 20px; }
+    /* --- SELECTION VIEW --- */
+    #selection-view { 
+        grid-column: 1 / -1; 
+        grid-row: 2 / -1; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: flex-start; 
+        align-items: center; 
+        gap: 20px; 
+        height: auto; 
+        min-height: 100%;
+        padding: 20px; 
+        padding-bottom: 50px; 
+    }
+
     .selection-container { display: flex; width: 100%; max-width: 1000px; gap: 30px; height: 100%; }
     
     .card-categories { flex: 2; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; }
     #dynamic-cat-list { padding: 20px; overflow-y: auto; }
     
-    .subject-item { display: flex; align-items: center; padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
-    .subject-item:hover { background: rgba(255,255,255,0.03); color: #fff; }
-    .subject-item.active { background: rgba(250, 204, 21, 0.1); color: #fff; border-left: 4px solid var(--accent); }
-    
-    .custom-checkbox { width: 18px; height: 18px; border: 2px solid #555; margin-right: 15px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-    .subject-item.active .custom-checkbox { background: var(--accent); border-color: var(--accent); }
-    .subject-item.active .custom-checkbox::after { content: '✓'; color: black; font-size: 12px; font-weight: bold; }
+    .category-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .category-card:hover { border-color: var(--accent); background: #1c1c20; transform: translateX(5px); }
+    .category-card.selected { border-color: var(--accent); box-shadow: 0 0 15px rgba(250, 204, 21, 0.1); }
+
+    .cat-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .cat-name { font-weight: 600; color: #fff; font-size: 1rem; }
+    .cat-percent { font-weight: 800; color: #22c55e; font-size: 0.9rem; }
+    .progress-track { width: 100%; height: 8px; background-color: #333; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background-color: #22c55e; border-radius: 4px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); width: 0%; }
 
     .card-start-quiz { flex: 1; background: #1c1c20; border: 2px solid var(--accent); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; }
     .card-start-quiz:hover { transform: scale(1.02); box-shadow: 0 0 20px var(--accent-glow); }
 
-    /* --- POMODORO VIEWS --- */
+    /* --- POMODORO --- */
     #pomodoro-timer-view { grid-column: 1 / -1; grid-row: 2 / -1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; height: 100%; width: 100%; max-width: 600px; margin: 0 auto; }
     .pomo-container { width: 100%; background: var(--card-bg); border: 1px solid var(--accent); border-radius: 24px; padding: 40px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 40px rgba(250,204,21,0.1); position: relative; }
     .pomo-timer-display { font-size: 6rem; font-weight: 900; font-variant-numeric: tabular-nums; color: #fff; margin: 10px 0; text-shadow: 0 0 20px rgba(255,255,255,0.1); }
     .pomo-btn { background: #333; color: #fff; border: none; width: 60px; height: 60px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s; }
     .pomo-btn.main { background: var(--accent); color: #000; width: 80px; height: 80px; font-size: 2rem; box-shadow: 0 0 20px rgba(250,204,21,0.3); }
-    
+
     /* --- MODALES --- */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
     .modal-overlay.active { opacity: 1; pointer-events: auto; }
     .modal-content { background: #121212; border: 1px solid #333; padding: 30px; border-radius: 20px; width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-    
     .close-btn { float: right; cursor: pointer; font-size: 1.5rem; color: #666; }
     .close-btn:hover { color: #fff; }
 
-    /* Input IA */
     .ai-input-area { width: 100%; background: #000; border: 1px solid #333; border-radius: 10px; padding: 15px; color: #fff; font-size: 1rem; min-height: 100px; margin: 15px 0; resize: none; }
     .ai-input-area:focus { outline: none; border-color: var(--accent); }
     .ai-action-btn { width: 100%; background: var(--accent); border: none; padding: 12px; font-weight: bold; border-radius: 8px; cursor: pointer; }
 
-    /* Password Alert */
     #password-alert-container { position: absolute; top: 0; width: 100%; z-index: 2000; }
     .password-alert { background: rgba(250, 204, 21, 0.2); color: var(--accent); border-bottom: 1px solid var(--accent); padding: 10px; text-align: center; font-size: 0.9rem; display: none; }
+
+    /* --- NUEVOS ESTILOS (Actividad & Calendario) --- */
+    
+    /* Pie Chart en la Card */
+    .activity-pie-chart {
+        width: 90px; 
+        height: 90px; 
+        border-radius: 50%; 
+        background: conic-gradient(#222 0% 100%); /* Default background */
+        display: flex; 
+        justify-content: center; 
+        align-items: center;
+        box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        transition: background 0.5s ease;
+    }
+    .activity-pie-inner {
+        width: 70px; 
+        height: 70px; 
+        background-color: #121214; /* Mismo color que card-bg */
+        border-radius: 50%; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center;
+        font-weight: 800;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    /* Calendario en el Modal */
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+    }
+    .cal-day-header {
+        text-align: center;
+        font-size: 0.75rem;
+        color: #666;
+        padding-bottom: 5px;
+        font-weight: bold;
+    }
+    .cal-day {
+        aspect-ratio: 1/1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #222;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        color: #666;
+        border: 1px solid transparent;
+    }
+    .cal-day.active-day { background: rgba(16, 185, 129, 0.2); color: #10b981; border-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.1); }
+    .cal-day.missed-day { background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+    .cal-day.future-day { background: #1a1a1a; color: #444; }
+    .cal-day.today { border: 1px solid var(--accent); }
+
 </style>
 </head>
 <body>
@@ -245,15 +313,15 @@
 
 <div class="lab-container">
     <header class="header-area">
-        <h1 class="lab-title" onclick="goBackToDashboard()">INBDE PRO <span style="opacity:0.5; font-weight:300;">Lab</span></h1>
+        <h1 class="lab-title" id="lab-title-desktop">INBDE PRO <span style="opacity:0.5; font-weight:300;">Lab</span></h1>
         <div class="lab-subtitle">Train in our lab. Become a Pro.</div>
         <div id="header-welcome-section">
             <div class="user-welcome">
                 <span>Welcome, <span id="user-name-display" style="color:var(--accent); font-weight:700;">Doctor</span></span>
-                <button onclick="logout()" style="background:none; border:1px solid #ff6b6b; color:#ff6b6b; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center;">✕</button>
+                <button id="btn-logout-desktop" style="background:none; border:1px solid #ff6b6b; color:#ff6b6b; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center;">✕</button>
             </div>
-            <div class="header-countdown" onclick="openDateModal()" id="countdown-badge">
-                <span id="countdown-value">-- Days Left</span> ⏱
+            <div class="stat-badge" id="countdown-badge" onclick="openDateModal()" style="cursor: pointer;">
+                📅 Set Exam Date
             </div>
         </div>
     </header>
@@ -262,11 +330,11 @@
         
         <div class="col-side col-left">
             <div class="card card-promo-style">
-                <div class="promo-header"><div class="fire-icon">🔥</div><div class="promo-title">DAILY LAB RUN</div></div>
-                <div class="promo-desc">10-question sprint. Keep the streak alive.</div>
-                <button class="btn-start" onclick="startDailyRun()">START NOW</button>
+                <div class="promo-header"><div class="fire-icon">🔥</div><div class="promo-title">RANDOM LAB RUN</div></div>
+                <div class="promo-desc">10 random questions. Always fresh.</div>
+                <button class="btn-start" id="btn-daily-run">START NOW</button>
             </div>
-            <div class="card card-notes square-card-bottom" onclick="openNotesModal()">
+            <div class="card card-notes square-card-bottom" id="card-notes-desktop">
                 <div class="metrics-header"><span class="metrics-title">QUICK NOTES</span><span>📝</span></div>
                 <div style="font-size:0.8rem; opacity:0.5; margin-top:10px;">Click to open notebook...</div>
             </div>
@@ -279,17 +347,17 @@
             </div>
             
             <div class="center-row-hero">
-                <div class="hero-card" onclick="showLearningLab()">
+                <div class="hero-card" id="card-learning-lab">
                     <div class="icon">🧪</div>
                     <div class="title">Learning Lab</div>
                     <div class="sub">Study Mode</div>
                 </div>
-                <div class="hero-card" onclick="showSimulationLab()">
+                <div class="hero-card" id="card-simulation-lab">
                     <div class="icon">⚡</div>
                     <div class="title">Simulation</div>
                     <div class="sub">Exam Mode</div>
                 </div>
-                <div class="hero-card" onclick="showPomodoro()">
+                <div class="hero-card" id="card-pomodoro-lab">
                     <div class="icon">🍅</div>
                     <div class="title">Pomodoro</div>
                     <div class="sub">Focus Timer</div>
@@ -310,49 +378,58 @@
         </div> 
         
         <div class="col-side col-right">
-            <div class="card card-promo-style" onclick="openAIModal('ia_search')">
+            <div class="card card-promo-style" id="card-ia-lab">
                 <div class="promo-header"><div class="ai-icon">🤖</div><div class="promo-title">IA LAB</div></div>
                 <div class="promo-desc">Smart Search. Find questions instantly.</div>
-                <button class="btn-start" style="background:#fff; color:#000;">ASK AI</button>
+                <button class="btn-start" id="btn-ia-lab-start" style="background:#fff; color:#000;">ASK AI</button>
             </div>
-            <div class="card card-metrics square-card-bottom" onclick="openActivityModal()">
-                <div class="metrics-header"><span class="metrics-title">ACTIVITY LOG</span></div>
-                <div class="activity-dots" id="activity-dots-container">
-                    <span style="font-size:0.7rem; color:#666;">Loading activity...</span>
+            
+            <div class="card card-metrics square-card-bottom" id="card-activity-log">
+                <div class="metrics-header">
+                    <span class="metrics-title">ACTIVITY LOG</span>
+                    <span style="font-size:0.8rem; color:#666;">Monthly Rate</span>
+                </div>
+                <div style="display:flex; justify-content:center; align-items:center; height:100%; padding-top:10px;">
+                    <div class="activity-pie-chart" id="activity-pie-chart">
+                        <div class="activity-pie-inner">
+                            <span id="activity-percent-text">0%</span>
+                        </div>
+                    </div>
                 </div>
             </div>
+
         </div>
     </div>
 
     <div id="learning-view" class="hidden">
         <div class="learning-cards-row">
-            <div class="learning-card" onclick="openSelectionView('standalone')">
+            <div class="learning-card" id="btn-learn-standalone">
                 <div class="learning-icon">🧠</div><h3>Stand Alone</h3><p>Practice specific topics.</p>
             </div>
-            <div class="learning-card" onclick="openSelectionView('itemsets')">
+            <div class="learning-card" id="btn-learn-itemsets">
                 <div class="learning-icon">🔗</div><h3>Item Sets</h3><p>Complex scenarios.</p>
             </div>
         </div>
-        <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Dashboard</button>
+        <button class="btn-back-small" id="btn-back-learning">← Back to Dashboard</button>
     </div>
 
     <div id="simulation-view" class="hidden">
         <div class="learning-cards-row">
-            <div class="learning-card" onclick="openSelectionView('simulation')">
+            <div class="learning-card" id="btn-sim-customize">
                 <div class="learning-icon">🛠️</div><h3>Customize</h3><p>Configure your exam.</p>
             </div>
-            <div class="learning-card" onclick="startQuizEngine('simulation_standard')">
+            <div class="learning-card" id="btn-sim-start">
                 <div class="learning-icon">▶️</div><h3>Standard Exam</h3><p>Full INBDE simulation.</p>
             </div>
         </div>
-        <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Dashboard</button>
+        <button class="btn-back-small" id="btn-back-simulation">← Back to Dashboard</button>
     </div>
 
     <div id="pomodoro-view" class="hidden">
-        <div class="learning-card" onclick="openPomodoroSession()">
+        <div class="learning-card" id="btn-pomo-session">
             <div class="learning-icon">🍅</div><h3>Start Session</h3><p>25 min Focus / 5 min Break</p>
         </div>
-        <button class="btn-back-small" onclick="goBackToDashboard()">← Back to Dashboard</button>
+        <button class="btn-back-small" id="btn-back-pomodoro">← Back to Dashboard</button>
     </div>
 
     <div id="pomodoro-timer-view" class="hidden">
@@ -360,59 +437,53 @@
         <div class="pomo-container">
             <div id="timer-display" class="pomo-timer-display">25:00</div>
             <div style="display:flex; gap:20px;">
-                <button class="pomo-btn main" id="play-icon" onclick="toggleTimer()">▶</button>
-                <button class="pomo-btn" onclick="resetPomo()">↺</button>
+                <button class="pomo-btn main" id="btn-pomo-toggle">▶</button>
+                <button class="pomo-btn" id="btn-pomo-reset">↺</button>
             </div>
         </div>
-        <button class="btn-back-small" onclick="goBackToPomodoro()">Exit</button>
+        <button class="btn-back-small" id="btn-back-timer">Exit</button>
       </div>
 
     <div id="selection-view" class="hidden">
         <h2 id="selection-mode-title" style="text-transform:uppercase; color:white; margin-bottom:20px;">TOPIC SELECTION </h2>
         <div class="selection-container">
             <div class="card-categories">
-                <div class="cat-header"><h3>Subjects</h3></div>
+                <div class="cat-header" style="padding:20px; border-bottom:1px solid #333;"><h3 style="margin:0;">Subjects</h3></div>
                 <div id="dynamic-cat-list">Loading...</div>
             </div>
-            <div class="card-start-quiz" onclick="openQuizSettings()">
-                <div class="start-icon">🚀</div><h3>Next</h3>
+            
+            <div class="card-start-quiz" id="btn-start-quiz-selection">
+                <div class="start-icon" style="font-size:3rem;">🚀</div>
+                <h3 style="font-weight:900; margin-top:10px; color:#fff;">START PRACTICE</h3>
             </div>
         </div>
-        <button class="btn-back-small" onclick="goBackToLearning()">← Back</button>
+        <button class="btn-back-small" id="btn-back-selection">← Back</button>
     </div>
 
     <div id="quiz-settings-modal" class="modal-overlay hidden">
         <div class="modal-content" style="text-align:center;">
-            <span class="close-btn" onclick="closeQuizSettings()">×</span>
+            <span class="close-btn" id="btn-close-quiz-settings">×</span>
             <h3>Quiz Settings</h3>
             <p style="color:#aaa; margin-bottom:10px;">Select length:</p>
             <select id="quiz-count" style="width:100%; padding:15px; margin:10px 0 20px 0; background:#000; color:#fff; border:1px solid var(--accent); border-radius:8px;">
-                </select>
-            <button class="btn-start" onclick="startQuiz()">START NOW</button>
-        </div>
-    </div>
-
-    <div id="date-setup-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h3>Set Exam Date</h3>
-            <input type="date" id="exam-date-input" style="width:100%; padding:10px; margin:10px 0; background:#000; color:#fff; border:1px solid #444;">
-            <button class="btn-start" onclick="saveExamDate()">Save</button>
+            </select>
+            <button class="btn-start" id="btn-start-quiz-confirm">START NOW</button>
         </div>
     </div>
 
     <div id="notes-modal" class="modal-overlay hidden">
         <div class="modal-content" style="display:flex; flex-direction:column; height: 80vh; max-height: 600px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h3 style="margin:0;">My Quick Notes</h3>
-                <span class="close-btn" onclick="closeNotesModal()">×</span>
+                <h3 style="margin:0; color:#fff;">My Quick Notes</h3>
+                <span class="close-btn" id="btn-close-notes-modal">×</span>
             </div>
 
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <input id="new-note-input" type="text" placeholder="Type a note..." style="flex:1; background:#000; border:1px solid #444; color:white; padding:12px; border-radius:10px; outline:none;">
-                <button onclick="saveNote()" style="background:var(--accent); color:black; border:none; border-radius:10px; padding:0 20px; font-weight:bold; cursor:pointer;">SAVE</button>
+                <button id="btn-save-note" style="background:var(--accent); color:black; border:none; border-radius:10px; padding:0 20px; font-weight:bold; cursor:pointer;">SAVE</button>
             </div>
 
-            <div id="notes-list-container" style="flex:1; overflow-y:auto; padding-right:5px;">
+            <div id="notes-list-container" style="flex:1; overflow-y:auto; padding-right:5px; color:#ccc;">
                 Loading notes...
             </div>
         </div>
@@ -420,42 +491,152 @@
 
     <div id="ai-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <span class="close-btn" onclick="closeAIModal()">×</span>
-            <h3>🤖 IA Lab Search</h3>
+            <span class="close-btn" id="btn-close-ai-modal">×</span>
+            <h3 style="color:#fff;">🤖 IA Lab Search</h3>
             <p style="color:#888; font-size:0.9rem;">Type a keyword to find related questions (e.g., "Ameloblastoma").</p>
             <textarea id="ai-input" class="ai-input-area" placeholder="Search question bank..."></textarea>
-            <button class="ai-action-btn" onclick="callGemini()">Search & Start Quiz</button>
-            <div id="ai-output" class="ai-response" style="margin-top:15px;"></div>
+            <button class="ai-action-btn" id="btn-ai-submit">Search & Start Quiz</button>
+            <div id="ai-output" class="ai-response" style="margin-top:15px; color:#ccc;"></div>
         </div>
     </div>
 
     <div id="activity-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h3 style="margin:0; color:white;">Activity Calendar</h3>
-                <span class="close-btn" onclick="closeActivityModal()">×</span>
+        <div class="modal-content" style="max-width: 450px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:white;">Activity Log</h3>
+                <span class="close-btn" id="btn-close-activity-modal">×</span>
             </div>
-            <div id="full-calendar-container" style="color:white;">
+            
+            <div class="calendar-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; color:white;">
+                <button id="btn-prev-month" style="background:none; border:1px solid #333; color:white; border-radius:5px; cursor:pointer; padding:5px 10px;">&lt;</button>
+                <span id="calendar-month-year" style="font-weight:bold; text-transform:uppercase;">MONTH YEAR</span>
+                <button id="btn-next-month" style="background:none; border:1px solid #333; color:white; border-radius:5px; cursor:pointer; padding:5px 10px;">&gt;</button>
+            </div>
+
+            <div id="full-calendar-container" class="calendar-grid">
                 </div>
-            <div style="margin-top:20px; font-size:0.8rem; color:#666;">
-                <span style="color:#10b981;">■</span> Day with activity. 
-                <span style="color:var(--accent); margin-left:10px;">■</span> Current day.
+
+            <div style="margin-top:20px; font-size:0.8rem; color:#888; display:flex; gap:15px; justify-content:center;">
+                <div style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; background:#10b981; border-radius:2px;"></span> Active</div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; background:#ef4444; border-radius:2px;"></span> Missed</div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; background:#333; border-radius:2px;"></span> Future</div>
             </div>
         </div>
     </div>
 
 </div>
 
+<div id="date-setup-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="text-align:center; max-width: 350px;">
+        <span class="close-btn" onclick="closeDateModal()">×</span>
+        <h3 style="color: white; margin-bottom: 10px;">When is your Exam?</h3>
+        <p style="color: #999; font-size: 0.9rem; margin-bottom: 20px;">Select your exam date to start the countdown.</p>
+        
+        <input type="date" id="exam-date-input" 
+               style="width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px; font-size: 1rem; margin-bottom: 20px; color-scheme: dark;">
+        
+        <button onclick="saveExamDate()" 
+                style="width: 100%; background: var(--accent); color: black; font-weight: bold; padding: 12px; border: none; border-radius: 8px; cursor: pointer;">
+            START COUNTDOWN
+        </button>
+    </div>
+</div>
+
+<div id="reset-password-view" class="hidden" 
+        style="grid-column: 1 / -1; grid-row: 2 / -1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; height: 100%;">
+        
+        <div class="card" style="max-width: 400px; padding: 40px; text-align: center; background: var(--card-bg-hero);">
+            <h2 style="color:var(--accent); margin-bottom:20px;">RESET YOUR PASSWORD</h2>
+            <div id="reset-form-content">
+                <input type="password" id="new-password" placeholder="New Password" 
+                    style="width:100%; padding:15px; margin-bottom:15px; background:#000; color:#fff; border:1px solid #333; border-radius:8px;">
+                <input type="password" id="confirm-password" placeholder="Confirm Password" 
+                    style="width:100%; padding:15px; margin-bottom:20px; background:#000; color:#fff; border:1px solid #333; border-radius:8px;">
+                <button class="btn-start" id="btn-update-password" onclick="updatePassword()">Update Password</button>
+                <div id="reset-msg" style="margin-top:15px; color:#ef4444; font-size:0.9rem;"></div>
+            </div>
+        </div>
+    </div>
+
 <script src="app.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Asume que renderMiniActivity y otras funciones de inicio están en app.js
-        if(typeof renderMiniActivity === 'function') {
-            renderMiniActivity();
-        }
-        // Puedes agregar aquí otras funciones de inicio si es necesario (ej: initCountdown)
-    });
-</script>
+    // Asumimos que _supabase está definido en app.js
 
+    // 1. Detección de Parámetros de Recuperación
+    function checkRecoveryMode() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const isRecovery = urlParams.get('recovery') === 'true';
+
+        if (isRecovery) {
+            // Ocultar el Dashboard principal
+            document.getElementById('dashboard-content').classList.add('hidden');
+            // Ocultar el Header
+            document.querySelector('.header-area').classList.add('hidden');
+            // Mostrar la nueva vista de Reset
+            document.getElementById('reset-password-view').classList.remove('hidden');
+            
+            const newUrl = window.location.pathname + window.location.hash;
+            history.replaceState(null, '', newUrl);
+
+            const alertContainer = document.getElementById('password-alert-container');
+            if (alertContainer) {
+                alertContainer.innerHTML = '<div class="password-alert" style="display:block;">⚠️ You are in Password Reset Mode. Please set a new password.</div>';
+            }
+
+        } else {
+            document.getElementById('dashboard-content').classList.remove('hidden');
+            document.querySelector('.header-area').classList.remove('hidden');
+            document.getElementById('reset-password-view').classList.add('hidden');
+        }
+    }
+
+    // 2. Función para Actualizar la Contraseña
+    async function updatePassword() {
+        const password = document.getElementById('new-password').value;
+        const confirm = document.getElementById('confirm-password').value;
+        const btn = document.getElementById('btn-update-password');
+        const msg = document.getElementById('reset-msg');
+
+        if (password.length < 6 || password !== confirm) {
+            msg.innerText = password.length < 6 ? 'Password must be at least 6 characters.' : 'Passwords do not match.';
+            msg.style.color = '#ef4444';
+            return;
+        }
+
+        btn.innerText = 'Updating...'; 
+        btn.disabled = true;
+        msg.innerText = '';
+        
+        if (typeof _supabase === 'undefined') {
+            msg.innerText = 'Error: Supabase client not initialized.';
+            msg.style.color = '#ef4444';
+            btn.innerText = 'Update Password';
+            btn.disabled = false;
+            return;
+        }
+
+        const { error } = await _supabase.auth.updateUser({ password: password });
+
+        if (error) {
+            msg.innerText = `Error: ${error.message}. Try logging out and using the recovery link again.`;
+            msg.style.color = '#ef4444';
+            btn.innerText = 'Update Password';
+            btn.disabled = false;
+        } else {
+            msg.innerText = '✅ Password updated successfully! Redirecting to login.';
+            msg.style.color = '#22c55e';
+
+            await _supabase.auth.signOut();
+            
+            document.getElementById('reset-form-content').classList.add('hidden');
+            
+            setTimeout(() => {
+                window.location.href = 'index.html'; 
+            }, 3000);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', checkRecoveryMode);
+</script>
 </body>
 </html>
