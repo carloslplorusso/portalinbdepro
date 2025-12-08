@@ -18,9 +18,9 @@ const QuizEngine = {
         const urlParams = new URLSearchParams(window.location.search);
         this.mode = urlParams.get('mode') || 'practice';
         const count = urlParams.get('count') ? parseInt(urlParams.get('count')) : null;
-        const term = urlParams.get('term'); 
-        const cats = urlParams.get('cats'); 
-        
+        const term = urlParams.get('term');
+        const cats = urlParams.get('cats');
+
         console.log(`QuizEngine iniciado. Modo: ${this.mode}, Mobile: ${this.isMobile}`);
 
         // Configurar clases en el Body para CSS específico
@@ -39,10 +39,10 @@ const QuizEngine = {
         if (this.mode === 'random' || this.mode === 'daily' || this.mode === 'search' || cats) {
             await this.fetchQuestions(count, term, cats);
         } else if (this.mode === 'simulation') {
-              await this.fetchQuestions(count);
+            await this.fetchQuestions(count);
         } else {
-            if(typeof loadCategoriesUI === 'function') {
-                await loadCategoriesUI(); 
+            if (typeof loadCategoriesUI === 'function') {
+                await loadCategoriesUI();
             } else {
                 console.warn("No loadCategoriesUI function found.");
             }
@@ -75,10 +75,10 @@ const QuizEngine = {
         } else {
             if (this.mode.includes('simulation')) query = query.not('case_id', 'is', null);
             else query = query.is('case_id', null);
-            
+
             if (count) query = query.limit(count);
-            else query = query.limit(100); 
-            
+            else query = query.limit(100);
+
             const res = await query;
             data = res.data;
         }
@@ -102,7 +102,7 @@ const QuizEngine = {
     startQuiz() {
         this.currentIndex = 0;
         document.getElementById('prac-start-screen')?.classList.add('hidden');
-        
+
         if (this.mode.includes('simulation')) {
             document.getElementById('sim-screen-quiz').classList.add('active');
             this.renderSimQuestion();
@@ -116,7 +116,7 @@ const QuizEngine = {
     renderPracticeQuestion() {
         const q = this.data[this.currentIndex];
         document.getElementById('prac-q-text').innerText = q.question_text;
-        
+
         document.getElementById('prac-review-area').classList.add('hidden');
         document.getElementById('prac-error-msg')?.classList.add('hidden');
         document.getElementById('btn-prac-next').classList.add('hidden');
@@ -128,7 +128,7 @@ const QuizEngine = {
             if (!opt) return;
             const letter = String.fromCharCode(65 + idx);
             const div = document.createElement('div');
-            div.className = 'prac-option'; 
+            div.className = 'prac-option';
             div.id = `prac-opt-${idx}`;
             div.innerHTML = `<div class="prac-radio"></div><span>${opt}</span>`;
             div.onclick = () => this.handlePracticeAnswer(idx, letter, q);
@@ -137,7 +137,7 @@ const QuizEngine = {
     },
 
     handlePracticeAnswer(idx, letter, q) {
-        if (this.userAnswers[q.id]) return; 
+        if (this.userAnswers[q.id]) return;
         this.userAnswers[q.id] = letter;
 
         const selectedDiv = document.getElementById(`prac-opt-${idx}`);
@@ -145,7 +145,7 @@ const QuizEngine = {
 
         const allOpts = document.getElementById('prac-options-list').children;
         Array.from(allOpts).forEach((div, i) => {
-            div.classList.add('answered'); 
+            div.classList.add('answered');
             const optLet = String.fromCharCode(65 + i);
             const optText = [q.option_a, q.option_b, q.option_c, q.option_d][i];
 
@@ -170,13 +170,13 @@ const QuizEngine = {
 
         const btns = document.querySelectorAll('.btn-classify');
         btns.forEach(b => b.classList.remove('active'));
-        
+
         const btnMap = { 'learning': '.btn-hard', 'reviewing': '.btn-medium', 'mastered': '.btn-easy' };
         document.querySelector(btnMap[status])?.classList.add('active');
 
         const q = this.data[this.currentIndex];
         const { data: { session } } = await _supabase.auth.getSession();
-        
+
         if (session) {
             _supabase.from('user_progress').insert([{
                 user_id: session.user.id,
@@ -194,7 +194,7 @@ const QuizEngine = {
     nextQuestion() {
         if (this.currentIndex < this.data.length - 1) {
             this.currentIndex++;
-            if(this.mode.includes('simulation')) this.renderSimQuestion();
+            if (this.mode.includes('simulation')) this.renderSimQuestion();
             else this.renderPracticeQuestion();
         } else {
             this.finishQuiz();
@@ -205,8 +205,8 @@ const QuizEngine = {
     renderFinalReview(prefix) {
         const listContainer = document.getElementById(`${prefix}-final-list-content`);
         if (!listContainer) return;
-        
-        listContainer.innerHTML = ''; 
+
+        listContainer.innerHTML = '';
 
         const isSim = (prefix === 'sim');
         const theme = isSim ? {
@@ -220,16 +220,16 @@ const QuizEngine = {
         this.data.forEach((q, index) => {
             const userAns = this.userAnswers[q.id];
             // --- FILTRO: Solo mostrar si fue respondida ---
-            if (userAns === undefined || userAns === null) return; 
+            if (userAns === undefined || userAns === null) return;
             questionsShown++;
 
             const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
             const ansChar = typeof userAns === 'number' ? String.fromCharCode(65 + userAns) : userAns;
             const ansText = typeof userAns === 'number' ? opts[userAns] : (userAns.length > 1 ? userAns : opts[ansChar?.charCodeAt(0) - 65] || null);
             const isCorrect = (ansChar === q.correct_answer || ansText === q.correct_answer);
-            
+
             const statusText = isCorrect ? 'Correct' : 'Incorrect';
-            const statusColor = isCorrect ? '#22c55e' : '#ef4444'; 
+            const statusColor = isCorrect ? '#22c55e' : '#ef4444';
             const icon = isCorrect ? '✓' : '✕';
 
             const itemDiv = document.createElement('div');
@@ -250,7 +250,7 @@ const QuizEngine = {
             detailDiv.style.cssText = `padding:20px; background:${theme.detail}; border-top:1px solid ${theme.border}; color:${theme.detailText}; line-height:1.5;`;
             detailDiv.innerHTML = `
                 <div style="margin-bottom:15px; font-weight:600; color:${theme.text};">${q.question_text}</div>
-                <div style="background:${isSim?'#fffbeb':'rgba(250,204,21,0.1)'}; border-left:4px solid ${theme.accent}; padding:15px; border-radius:4px;">
+                <div style="background:${isSim ? '#fffbeb' : 'rgba(250,204,21,0.1)'}; border-left:4px solid ${theme.accent}; padding:15px; border-radius:4px;">
                     <strong style="color:${theme.accent};">EXPLANATION:</strong><br>${q.explanation || 'No explanation available.'}
                 </div>
             `;
@@ -274,7 +274,7 @@ const QuizEngine = {
             listContainer.innerHTML = `<div style="padding:20px; text-align:center; color:${theme.detailText}">No questions answered yet.</div>`;
         }
     },
-    
+
     // --- 6. FUNCIÓN DE FINALIZACIÓN (FLUJO: QUIZ -> LISTA DE REVISIÓN) ---
     finishQuiz() {
         if (this.simTimerInterval) clearInterval(this.simTimerInterval);
@@ -282,7 +282,7 @@ const QuizEngine = {
         // Ocultar Quizzes Activos
         document.getElementById('prac-quiz-screen')?.classList.add('hidden');
         document.getElementById('sim-screen-quiz')?.classList.remove('active');
-        document.getElementById('sim-screen-review')?.classList.remove('active'); 
+        document.getElementById('sim-screen-review')?.classList.remove('active');
 
         const prefix = this.mode.includes('simulation') ? 'sim' : 'prac';
 
@@ -313,7 +313,7 @@ const QuizEngine = {
             // Ocultar Lista
             document.getElementById('sim-final-review-screen').classList.remove('active');
             document.getElementById('sim-final-review-screen').style.display = 'none';
-            
+
             // Mostrar Stats Simulación (Correct/Incorrect)
             const statsScreen = document.getElementById('sim-screen-perf');
             statsScreen.classList.add('active');
@@ -321,7 +321,7 @@ const QuizEngine = {
         } else {
             // Ocultar Lista
             document.getElementById('prac-review-screen').classList.add('hidden');
-            
+
             // Mostrar Stats Práctica (Easy/Med/Hard)
             document.getElementById('prac-results-screen').classList.remove('hidden');
             document.getElementById('prac-results-screen').style.display = 'flex';
@@ -337,12 +337,12 @@ const QuizEngine = {
         this.data.forEach(q => {
             const userAns = this.userAnswers[q.id];
             let isCorr = false;
-            
+
             if (userAns !== undefined && userAns !== null) {
                 const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
                 const ansChar = typeof userAns === 'number' ? String.fromCharCode(65 + userAns) : userAns;
                 const ansText = typeof userAns === 'number' ? opts[userAns] : (userAns.length > 1 ? userAns : opts[ansChar?.charCodeAt(0) - 65]);
-                
+
                 if (ansChar === q.correct_answer || ansText === q.correct_answer) isCorr = true;
             }
 
@@ -364,18 +364,18 @@ const QuizEngine = {
 
         // 2. PIE CHART (LÓGICA ESPECÍFICA)
         const pie = document.getElementById(`${prefix}-perf-pie`);
-        
+
         if (pie) {
             if (prefix === 'sim') {
                 // MODO SIMULACIÓN (LIGHT): CORRECTO vs INCORRECTO
                 const deg = Math.round((acc / 100) * 360);
                 pie.style.background = `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
-            
+
             } else {
                 // MODO PRÁCTICA (DARK): EASY / MEDIUM / HARD
                 // Usamos this.stats para colorear el gráfico
                 const s = this.stats;
-                const totalRated = (s.easy + s.medium + s.hard) || 1; 
+                const totalRated = (s.easy + s.medium + s.hard) || 1;
 
                 const degEasy = (s.easy / totalRated) * 360;
                 const degMed = (s.medium / totalRated) * 360;
@@ -413,10 +413,10 @@ const QuizEngine = {
             const m = Math.floor((this.simTotalTime % 3600) / 60);
             const s = this.simTotalTime % 60;
             const tStr = `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            
+
             this.setText('sim-timer', tStr);
             this.setText('sim-timer-rev', tStr);
-            
+
             if (this.simTotalTime <= 0) this.finishQuiz();
         }, 1000);
     },
@@ -438,11 +438,11 @@ const QuizEngine = {
                         history: parsed.history || "-",
                         findings: parsed.findings || "-"
                     };
-                } catch (e) {}
+                } catch (e) { }
             }
         }
-        
-        const setTable = (id, val) => { const el = document.getElementById(id); if(el) el.innerHTML = `<tr><td>${val}</td></tr>`; };
+
+        const setTable = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = `<tr><td>${val}</td></tr>`; };
         setTable('sim-pat-demo', pData.patient);
         setTable('sim-pat-cc', pData.cc);
         setTable('sim-pat-hist', pData.history);
@@ -454,12 +454,12 @@ const QuizEngine = {
             if (!opt) return;
             const div = document.createElement('div');
             div.className = 'sim-option';
-            if (this.userAnswers[q.id] === idx) div.classList.add('selected'); 
-            
+            if (this.userAnswers[q.id] === idx) div.classList.add('selected');
+
             div.innerHTML = `<div class="sim-radio"></div> ${opt}`;
             div.onclick = () => {
-                this.userAnswers[q.id] = idx; 
-                this.renderSimQuestion(); 
+                this.userAnswers[q.id] = idx;
+                this.renderSimQuestion();
             };
             container.appendChild(div);
         });
@@ -479,7 +479,7 @@ const QuizEngine = {
         document.getElementById('sim-screen-review').classList.add('active');
         const body = document.getElementById('sim-review-body');
         body.innerHTML = '';
-        
+
         this.data.forEach((q, i) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `

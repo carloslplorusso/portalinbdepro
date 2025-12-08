@@ -1,207 +1,346 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>INBDE Pro - Admin Console</title>
-<style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f3f4f6; padding: 40px; display: flex; justify-content: center; }
-    .container { width: 100%; max-width: 500px; }
-    
-    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    
-    h1 { margin-top: 0; color: #121212; font-size: 1.5em; }
-    h2 { font-size: 1em; color: #666; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-    
-    label { display: block; margin-top: 15px; font-weight: 600; color: #333; font-size: 0.9em; }
-    input, textarea, select { width: 100%; padding: 12px; margin-top: 5px; border: 2px solid #e5e7eb; border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 1em; }
-    input:focus, textarea:focus, select:focus { border-color: #fcdc11; outline: none; }
-    
-    textarea { height: 100px; font-family: monospace; font-size: 0.9em; }
-    
-    .btn-main { background: #fcdc11; color: #121212; border: none; padding: 12px; width: 100%; font-weight: 800; border-radius: 8px; margin-top: 20px; cursor: pointer; transition: transform 0.1s; }
-    .btn-main:hover { transform: scale(1.02); }
-    .btn-secondary { background: #e5e7eb; color: #333; border: none; padding: 8px; width: auto; font-weight: 600; border-radius: 6px; cursor: pointer; font-size: 0.8em; margin-top: 5px; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INBDE Pro - Admin Console</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f3f4f6;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
 
-    .status-box { margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 0.85em; display: none; }
-    .status-success { background: #dcfce7; color: #166534; }
-    .status-error { background: #fee2e2; color: #ef4444; }
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
 
-    .key-section { display: none; /* OCULTAMOS ESTA SECCIÓN */ }
-    
-    /* ESTILOS PARA EL TOGGLE DE TIPO DE SUSCRIPCIÓN */
-    .radio-group { display: flex; gap: 15px; margin-top: 10px; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
-    .radio-label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: normal; margin: 0; }
-    
-    .mode-section { display: none; margin-top: 10px; }
-    .mode-section.active { display: block; animation: fadeIn 0.3s; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
 
-    .date-input { border-color: #fcdc11; background-color: #fffce0; font-weight: bold; }
-</style>
+        h1 {
+            margin-top: 0;
+            color: #121212;
+            font-size: 1.5em;
+        }
+
+        h2 {
+            font-size: 1em;
+            color: #666;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 1em;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: #fcdc11;
+            outline: none;
+        }
+
+        textarea {
+            height: 100px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .btn-main {
+            background: #fcdc11;
+            color: #121212;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-weight: 800;
+            border-radius: 8px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .btn-main:hover {
+            transform: scale(1.02);
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #333;
+            border: none;
+            padding: 8px;
+            width: auto;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+
+        .status-box {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            display: none;
+        }
+
+        .status-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .key-section {
+            display: none;
+            /* OCULTAMOS ESTA SECCIÓN */
+        }
+
+        /* ESTILOS PARA EL TOGGLE DE TIPO DE SUSCRIPCIÓN */
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-weight: normal;
+            margin: 0;
+        }
+
+        .mode-section {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .mode-section.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .date-input {
+            border-color: #fcdc11;
+            background-color: #fffce0;
+            font-weight: bold;
+        }
+    </style>
 </head>
+
 <body>
 
-<div class="container">
+    <div class="container">
 
-    <div class="key-section">
-        <label>🔐 Service Role Key (Admin)</label>
-        <input type="password" id="service-key" placeholder="Paste key here...">
-        <button class="btn-secondary" onclick="saveKey()">💾 Save Key</button>
-    </div>
-
-    <div class="card" style="border-left: 5px solid #fcdc11;">
-        <h2>⚙️ Subscription Settings</h2>
-        <label>Expiration Mode:</label>
-        <div class="radio-group">
-            <label class="radio-label">
-                <input type="radio" name="sub-mode" value="months" checked onchange="toggleMode()"> 
-                Relative (Months)
-            </label>
-            <label class="radio-label">
-                <input type="radio" name="sub-mode" value="fixed" onchange="toggleMode()"> 
-                Fixed Date 📅
-            </label>
+        <div class="key-section">
+            <label>🔐 Service Role Key (Admin)</label>
+            <input type="password" id="service-key" placeholder="Paste key here...">
+            <button class="btn-secondary" onclick="saveKey()">💾 Save Key</button>
         </div>
 
-        <div id="section-months" class="mode-section active">
-            <label>Duration (from today):</label>
-            <select id="months-select">
-                <option value="1">1 Month</option>
-                <option value="2">2 Months</option>
-                <option value="3">3 Months</option>
-                <option value="4" selected>4 Months (Standard)</option>
-                <option value="6">6 Months</option>
-                <option value="12">12 Months</option>
-            </select>
+        <div class="card" style="border-left: 5px solid #fcdc11;">
+            <h2>⚙️ Subscription Settings</h2>
+            <label>Expiration Mode:</label>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" name="sub-mode" value="months" checked onchange="toggleMode()">
+                    Relative (Months)
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="sub-mode" value="fixed" onchange="toggleMode()">
+                    Fixed Date 📅
+                </label>
+            </div>
+
+            <div id="section-months" class="mode-section active">
+                <label>Duration (from today):</label>
+                <select id="months-select">
+                    <option value="1">1 Month</option>
+                    <option value="2">2 Months</option>
+                    <option value="3">3 Months</option>
+                    <option value="4" selected>4 Months (Standard)</option>
+                    <option value="6">6 Months</option>
+                    <option value="12">12 Months</option>
+                </select>
+            </div>
+
+            <div id="section-fixed" class="mode-section">
+                <label>Exact Expiration Date (End of Access):</label>
+                <input type="date" id="fixed-date-input" class="date-input">
+                <p style="font-size:0.8em; color:#666; margin-top:5px;">⚠️ Everyone invited will lose access on this
+                    exact date.</p>
+            </div>
         </div>
 
-        <div id="section-fixed" class="mode-section">
-            <label>Exact Expiration Date (End of Access):</label>
-            <input type="date" id="fixed-date-input" class="date-input">
-            <p style="font-size:0.8em; color:#666; margin-top:5px;">⚠️ Everyone invited will lose access on this exact date.</p>
+        <div class="card">
+            <h1>⚡ Quick Invite</h1>
+            <input type="email" id="single-email" placeholder="student@example.com">
+            <button class="btn-main" onclick="inviteSingle()">Send Invitation</button>
+            <div id="status-single" class="status-box"></div>
         </div>
+
+        <div class="card">
+            <h2>📂 Bulk Invite (Excel List)</h2>
+            <textarea id="bulk-list" placeholder="Paste list of emails here..."></textarea>
+            <button class="btn-main" style="background:#fff; border:2px solid #e5e7eb;" onclick="inviteBulk()">Process
+                Batch</button>
+            <div id="status-bulk" class="status-box" style="white-space: pre-line;"></div>
+        </div>
+
     </div>
 
-    <div class="card">
-        <h1>⚡ Quick Invite</h1>
-        <input type="email" id="single-email" placeholder="student@example.com">
-        <button class="btn-main" onclick="inviteSingle()">Send Invitation</button>
-        <div id="status-single" class="status-box"></div>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // URL de su proyecto Supabase y el endpoint de la función Edge
+        // La URL base (sin /functions/v1/...) está en app.js, pero para evitar depender de otro archivo, la definimos aquí para el fetch.
+        const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
+        const INVITE_ENDPOINT = `${SUPABASE_URL}/functions/v1/admin-invite-user`;
 
-    <div class="card">
-        <h2>📂 Bulk Invite (Excel List)</h2>
-        <textarea id="bulk-list" placeholder="Paste list of emails here..."></textarea>
-        <button class="btn-main" style="background:#fff; border:2px solid #e5e7eb;" onclick="inviteBulk()">Process Batch</button>
-        <div id="status-bulk" class="status-box" style="white-space: pre-line;"></div>
-    </div>
+        // Eliminamos todo el código relacionado con la Service Role Key
 
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-    // URL de su proyecto Supabase y el endpoint de la función Edge
-    // La URL base (sin /functions/v1/...) está en app.js, pero para evitar depender de otro archivo, la definimos aquí para el fetch.
-    const SUPABASE_URL = 'https://arumiloijqsxthlswojt.supabase.co';
-    const INVITE_ENDPOINT = `${SUPABASE_URL}/functions/v1/admin-invite-user`; 
-    
-    // Eliminamos todo el código relacionado con la Service Role Key
-
-    function toggleMode() {
-        const mode = document.querySelector('input[name="sub-mode"]:checked').value;
-        document.getElementById('section-months').className = mode === 'months' ? 'mode-section active' : 'mode-section';
-        document.getElementById('section-fixed').className = mode === 'fixed' ? 'mode-section active' : 'mode-section';
-    }
-
-    function getSubscriptionData() {
-        const mode = document.querySelector('input[name="sub-mode"]:checked').value;
-        
-        if (mode === 'fixed') {
-            const dateVal = document.getElementById('fixed-date-input').value;
-            if (!dateVal) { alert("Please select a valid expiration date!"); return null; }
-            // La función Edge espera 'metaData' con el tipo de suscripción
-            return { fixed_expiry_date: dateVal, type: 'fixed' }; 
-        } else {
-            const months = document.getElementById('months-select').value;
-            return { subscription_months: parseInt(months), type: 'months' };
+        function toggleMode() {
+            const mode = document.querySelector('input[name="sub-mode"]:checked').value;
+            document.getElementById('section-months').className = mode === 'months' ? 'mode-section active' : 'mode-section';
+            document.getElementById('section-fixed').className = mode === 'fixed' ? 'mode-section active' : 'mode-section';
         }
-    }
 
-    // --- FUNCIÓN HELPER PARA LLAMAR A LA FUNCIÓN EDGE ---
-    async function callInviteEndpoint(email, metaData) {
-        const response = await fetch(INVITE_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email, metaData: metaData }),
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.error || 'Invitation failed on server.');
+        function getSubscriptionData() {
+            const mode = document.querySelector('input[name="sub-mode"]:checked').value;
+
+            if (mode === 'fixed') {
+                const dateVal = document.getElementById('fixed-date-input').value;
+                if (!dateVal) { alert("Please select a valid expiration date!"); return null; }
+                // La función Edge espera 'metaData' con el tipo de suscripción
+                return { fixed_expiry_date: dateVal, type: 'fixed' };
+            } else {
+                const months = document.getElementById('months-select').value;
+                return { subscription_months: parseInt(months), type: 'months' };
+            }
         }
-        
-        return data;
-    }
 
-    // --- 1. INVITAR UNO SOLO (Quick Invite) ---
-    async function inviteSingle() {
-        const email = document.getElementById('single-email').value.trim();
-        const metaData = getSubscriptionData();
-        if (!metaData || !email) return;
+        // --- FUNCIÓN HELPER PARA LLAMAR A LA FUNCIÓN EDGE ---
+        async function callInviteEndpoint(email, metaData) {
+            const response = await fetch(INVITE_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, metaData: metaData }),
+            });
 
-        const statusBox = document.getElementById('status-single');
-        statusBox.style.display = 'block';
-        statusBox.className = 'status-box';
-        statusBox.innerText = "Sending...";
+            const data = await response.json();
 
-        try {
-            await callInviteEndpoint(email, metaData);
+            if (!response.ok) {
+                throw new Error(data.error || 'Invitation failed on server.');
+            }
 
-            const typeMsg = metaData.type === 'fixed' ? `Expires: ${metaData.fixed_expiry_date}` : `Duration: ${metaData.subscription_months} months`;
-            statusBox.className = 'status-box status-success';
-            statusBox.innerText = `✅ Invitation sent to ${email}\n(${typeMsg})`;
-            document.getElementById('single-email').value = ''; 
-
-        } catch (err) {
-            statusBox.className = 'status-box status-error';
-            statusBox.innerText = `❌ Error: ${err.message}`;
+            return data;
         }
-    }
 
-    // --- 2. INVITAR LOTE (Bulk Invite) ---
-    async function inviteBulk() {
-        const text = document.getElementById('bulk-list').value.trim();
-        const metaData = getSubscriptionData();
-        if (!metaData || !text) return;
+        // --- 1. INVITAR UNO SOLO (Quick Invite) ---
+        async function inviteSingle() {
+            const email = document.getElementById('single-email').value.trim();
+            const metaData = getSubscriptionData();
+            if (!metaData || !email) return;
 
-        const emails = text.split(/\r?\n/).map(e => e.trim()).filter(e => e);
-        const typeMsg = metaData.type === 'fixed' ? `expires on ${metaData.fixed_expiry_date}` : `for ${metaData.subscription_months} months`;
+            const statusBox = document.getElementById('status-single');
+            statusBox.style.display = 'block';
+            statusBox.className = 'status-box';
+            statusBox.innerText = "Sending...";
 
-        if (!confirm(`Send invites to ${emails.length} users?\nAccess: ${typeMsg}`)) return;
-
-        const statusBox = document.getElementById('status-bulk');
-        statusBox.style.display = 'block';
-        statusBox.className = 'status-box';
-        statusBox.innerText = "Processing...";
-
-        let success = 0;
-        
-        for (const email of emails) {
             try {
                 await callInviteEndpoint(email, metaData);
-                statusBox.innerText += `\n✅ Sent: ${email}`;
-                success++;
+
+                const typeMsg = metaData.type === 'fixed' ? `Expires: ${metaData.fixed_expiry_date}` : `Duration: ${metaData.subscription_months} months`;
+                statusBox.className = 'status-box status-success';
+                statusBox.innerText = `✅ Invitation sent to ${email}\n(${typeMsg})`;
+                document.getElementById('single-email').value = '';
+
             } catch (err) {
-                statusBox.innerText += `\n❌ Error (${email}): ${err.message}`;
+                statusBox.className = 'status-box status-error';
+                statusBox.innerText = `❌ Error: ${err.message}`;
             }
-            // Pequeña pausa para evitar sobrecargar el Rate Limiting
-            await new Promise(r => setTimeout(r, 100));
         }
-        alert(`Done! ${success} invites sent.`);
-    }
-</script>
+
+        // --- 2. INVITAR LOTE (Bulk Invite) ---
+        async function inviteBulk() {
+            const text = document.getElementById('bulk-list').value.trim();
+            const metaData = getSubscriptionData();
+            if (!metaData || !text) return;
+
+            const emails = text.split(/\r?\n/).map(e => e.trim()).filter(e => e);
+            const typeMsg = metaData.type === 'fixed' ? `expires on ${metaData.fixed_expiry_date}` : `for ${metaData.subscription_months} months`;
+
+            if (!confirm(`Send invites to ${emails.length} users?\nAccess: ${typeMsg}`)) return;
+
+            const statusBox = document.getElementById('status-bulk');
+            statusBox.style.display = 'block';
+            statusBox.className = 'status-box';
+            statusBox.innerText = "Processing...";
+
+            let success = 0;
+
+            for (const email of emails) {
+                try {
+                    await callInviteEndpoint(email, metaData);
+                    statusBox.innerText += `\n✅ Sent: ${email}`;
+                    success++;
+                } catch (err) {
+                    statusBox.innerText += `\n❌ Error (${email}): ${err.message}`;
+                }
+                // Pequeña pausa para evitar sobrecargar el Rate Limiting
+                await new Promise(r => setTimeout(r, 100));
+            }
+            alert(`Done! ${success} invites sent.`);
+        }
+    </script>
 
 </body>
+
 </html>

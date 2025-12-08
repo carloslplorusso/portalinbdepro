@@ -1,268 +1,548 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>INBDE Pro - Statistics Lab</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-    :root {
-        --accent: #facc15; 
-        --bg-dark: #000000;
-        --card-bg: #121214;
-        --text-main: #ffffff;
-        --text-muted: #a1a1aa;
-        --success: #22c55e; 
-        --danger: #ef4444; 
-    }
-    body { margin: 0; font-family: 'Inter', sans-serif; background-color: #000; color: var(--text-main); height: 100dvh; overflow: hidden; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle at 50% 0%, #1a1830 0%, #000000 80%); }
-    .lab-container { width: 100%; max-width: 600px; height: 100dvh; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
-    .header-area { text-align: center; margin-bottom: 20px; flex-shrink: 0; }
-    .lab-title { font-size: 1.8rem; font-weight: 900; text-transform: uppercase; margin: 0; color: #fff; }
-    .lab-subtitle { color: var(--accent); font-weight: 600; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.9; }
-    .user-badge { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; margin-top: 10px; display: inline-flex; }
-    .stats-grid { display: flex; flex-direction: column; gap: 15px; width: 100%; }
-    .card-promo-style { background: linear-gradient(180deg, rgba(30, 30, 35, 0.8) 0%, rgba(10, 10, 10, 0.9) 100%); border: 1px solid var(--accent); border-radius: 16px; padding: 20px; text-align: center; }
-    .accuracy-display { font-size: 3.5rem; font-weight: 900; color: var(--accent); line-height: 1; text-shadow: 0 0 20px rgba(250,204,21,0.2); }
-    .card-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
-    .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .hero-card { background: #1c1c20; border: 1px solid #27272a; border-radius: 14px; padding: 15px; text-align: center; }
-    .hero-card .title { font-size: 1.5rem; font-weight: 800; color: #fff; margin: 0; }
-    .hero-card .sub { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
-    .card-confidence { background: #121214; border: 1px solid #27272a; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-    .confidence-header { width: 100%; text-align: left; margin-bottom: 15px; font-weight: 700; color: #fff; text-transform: uppercase; font-size: 0.9rem; border-bottom: 1px solid #333; padding-bottom: 10px; }
-    .pie-chart { width: 140px; height: 140px; border-radius: 50%; margin: 10px auto; position: relative; background: #333; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
-    .pie-chart::after { content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; background: #121214; border-radius: 50%; }
-    .pie-center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2; text-align: center; }
-    .pie-val { font-size: 1.5rem; font-weight: 900; color: #fff; }
-    .pie-label { font-size: 0.6rem; color: #888; text-transform: uppercase; }
-    .confidence-stats { display: flex; justify-content: space-around; width: 100%; margin-top: 15px; }
-    .conf-item { text-align: center; }
-    .conf-val { font-weight: 800; font-size: 1.1rem; }
-    .conf-label { font-size: 0.65rem; text-transform: uppercase; color: #888; margin-top: 2px; }
-    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
-    .card-expandable { background: #121214; border: 1px solid #27272a; border-radius: 16px; margin-bottom: 20px; }
-    .expandable-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    .expandable-header h3 { margin: 0; font-size: 0.9rem; color: #fff; text-transform: uppercase; }
-    .topic-list-container { display: none; padding: 0 20px 20px 20px; border-top: 1px solid #27272a; }
-    .card-expandable.open .topic-list-container { display: block; }
-    .topic-item { padding: 10px 0; border-bottom: 1px solid #222; }
-    .topic-row { display: flex; justify-content: space-between; font-size: 0.85rem; color: #ddd; margin-bottom: 5px; }
-    .progress-track { width: 100%; height: 4px; background: #222; border-radius: 2px; }
-    .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; }
-    .btn-start { display: block; width: 100%; background: var(--accent); color: #000; font-weight: 900; padding: 15px; border-radius: 12px; text-align: center; text-decoration: none; border: none; cursor: pointer; margin-top: auto; }
-    .btn-back-link { display: block; width: 100%; text-align: center; color: #666; font-size: 0.8rem; margin-top: 15px; padding: 15px; cursor: pointer; }
-    
-    /* Mensaje de error amigable */
-    #error-message { display: none; text-align: center; padding: 20px; color: #ef4444; }
-    .btn-retry { background: #333; color: white; border: 1px solid #555; padding: 10px 20px; border-radius: 8px; margin-top: 10px; cursor: pointer; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>INBDE Pro - Statistics Lab</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --accent: #facc15;
+            --bg-dark: #000000;
+            --card-bg: #121214;
+            --text-main: #ffffff;
+            --text-muted: #a1a1aa;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #000;
+            color: var(--text-main);
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at 50% 0%, #1a1830 0%, #000000 80%);
+        }
+
+        .lab-container {
+            width: 100%;
+            max-width: 600px;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .header-area {
+            text-align: center;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+
+        .lab-title {
+            font-size: 1.8rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin: 0;
+            color: #fff;
+        }
+
+        .lab-subtitle {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+
+        .user-badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            display: inline-flex;
+        }
+
+        .stats-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .card-promo-style {
+            background: linear-gradient(180deg, rgba(30, 30, 35, 0.8) 0%, rgba(10, 10, 10, 0.9) 100%);
+            border: 1px solid var(--accent);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .accuracy-display {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--accent);
+            line-height: 1;
+            text-shadow: 0 0 20px rgba(250, 204, 21, 0.2);
+        }
+
+        .card-label {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        .grid-2x2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .hero-card {
+            background: #1c1c20;
+            border: 1px solid #27272a;
+            border-radius: 14px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .hero-card .title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #fff;
+            margin: 0;
+        }
+
+        .hero-card .sub {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .card-confidence {
+            background: #121214;
+            border: 1px solid #27272a;
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .confidence-header {
+            width: 100%;
+            text-align: left;
+            margin-bottom: 15px;
+            font-weight: 700;
+            color: #fff;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .pie-chart {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            margin: 10px auto;
+            position: relative;
+            background: #333;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .pie-chart::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            background: #121214;
+            border-radius: 50%;
+        }
+
+        .pie-center-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            text-align: center;
+        }
+
+        .pie-val {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .pie-label {
+            font-size: 0.6rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .confidence-stats {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .conf-item {
+            text-align: center;
+        }
+
+        .conf-val {
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        .conf-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+
+        .card-expandable {
+            background: #121214;
+            border: 1px solid #27272a;
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        .expandable-header {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .expandable-header h3 {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .topic-list-container {
+            display: none;
+            padding: 0 20px 20px 20px;
+            border-top: 1px solid #27272a;
+        }
+
+        .card-expandable.open .topic-list-container {
+            display: block;
+        }
+
+        .topic-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #222;
+        }
+
+        .topic-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #ddd;
+            margin-bottom: 5px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 4px;
+            background: #222;
+            border-radius: 2px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .btn-start {
+            display: block;
+            width: 100%;
+            background: var(--accent);
+            color: #000;
+            font-weight: 900;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            margin-top: auto;
+        }
+
+        .btn-back-link {
+            display: block;
+            width: 100%;
+            text-align: center;
+            color: #666;
+            font-size: 0.8rem;
+            margin-top: 15px;
+            padding: 15px;
+            cursor: pointer;
+        }
+
+        /* Mensaje de error amigable */
+        #error-message {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #ef4444;
+        }
+
+        .btn-retry {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+    </style>
 </head>
+
 <body>
 
-<div class="lab-container">
-    <div class="header-area">
-        <h1 class="lab-title">Performance Hub</h1>
-        <div class="lab-subtitle">INBDE Pro Lab</div>
-        <div class="user-badge" id="user-display">Loading...</div>
+    <div class="lab-container">
+        <div class="header-area">
+            <h1 class="lab-title">Performance Hub</h1>
+            <div class="lab-subtitle">INBDE Pro Lab</div>
+            <div class="user-badge" id="user-display">Loading...</div>
+        </div>
+
+        <div id="error-message">
+            <p>Could not load user data.</p>
+            <button class="btn-retry" onclick="window.location.reload()">Retry Connection</button>
+            <button class="btn-retry" onclick="window.location.href='index.html'"
+                style="border-color:#ef4444; color:#ef4444; background:transparent;">Log Out</button>
+        </div>
+
+        <div class="stats-grid" id="main-content">
+            <div class="card-promo-style">
+                <div class="card-label">Global Accuracy</div>
+                <div id="accuracy-pct" class="accuracy-display">0%</div>
+                <div class="card-label">Cumulative Score</div>
+            </div>
+
+            <div class="grid-2x2">
+                <div class="hero-card">
+                    <div class="title" id="total-quizzes">0</div>
+                    <div class="sub">Categories</div>
+                </div>
+                <div class="hero-card">
+                    <div class="title" id="total-questions">0</div>
+                    <div class="sub">Questions</div>
+                </div>
+                <div class="hero-card" style="border-bottom: 2px solid var(--success);">
+                    <div class="title" id="total-correct" style="color:var(--success)">0</div>
+                    <div class="sub">Correct</div>
+                </div>
+                <div class="hero-card" style="border-bottom: 2px solid var(--danger);">
+                    <div class="title" id="total-incorrect" style="color:var(--danger)">0</div>
+                    <div class="sub">Incorrect</div>
+                </div>
+            </div>
+
+            <div class="card-confidence">
+                <div class="confidence-header">Performance</div>
+                <div class="pie-chart" id="traffic-pie-chart">
+                    <div class="pie-center-text">
+                        <div class="pie-val" id="total-mastered-display">0</div>
+                        <div class="pie-label">Average</div>
+                    </div>
+                </div>
+                <div class="confidence-stats">
+                    <div class="conf-item">
+                        <div class="conf-val" style="color:var(--danger)" id="count-learning">0</div>
+                        <div class="conf-label"><span class="dot" style="background:var(--danger)"></span>Hard</div>
+                    </div>
+                    <div class="conf-item">
+                        <div class="conf-val" style="color:var(--accent)" id="count-reviewing">0</div>
+                        <div class="conf-label"><span class="dot" style="background:var(--accent)"></span>Medium</div>
+                    </div>
+                    <div class="conf-item">
+                        <div class="conf-val" style="color:var(--success)" id="count-mastered">0</div>
+                        <div class="conf-label"><span class="dot" style="background:var(--success)"></span>Easy</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-expandable" id="topics-card" onclick="this.classList.toggle('open')">
+                <div class="expandable-header">
+                    <h3>Categories</h3><span>▼</span>
+                </div>
+                <div class="topic-list-container" id="topic-list-content">
+                    <div style="text-align:center; padding:10px; color:#666;">Loading...</div>
+                </div>
+            </div>
+
+            <a href="quiz_engine.html?mode=standalone" class="btn-start">Start New Quiz</a>
+            <div onclick="goBack()" class="btn-back-link">← Back to Dashboard</div>
+        </div>
     </div>
 
-    <div id="error-message">
-        <p>Could not load user data.</p>
-        <button class="btn-retry" onclick="window.location.reload()">Retry Connection</button>
-        <button class="btn-retry" onclick="window.location.href='index.html'" style="border-color:#ef4444; color:#ef4444; background:transparent;">Log Out</button>
-    </div>
-
-    <div class="stats-grid" id="main-content">
-        <div class="card-promo-style">
-            <div class="card-label">Global Accuracy</div>
-            <div id="accuracy-pct" class="accuracy-display">0%</div>
-            <div class="card-label">Cumulative Score</div>
-        </div>
-
-        <div class="grid-2x2">
-            <div class="hero-card">
-                <div class="title" id="total-quizzes">0</div><div class="sub">Categories</div>
-            </div>
-            <div class="hero-card">
-                <div class="title" id="total-questions">0</div><div class="sub">Questions</div>
-            </div>
-            <div class="hero-card" style="border-bottom: 2px solid var(--success);">
-                <div class="title" id="total-correct" style="color:var(--success)">0</div><div class="sub">Correct</div>
-            </div>
-            <div class="hero-card" style="border-bottom: 2px solid var(--danger);">
-                <div class="title" id="total-incorrect" style="color:var(--danger)">0</div><div class="sub">Incorrect</div>
-            </div>
-        </div>
-
-        <div class="card-confidence">
-            <div class="confidence-header">Performance</div>
-            <div class="pie-chart" id="traffic-pie-chart">
-                <div class="pie-center-text">
-                    <div class="pie-val" id="total-mastered-display">0</div>
-                    <div class="pie-label">Average</div>
-                </div>
-            </div>
-            <div class="confidence-stats">
-                <div class="conf-item">
-                    <div class="conf-val" style="color:var(--danger)" id="count-learning">0</div>
-                    <div class="conf-label"><span class="dot" style="background:var(--danger)"></span>Hard</div>
-                </div>
-                <div class="conf-item">
-                    <div class="conf-val" style="color:var(--accent)" id="count-reviewing">0</div>
-                    <div class="conf-label"><span class="dot" style="background:var(--accent)"></span>Medium</div>
-                </div>
-                <div class="conf-item">
-                    <div class="conf-val" style="color:var(--success)" id="count-mastered">0</div>
-                    <div class="conf-label"><span class="dot" style="background:var(--success)"></span>Easy</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card-expandable" id="topics-card" onclick="this.classList.toggle('open')">
-            <div class="expandable-header">
-                <h3>Categories</h3><span>▼</span>
-            </div>
-            <div class="topic-list-container" id="topic-list-content">
-                <div style="text-align:center; padding:10px; color:#666;">Loading...</div>
-            </div>
-        </div>
-
-        <a href="quiz_engine.html?mode=standalone" class="btn-start">Start New Quiz</a>
-        <div onclick="goBack()" class="btn-back-link">← Back to Dashboard</div>
-    </div>
-</div>
-
-<script src="app.js"></script>
-<script>
-    function goBack() {
-        if (window.matchMedia("(max-width: 768px)").matches) {
-            window.location.href = 'mobile.html';
-        } else {
-            window.location.href = 'dashboard.html';
-        }
-    }
-
-    let isStatsLoaded = false;
-
-    async function initStatsPage() {
-        if (isStatsLoaded) return; 
-
-        if (typeof _supabase === 'undefined') {
-            setTimeout(initStatsPage, 100);
-            return;
-        }
-
-        try {
-            // INTENTO 1: Sesión local (caché)
-            const { data: { session } } = await _supabase.auth.getSession();
-            
-            if (session && session.user) {
-                await loadData(session.user);
+    <script src="app.js"></script>
+    <script>
+        function goBack() {
+            if (window.matchMedia("(max-width: 768px)").matches) {
+                window.location.href = 'mobile.html';
             } else {
-                // INTENTO 2: Verificación de red
-                const { data: { user }, error } = await _supabase.auth.getUser();
-                if (user) {
-                    await loadData(user);
+                window.location.href = 'dashboard.html';
+            }
+        }
+
+        let isStatsLoaded = false;
+
+        async function initStatsPage() {
+            if (isStatsLoaded) return;
+
+            if (typeof _supabase === 'undefined') {
+                setTimeout(initStatsPage, 100);
+                return;
+            }
+
+            try {
+                // INTENTO 1: Sesión local (caché)
+                const { data: { session } } = await _supabase.auth.getSession();
+
+                if (session && session.user) {
+                    await loadData(session.user);
                 } else {
-                    // Si falla todo, NO REDIRIGIR. Mostrar error amigable.
-                    console.warn("User data not found via getUser or getSession.");
-                    document.getElementById('main-content').style.display = 'none';
-                    document.getElementById('error-message').style.display = 'block';
+                    // INTENTO 2: Verificación de red
+                    const { data: { user }, error } = await _supabase.auth.getUser();
+                    if (user) {
+                        await loadData(user);
+                    } else {
+                        // Si falla todo, NO REDIRIGIR. Mostrar error amigable.
+                        console.warn("User data not found via getUser or getSession.");
+                        document.getElementById('main-content').style.display = 'none';
+                        document.getElementById('error-message').style.display = 'block';
+                    }
                 }
+            } catch (e) {
+                console.error("Critical Init Error:", e);
             }
-        } catch (e) {
-            console.error("Critical Init Error:", e);
-        }
-    }
-
-    async function loadData(user) {
-        if(isStatsLoaded) return;
-        isStatsLoaded = true; 
-
-        if(user.email && document.getElementById('user-display')) {
-            document.getElementById('user-display').innerText = user.email.split('@')[0];
         }
 
-        const { data: attempts, error } = await _supabase
-            .from('user_progress')
-            .select(`status, questions_bank!inner(category)`)
-            .eq('user_id', user.id);
+        async function loadData(user) {
+            if (isStatsLoaded) return;
+            isStatsLoaded = true;
 
-        if (error) {
-            console.error("Error stats:", error);
-            return;
-        }
-
-        processStats(attempts || []);
-    }
-
-    function processStats(rows) {
-        let totalQ = 0, totalC = 0;
-        let sMas = 0, sRev = 0, sLea = 0;
-        const catMap = {};
-
-        rows.forEach(row => {
-            if (row.questions_bank && row.questions_bank.category) {
-                const cat = row.questions_bank.category;
-                const st = row.status;
-                const isCorrect = (st === 'mastered');
-
-                totalQ++;
-                if(isCorrect) totalC++;
-
-                if(st === 'mastered') sMas++;
-                else if(st === 'reviewing') sRev++;
-                else if(st === 'learning') sLea++;
-
-                if(!catMap[cat]) catMap[cat] = { t: 0, c: 0 };
-                catMap[cat].t++;
-                if(isCorrect) catMap[cat].c++;
+            if (user.email && document.getElementById('user-display')) {
+                document.getElementById('user-display').innerText = user.email.split('@')[0];
             }
-        });
 
-        const acc = totalQ > 0 ? Math.round((totalC / totalQ) * 100) : 0;
-        const accEl = document.getElementById('accuracy-pct');
-        if(accEl) {
-            accEl.innerText = acc + "%";
-            accEl.style.color = acc < 71 ? "var(--danger)" : "var(--success)";
+            const { data: attempts, error } = await _supabase
+                .from('user_progress')
+                .select(`status, questions_bank!inner(category)`)
+                .eq('user_id', user.id);
+
+            if (error) {
+                console.error("Error stats:", error);
+                return;
+            }
+
+            processStats(attempts || []);
         }
 
-        document.getElementById('total-quizzes').innerText = Object.keys(catMap).length;
-        document.getElementById('total-questions').innerText = totalQ;
-        document.getElementById('total-correct').innerText = totalC;
-        document.getElementById('total-incorrect').innerText = totalQ - totalC;
+        function processStats(rows) {
+            let totalQ = 0, totalC = 0;
+            let sMas = 0, sRev = 0, sLea = 0;
+            const catMap = {};
 
-        document.getElementById('count-mastered').innerText = sMas;
-        document.getElementById('count-reviewing').innerText = sRev;
-        document.getElementById('count-learning').innerText = sLea;
-        document.getElementById('total-mastered-display').innerText = sMas;
+            rows.forEach(row => {
+                if (row.questions_bank && row.questions_bank.category) {
+                    const cat = row.questions_bank.category;
+                    const st = row.status;
+                    const isCorrect = (st === 'mastered');
 
-        const totalT = sMas + sRev + sLea;
-        if(totalT > 0) {
-            const pR = (sLea / totalT) * 100;
-            const pY = (sRev / totalT) * 100;
-            const pie = document.getElementById('traffic-pie-chart');
-            if(pie) pie.style.background = `conic-gradient(var(--danger) 0% ${pR}%, var(--accent) ${pR}% ${pR + pY}%, var(--success) ${pR + pY}% 100%)`;
+                    totalQ++;
+                    if (isCorrect) totalC++;
+
+                    if (st === 'mastered') sMas++;
+                    else if (st === 'reviewing') sRev++;
+                    else if (st === 'learning') sLea++;
+
+                    if (!catMap[cat]) catMap[cat] = { t: 0, c: 0 };
+                    catMap[cat].t++;
+                    if (isCorrect) catMap[cat].c++;
+                }
+            });
+
+            const acc = totalQ > 0 ? Math.round((totalC / totalQ) * 100) : 0;
+            const accEl = document.getElementById('accuracy-pct');
+            if (accEl) {
+                accEl.innerText = acc + "%";
+                accEl.style.color = acc < 71 ? "var(--danger)" : "var(--success)";
+            }
+
+            document.getElementById('total-quizzes').innerText = Object.keys(catMap).length;
+            document.getElementById('total-questions').innerText = totalQ;
+            document.getElementById('total-correct').innerText = totalC;
+            document.getElementById('total-incorrect').innerText = totalQ - totalC;
+
+            document.getElementById('count-mastered').innerText = sMas;
+            document.getElementById('count-reviewing').innerText = sRev;
+            document.getElementById('count-learning').innerText = sLea;
+            document.getElementById('total-mastered-display').innerText = sMas;
+
+            const totalT = sMas + sRev + sLea;
+            if (totalT > 0) {
+                const pR = (sLea / totalT) * 100;
+                const pY = (sRev / totalT) * 100;
+                const pie = document.getElementById('traffic-pie-chart');
+                if (pie) pie.style.background = `conic-gradient(var(--danger) 0% ${pR}%, var(--accent) ${pR}% ${pR + pY}%, var(--success) ${pR + pY}% 100%)`;
+            }
+
+            const list = Object.keys(catMap).map(k => ({ name: k, pct: Math.round((catMap[k].c / catMap[k].t) * 100) }));
+            renderTopics(list);
         }
 
-        const list = Object.keys(catMap).map(k => ({ name: k, pct: Math.round((catMap[k].c / catMap[k].t) * 100) }));
-        renderTopics(list);
-    }
+        function renderTopics(list) {
+            const container = document.getElementById('topic-list-content');
+            if (!container) return;
 
-    function renderTopics(list) {
-        const container = document.getElementById('topic-list-content');
-        if (!container) return;
-        
-        if (list.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:10px; color:#666;">No data yet.</div>';
-            return;
-        }
-        
-        container.innerHTML = '';
-        list.sort((a,b) => b.pct - a.pct).forEach(topic => {
-            const color = "var(--success)"; 
-            container.innerHTML += `
+            if (list.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:10px; color:#666;">No data yet.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            list.sort((a, b) => b.pct - a.pct).forEach(topic => {
+                const color = "var(--success)";
+                container.innerHTML += `
                 <div class="topic-item">
                     <div class="topic-row">
                         <span>${topic.name}</span>
@@ -273,10 +553,11 @@
                     </div>
                 </div>
             `;
-        });
-    }
+            });
+        }
 
-    document.addEventListener('DOMContentLoaded', initStatsPage);
-</script>
+        document.addEventListener('DOMContentLoaded', initStatsPage);
+    </script>
 </body>
+
 </html>

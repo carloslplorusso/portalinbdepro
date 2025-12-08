@@ -18,16 +18,57 @@ let currentCalYear = new Date().getFullYear();
 let userActivityDates = new Set(); // Almacena fechas formato 'YYYY-MM-DD'
 
 // Variables Pomodoro
-let pomoInterval; 
-let pomoTime = 25 * 60; 
+let pomoInterval;
+let pomoTime = 25 * 60;
 let isPomoRunning = false;
 
 // =========================================================
 // 2. FUNCIONES AUXILIARES Y AUTH
 // =========================================================
+// Función reutilizable para notificaciones elegantes (Toastify)
+function showToast(message, type = 'info') {
+    let background = "#333";
+    if (type === 'success') background = "linear-gradient(to right, #00b09b, #96c93d)";
+    if (type === 'error') background = "linear-gradient(to right, #ff5f6d, #ffc371)";
+    if (type === 'warning') background = "#facc15";
+
+    Toastify({
+        text: message,
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        stopOnFocus: true,
+        style: {
+            background: background,
+            borderRadius: "8px",
+            boxShadow: "0 3px 6px rgba(0,0,0,0.16)",
+            fontWeight: "600",
+            color: type === 'warning' ? '#000' : '#fff'
+        },
+        onClick: function () { }
+    }).showToast();
+}
+
 function safeSetText(elementId, text) {
     const el = document.getElementById(elementId);
     if (el) el.innerText = text;
+}
+
+// Generic Modal Functions
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+    }
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
 }
 
 async function getCurrentUserId() {
@@ -35,9 +76,9 @@ async function getCurrentUserId() {
     return session ? session.user.id : null;
 }
 
-async function logout() { 
-    await _supabase.auth.signOut(); 
-    window.location.href = 'index.html'; 
+async function logout() {
+    await _supabase.auth.signOut();
+    window.location.href = 'index.html';
 }
 
 async function loadUserData() {
@@ -59,21 +100,32 @@ async function trackDailyLogin() {
     if (!userId) return;
 
     const today = new Date().toISOString().split('T')[0];
-    
+
     // Upsert: Inserta si no existe conflicto con la restricción UNIQUE (user_id, login_date)
     await _supabase.from('user_activity_logs').upsert(
-        { user_id: userId, login_date: today }, 
+        { user_id: userId, login_date: today },
         { onConflict: 'user_id, login_date', ignoreDuplicates: true }
     );
-    
+
     // Recargar datos para actualizar UI inmediatamente
     await loadActivityData();
 }
 
 // 3.2 Cargar datos históricos
 async function loadActivityData() {
+    // 1. Mostrar skeleton y ocultar real
+    const skeleton = document.getElementById('activity-skeleton');
+    const content = document.getElementById('activity-real-content');
+
+    if (skeleton) skeleton.classList.remove('hidden');
+    if (content) content.classList.add('hidden');
+
     const userId = await getCurrentUserId();
-    if (!userId) return;
+    if (!userId) {
+        if (skeleton) skeleton.classList.add('hidden');
+        if (content) content.classList.remove('hidden');
+        return;
+    }
 
     const { data, error } = await _supabase
         .from('user_activity_logs')
@@ -85,6 +137,15 @@ async function loadActivityData() {
         data.forEach(log => userActivityDates.add(log.login_date));
         updateActivityCard(); // Actualizar gráfico circular en el Dashboard
     }
+
+    // 3. Ocultar skeleton, mostrar real con delay
+    setTimeout(() => {
+        if (skeleton) skeleton.classList.add('hidden');
+        if (content) {
+            content.classList.remove('hidden');
+            content.classList.add('fade-in');
+        }
+    }, 500);
 }
 
 // 3.3 Actualizar Gráfico Circular (Card del Dashboard)
@@ -94,7 +155,7 @@ function updateActivityCard() {
     const month = now.getMonth(); // 0-11
     // const daysInMonth = new Date(year, month + 1, 0).getDate(); // Opcional si queremos % del mes total
     const todayDate = now.getDate(); // Día actual (ej: 15)
-    
+
     // Contar cuántos días de ESTE mes y año ha entrado el usuario
     let loginsThisMonth = 0;
     userActivityDates.forEach(dateStr => {
@@ -112,8 +173,8 @@ function updateActivityCard() {
     // Actualizar UI
     const pie = document.getElementById('activity-pie-chart');
     const text = document.getElementById('activity-percent-text');
-    
-    if(pie && text) {
+
+    if (pie && text) {
         text.innerText = `${finalPercent}%`;
         // Conic gradient para efecto de dona/progreso
         pie.style.background = `conic-gradient(#10b981 0% ${finalPercent}%, #222 ${finalPercent}% 100%)`;
@@ -143,7 +204,7 @@ function renderFullCalendar() {
     // Cálculos de fechas
     const firstDayIndex = new Date(currentCalYear, currentCalMonth, 1).getDay();
     const daysInMonth = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
-    
+
     // Fecha actual real para comparaciones
     const now = new Date();
     // Usamos local date string para comparar visualmente con lo guardado (YYYY-MM-DD)
@@ -152,7 +213,7 @@ function renderFullCalendar() {
     const todayYear = now.getFullYear();
     const todayMonth = now.getMonth();
     const todayDay = now.getDate();
-    const todayKey = `${todayYear}-${(todayMonth+1).toString().padStart(2,'0')}-${todayDay.toString().padStart(2,'0')}`;
+    const todayKey = `${todayYear}-${(todayMonth + 1).toString().padStart(2, '0')}-${todayDay.toString().padStart(2, '0')}`;
 
     // Celdas vacías previas al día 1
     for (let i = 0; i < firstDayIndex; i++) {
@@ -165,16 +226,16 @@ function renderFullCalendar() {
         const currentMonthStr = (currentCalMonth + 1).toString().padStart(2, '0');
         const dayStr = i.toString().padStart(2, '0');
         const dateKey = `${currentCalYear}-${currentMonthStr}-${dayStr}`;
-        
+
         // Determinar estado visual (CSS class)
         let className = 'cal-day';
-        
+
         // Objeto fecha para comparar si es futuro
         const checkDate = new Date(currentCalYear, currentCalMonth, i);
-        checkDate.setHours(0,0,0,0);
-        
+        checkDate.setHours(0, 0, 0, 0);
+
         const realTodayDate = new Date();
-        realTodayDate.setHours(0,0,0,0);
+        realTodayDate.setHours(0, 0, 0, 0);
 
         if (checkDate > realTodayDate) {
             className += ' future-day'; // Días futuros
@@ -199,7 +260,7 @@ function renderFullCalendar() {
 // 3.5 Navegación del Calendario
 function prevMonth() {
     currentCalMonth--;
-    if(currentCalMonth < 0) {
+    if (currentCalMonth < 0) {
         currentCalMonth = 11;
         currentCalYear--;
     }
@@ -208,7 +269,7 @@ function prevMonth() {
 
 function nextMonth() {
     currentCalMonth++;
-    if(currentCalMonth > 11) {
+    if (currentCalMonth > 11) {
         currentCalMonth = 0;
         currentCalYear++;
     }
@@ -216,27 +277,19 @@ function nextMonth() {
 }
 
 // 3.6 Modales de Actividad
-function openActivityModal() { 
-    const modal = document.getElementById('activity-modal'); 
-    if (modal) { 
-        modal.classList.remove('hidden'); 
-        modal.classList.add('active'); 
-        
-        // Resetear a mes actual al abrir
-        const now = new Date();
-        currentCalMonth = now.getMonth();
-        currentCalYear = now.getFullYear();
-        
-        renderFullCalendar(); 
-    } 
+function openActivityModal() {
+    openModal('activity-modal');
+
+    // Resetear a mes actual al abrir
+    const now = new Date();
+    currentCalMonth = now.getMonth();
+    currentCalYear = now.getFullYear();
+
+    renderFullCalendar();
 }
 
-function closeActivityModal() { 
-    const modal = document.getElementById('activity-modal'); 
-    if (modal) { 
-        modal.classList.remove('active'); 
-        setTimeout(() => modal.classList.add('hidden'), 300); 
-    } 
+function closeActivityModal() {
+    closeModal('activity-modal');
 }
 
 // =========================================================
@@ -247,11 +300,11 @@ function switchView(targetId) {
     if (dashboard) dashboard.classList.add('hidden');
 
     const views = [
-        'learning-view', 'simulation-view', 'pomodoro-view', 
+        'learning-view', 'simulation-view', 'pomodoro-view',
         'selection-view', 'pomodoro-timer-view', 'quiz-settings-modal',
         'stats-view', 'profile-view'
     ];
-    
+
     views.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
@@ -270,7 +323,7 @@ function showPomodoro() { switchView('pomodoro-view'); }
 
 function goBackToDashboard() {
     const views = [
-        'learning-view', 'simulation-view', 'pomodoro-view', 
+        'learning-view', 'simulation-view', 'pomodoro-view',
         'selection-view', 'pomodoro-timer-view', 'quiz-settings-modal',
         'stats-view', 'profile-view'
     ];
@@ -284,11 +337,11 @@ function goBackToDashboard() {
         dbContent.classList.remove('hidden');
         dbContent.classList.add('fade-in');
     }
-    
+
     // Resetear navegación móvil visualmente
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     document.getElementById('nav-home-mobile')?.classList.add('active');
-    
+
     // Actualizar stats del dashboard al volver
     loadDashboardStats();
     loadActivityData();
@@ -339,7 +392,7 @@ async function renderCategoriesWithProgress() {
 
             const card = document.createElement('div');
             card.className = 'category-card';
-            
+
             // Selección Múltiple (toggle)
             card.onclick = () => {
                 card.classList.toggle('selected');
@@ -372,10 +425,10 @@ function openSelectionView(mode) {
         else if (mode === 'simulation') titleEl.innerText = 'Customize Simulation';
     }
     switchView('selection-view');
-    
+
     // Solo cargar categorías si estamos en standalone
     if (mode === 'standalone') {
-        renderCategoriesWithProgress(); 
+        renderCategoriesWithProgress();
     }
 }
 
@@ -388,13 +441,12 @@ function startRandomRun() {
 // 6. QUICK NOTES
 // =========================================================
 function openNotesModal() {
-    const modal = document.getElementById('notes-modal');
-    if(modal) { modal.classList.remove('hidden'); modal.classList.add('active'); loadNotes(); }
+    openModal('notes-modal');
+    loadNotes();
 }
 
 function closeNotesModal() {
-    const modal = document.getElementById('notes-modal');
-    if (modal) { modal.classList.remove('active'); setTimeout(() => modal.classList.add('hidden'), 300); }
+    closeModal('notes-modal');
 }
 
 async function saveNote() {
@@ -402,30 +454,30 @@ async function saveNote() {
     const text = input.value.trim();
     if (!text) return;
     const userId = await getCurrentUserId();
-    if (!userId) { alert("Please log in."); return; }
-    
+    if (!userId) { showToast("Please log in.", "error"); return; }
+
     const btn = document.getElementById('btn-save-note');
     btn.innerText = "...";
-    
+
     const { error } = await _supabase.from('user_notes').insert({ user_id: userId, content: text });
     btn.innerText = "SAVE";
-    
+
     if (error) console.error(error);
     else { input.value = ''; loadNotes(); }
 }
 
 async function loadNotes() {
     const container = document.getElementById('notes-list-container');
-    if(!container) return;
+    if (!container) return;
     container.innerHTML = 'Loading...';
-    
+
     const userId = await getCurrentUserId();
     if (!userId) { container.innerHTML = 'Log in to see notes.'; return; }
-    
+
     const { data: notes } = await _supabase.from('user_notes').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-    
+
     if (!notes || notes.length === 0) { container.innerHTML = 'No notes yet.'; return; }
-    
+
     container.innerHTML = notes.map(n => `
         <div style="background:rgba(255,255,255,0.05); padding:12px; border-radius:8px; margin-bottom:8px; border-left:3px solid var(--accent);">
             <div style="color:#eee;">${n.content}</div>
@@ -438,28 +490,26 @@ async function loadNotes() {
 // 7. IA LAB
 // =========================================================
 function openAIModal() {
-    const modal = document.getElementById('ai-modal');
-    if(modal) { modal.classList.remove('hidden'); modal.classList.add('active'); }
+    openModal('ai-modal');
 }
 
 function closeAIModal() {
-    const modal = document.getElementById('ai-modal');
-    if(modal) { modal.classList.remove('active'); setTimeout(() => modal.classList.add('hidden'), 300); }
+    closeModal('ai-modal');
 }
 
 function callGemini() {
     const input = document.getElementById('ai-input');
-    if(!input || !input.value.trim()) return;
-    
+    if (!input || !input.value.trim()) return;
+
     const isMobile = window.location.href.includes('mobile.html');
     const targetPage = isMobile ? 'quiz_engine_mobile.html' : 'quiz_engine.html';
 
     const output = document.getElementById('ai-output');
-    if(output) {
+    if (output) {
         output.style.display = 'block';
         output.innerHTML = '<div style="color:var(--accent);">🔍 Searching...</div>';
     }
-    
+
     setTimeout(() => {
         window.location.href = `${targetPage}?mode=search&term=${encodeURIComponent(input.value.trim())}`;
     }, 800);
@@ -474,28 +524,28 @@ function updatePomoDisplay() {
     const m = Math.floor(pomoTime / 60).toString().padStart(2, '0');
     const s = (pomoTime % 60).toString().padStart(2, '0');
     const display = document.getElementById('timer-display');
-    if(display) display.innerText = `${m}:${s}`;
+    if (display) display.innerText = `${m}:${s}`;
 }
 
 function toggleTimer() {
     const btn = document.getElementById('btn-pomo-toggle');
-    if(isPomoRunning) {
-        clearInterval(pomoInterval); isPomoRunning = false; if(btn) btn.innerText = "▶";
+    if (isPomoRunning) {
+        clearInterval(pomoInterval); isPomoRunning = false; if (btn) btn.innerText = "▶";
     } else {
-        isPomoRunning = true; if(btn) btn.innerText = "❚❚";
+        isPomoRunning = true; if (btn) btn.innerText = "❚❚";
         pomoInterval = setInterval(() => {
-            if(pomoTime > 0) { pomoTime--; updatePomoDisplay(); } else { clearInterval(pomoInterval); isPomoRunning = false; }
+            if (pomoTime > 0) { pomoTime--; updatePomoDisplay(); } else { clearInterval(pomoInterval); isPomoRunning = false; }
         }, 1000);
     }
 }
 
-function resetPomo() { 
-    clearInterval(pomoInterval); 
-    isPomoRunning = false; 
-    pomoTime = 25 * 60; 
-    updatePomoDisplay(); 
-    const btn = document.getElementById('btn-pomo-toggle'); 
-    if(btn) btn.innerText = "▶"; 
+function resetPomo() {
+    clearInterval(pomoInterval);
+    isPomoRunning = false;
+    pomoTime = 25 * 60;
+    updatePomoDisplay();
+    const btn = document.getElementById('btn-pomo-toggle');
+    if (btn) btn.innerText = "▶";
 }
 
 // =========================================================
@@ -504,36 +554,141 @@ function resetPomo() {
 async function initCountdown() {
     const badge = document.getElementById('countdown-badge');
     if (!badge) return;
+
+    let dateStr = localStorage.getItem('user_exam_date');
+
+    // Try to get from Supabase if logged in
     const { data: { session } } = await _supabase.auth.getSession();
-    if (!session) { badge.innerText = "Set Date"; return; }
-    const { data } = await _supabase.from('user_settings').select('exam_date').eq('user_id', session.user.id).single();
-    if (data && data.exam_date) updateDaysLeftUI(data.exam_date);
+    if (session) {
+        const { data } = await _supabase.from('user_settings').select('exam_date').eq('user_id', session.user.id).single();
+        if (data && data.exam_date) {
+            dateStr = data.exam_date;
+            // Sync local
+            localStorage.setItem('user_exam_date', dateStr);
+        }
+    }
+
+    if (dateStr) {
+        updateDaysLeftUI(dateStr);
+    } else {
+        badge.innerText = "Set Date";
+    }
 }
 
 function updateDaysLeftUI(dateString) {
     const target = new Date(dateString); const today = new Date();
     const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-    const badge = document.getElementById('countdown-badge'); 
-    if(badge) badge.innerText = diff > 0 ? `${diff} Days Left` : "Exam Day!";
+    const badge = document.getElementById('countdown-badge');
+    if (badge) badge.innerText = diff > 0 ? `${diff} Days Left` : "Exam Day!";
 }
 
-function openDateModal() { 
-    const modal = document.getElementById('date-setup-modal');
-    if(modal) { modal.classList.remove('hidden'); modal.classList.add('active'); }
+function openDateModal() {
+    openModal('date-setup-modal');
 }
-function closeDateModal() { 
-    const modal = document.getElementById('date-setup-modal');
-    if(modal) { modal.classList.remove('active'); setTimeout(() => modal.classList.add('hidden'), 300); }
+function closeDateModal() {
+    closeModal('date-setup-modal');
 }
 
 async function saveExamDate() {
     const dateInput = document.getElementById('exam-date-input');
-    if (!dateInput || !dateInput.value) return;
+
+    if (!dateInput || !dateInput.value) {
+        showToast("Please select a date first.", "warning");
+        return;
+    }
+    const selectedDate = dateInput.value;
+
+    // Save locally first (optimistic and fallback)
+    localStorage.setItem('user_exam_date', selectedDate);
+
     const { data: { session } } = await _supabase.auth.getSession();
-    if (session) { 
-        await _supabase.from('user_settings').upsert({ user_id: session.user.id, exam_date: dateInput.value }); 
-        updateDaysLeftUI(dateInput.value); 
-        closeDateModal(); 
+
+    if (session) {
+        const { error: upsertError } = await _supabase.from('user_settings').upsert({ user_id: session.user.id, exam_date: selectedDate });
+        if (upsertError) {
+            console.error("Supabase upsert error:", upsertError);
+            showToast("Error saving date to cloud: " + upsertError.message, "error");
+            // We don't block the UI update because we saved locally
+        } else {
+            showToast("Date saved successfully!", "success");
+        }
+    } else {
+        showToast("Saved locally (login to sync)", "info");
+    }
+
+    // Update UI generic
+    updateDaysLeftUI(selectedDate);
+    closeDateModal();
+}
+
+// =========================================================
+// 10. RECOVERY & PASSWORD RESET
+// =========================================================
+function checkRecoveryMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isRecovery = urlParams.get('recovery') === 'true';
+
+    if (isRecovery) {
+        document.getElementById('dashboard-content')?.classList.add('hidden');
+        document.querySelector('.header-area')?.classList.add('hidden');
+        document.getElementById('reset-password-view')?.classList.remove('hidden');
+
+        const newUrl = window.location.pathname + window.location.hash;
+        history.replaceState(null, '', newUrl);
+
+        const alertContainer = document.getElementById('password-alert-container');
+        if (alertContainer) {
+            alertContainer.innerHTML = '<div class="password-alert" style="display:block;">⚠️ You are in Password Reset Mode. Please set a new password.</div>';
+        }
+    } else {
+        document.getElementById('dashboard-content')?.classList.remove('hidden');
+        document.querySelector('.header-area')?.classList.remove('hidden');
+        document.getElementById('reset-password-view')?.classList.add('hidden');
+    }
+}
+
+async function updatePassword() {
+    const password = document.getElementById('new-password').value;
+    const confirm = document.getElementById('confirm-password').value;
+    const btn = document.getElementById('btn-update-password');
+    const msg = document.getElementById('reset-msg');
+
+    if (password.length < 6 || password !== confirm) {
+        msg.innerText = password.length < 6 ? 'Password must be at least 6 characters.' : 'Passwords do not match.';
+        msg.style.color = '#ef4444';
+        return;
+    }
+
+    btn.innerText = 'Updating...';
+    btn.disabled = true;
+    msg.innerText = '';
+
+    if (typeof _supabase === 'undefined') {
+        msg.innerText = 'Error: Supabase client not initialized.';
+        msg.style.color = '#ef4444';
+        btn.innerText = 'Update Password';
+        btn.disabled = false;
+        return;
+    }
+
+    const { error } = await _supabase.auth.updateUser({ password: password });
+
+    if (error) {
+        msg.innerText = `Error: ${error.message}. Try logging out and using the recovery link again.`;
+        msg.style.color = '#ef4444';
+        btn.innerText = 'Update Password';
+        btn.disabled = false;
+    } else {
+        msg.innerText = '✅ Password updated successfully! Redirecting to login.';
+        msg.style.color = '#22c55e';
+
+        await _supabase.auth.signOut();
+
+        document.getElementById('reset-form-content').classList.add('hidden');
+
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 3000);
     }
 }
 
@@ -549,13 +704,13 @@ async function loadDashboardStats() {
 // 11. INICIALIZACIÓN PRINCIPAL
 // =========================================================
 document.addEventListener('DOMContentLoaded', async () => {
-    
+
     const path = window.location.pathname;
     const isMobilePage = path.includes('mobile.html');
 
     if (path.includes('dashboard.html') || isMobilePage) {
         console.log("Inicializando App...");
-        
+
         // 1. Cargar usuario y tracking inicial
         await loadUserData();
         loadDashboardStats();
@@ -569,25 +724,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Calendario controles
         document.getElementById('btn-prev-month')?.addEventListener('click', prevMonth);
         document.getElementById('btn-next-month')?.addEventListener('click', nextMonth);
-        
+
         // Notas
         document.getElementById('card-notes-desktop')?.addEventListener('click', openNotesModal);
         document.getElementById('nav-notes-mobile')?.addEventListener('click', openNotesModal);
         document.getElementById('btn-save-note')?.addEventListener('click', saveNote);
         document.getElementById('btn-close-notes-modal')?.addEventListener('click', closeNotesModal);
-        
+
         // IA
         document.getElementById('btn-ai-submit')?.addEventListener('click', callGemini);
         document.getElementById('btn-close-ai-modal')?.addEventListener('click', closeAIModal);
-        
+
         // Fecha Examen
         document.getElementById('countdown-badge')?.addEventListener('click', openDateModal);
-        const btnSaveDate = document.querySelector('#date-setup-modal button'); 
-        if(btnSaveDate) btnSaveDate.onclick = saveExamDate;
+        const btnSaveDate = document.querySelector('#date-setup-modal button');
+        if (btnSaveDate) btnSaveDate.onclick = saveExamDate;
         const btnCloseDate = document.querySelector('#date-setup-modal .close-btn');
-        if(btnCloseDate) btnCloseDate.onclick = closeDateModal;
-        
-        // 3. Navegación Desktop Específica
+        if (btnCloseDate) btnCloseDate.onclick = closeDateModal;
+
+        // 4. Recovery Check
+        checkRecoveryMode();
+        // Listener para update password ya estÃ¡ en HTML onclick="updatePassword()", pero podemos moverlo aquÃ­ si quitamos el onclick del HTML. 
+        // En este paso, el HTML onclick sigue ahÃ­, asÃ­ que funcionarÃ¡ porque updatePassword ahora es global o accesible.
+        // Pero para ser puristas, deberÃ­amos agregar el listener aquÃ­ y quitarlo del HTML. 
+        // Como no edite el HTML para quitar 'onclick="updatePassword()"', lo dejarÃ© accesible globalmente.
+        // Sin embargo, como estamos en un modulo o script, aseguremonos que sea window.updatePassword = updatePassword si fuera modulo, 
+        // pero esto es script plano, asÃ­ que estÃ¡ bien.
+
+        // Agregar listener al boton de update password por si acaso
+        document.getElementById('btn-update-password')?.addEventListener('click', updatePassword);
+
+        // 5. Navegación Desktop Específica
         if (!isMobilePage) {
             console.log("Modo Escritorio Detectado.");
 
@@ -618,26 +785,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // START QUIZ con selección múltiple
             document.getElementById('btn-start-quiz-selection')?.addEventListener('click', () => {
-                
+
                 if (currentSelectionMode === 'standalone') {
                     // Capturar múltiples categorías seleccionadas
                     const selectedCards = document.querySelectorAll('.category-card.selected');
-                    
+
                     if (selectedCards.length > 0) {
-                        const selectedCats = Array.from(selectedCards).map(card => 
+                        const selectedCats = Array.from(selectedCards).map(card =>
                             card.querySelector('.cat-name').innerText.trim()
                         );
-                        
+
                         const catsParam = selectedCats.map(c => encodeURIComponent(c)).join(',');
                         window.location.href = `quiz_engine.html?mode=standalone&cats=${catsParam}`;
                     } else {
                         alert("Please select at least one subject.");
                     }
                 } else {
-                     window.location.href = `quiz_engine.html?mode=${currentSelectionMode}`;
+                    window.location.href = `quiz_engine.html?mode=${currentSelectionMode}`;
                 }
             });
-        } 
+        }
         else {
             console.log("Modo Móvil Detectado.");
         }
