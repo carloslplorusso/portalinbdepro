@@ -38,7 +38,7 @@ const QuizEngine = {
         // Decidir si cargar preguntas o mostrar selección
         if (this.mode === 'random' || this.mode === 'daily' || this.mode === 'search' || cats) {
             await this.fetchQuestions(count, term, cats);
-        } else if (this.mode === 'simulation') {
+        } else if (this.mode === 'simulation' || this.mode === 'itemsets') {
             await this.fetchQuestions(count);
         } else {
             if (typeof loadCategoriesUI === 'function') {
@@ -73,7 +73,7 @@ const QuizEngine = {
             const res = await query.in('category', catsArr).is('case_id', null);
             data = res.data;
         } else {
-            if (this.mode.includes('simulation')) query = query.not('case_id', 'is', null);
+            if (this.mode.includes('simulation') || this.mode === 'itemsets') query = query.not('case_id', 'is', null);
             else query = query.is('case_id', null);
 
             if (count) query = query.limit(count);
