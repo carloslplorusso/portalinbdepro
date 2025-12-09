@@ -103,7 +103,7 @@ const QuizEngine = {
         this.currentIndex = 0;
         document.getElementById('prac-start-screen')?.classList.add('hidden');
 
-        if (this.mode.includes('simulation')) {
+        if (this.mode.includes('simulation') || this.mode === 'itemsets') {
             document.getElementById('sim-screen-quiz').classList.add('active');
             this.renderSimQuestion();
         } else {
@@ -194,7 +194,7 @@ const QuizEngine = {
     nextQuestion() {
         if (this.currentIndex < this.data.length - 1) {
             this.currentIndex++;
-            if (this.mode.includes('simulation')) this.renderSimQuestion();
+            if (this.mode.includes('simulation') || this.mode === 'itemsets') this.renderSimQuestion();
             else this.renderPracticeQuestion();
         } else {
             this.finishQuiz();
@@ -284,7 +284,7 @@ const QuizEngine = {
         document.getElementById('sim-screen-quiz')?.classList.remove('active');
         document.getElementById('sim-screen-review')?.classList.remove('active');
 
-        const prefix = this.mode.includes('simulation') ? 'sim' : 'prac';
+        const prefix = (this.mode.includes('simulation') || this.mode === 'itemsets') ? 'sim' : 'prac';
 
         // 1. Calcular Gráficos (Prepara los datos, pero NO muestra la pantalla aún)
         this.calculateAndRenderCharts(prefix);
