@@ -810,3 +810,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 });
+
+// =========================================================
+// 12. POMODORO ACCORDION (NUEVO)
+// =========================================================
+function togglePomoInfo() {
+    const content = document.getElementById('pomo-info-content');
+    if (content) {
+        content.classList.toggle('hidden');
+        content.classList.toggle('fade-in');
+    }
+}

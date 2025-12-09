@@ -37,8 +37,18 @@
             <div class="lab-subtitle">Train in our lab. Become a Pro.</div>
             <div id="header-welcome-section">
                 <div class="user-welcome">
-                    <span>Welcome, <span id="user-name-display"
-                            style="color:var(--accent); font-weight:700;">Doctor</span></span>
+                    <span>Welcome, <span .learning-card:active { transform: scale(0.98); border-color: var(--accent); }
+                            .pomo-accordion-btn { background: #1c1c1c; color: #ccc; width: 100%; padding: 15px; border:
+                            1px solid #333; border-radius: 12px; margin: 15px 0 5px 0; cursor: pointer; text-align:
+                            left; font-weight: 600; display: flex; justify-content: space-between; align-items: center;
+                            transition: all 0.3s; } .pomo-accordion-btn:hover { border-color: var(--accent); color:
+                            white; } .pomo-accordion-content { background: #111; border: 1px solid #222; border-top:
+                            none; border-radius: 0 0 12px 12px; padding: 20px; color: #ccc; font-size: 0.95rem;
+                            line-height: 1.6; margin-bottom: 15px; max-height: 400px; /* Scrollable if too long */
+                            overflow-y: auto; border-top: 1px solid #333; /* Visual separation */ margin-top: -10px; /*
+                            Connect with button */ } .pomo-accordion-content h4 { color: white; margin: 15px 0 5px 0; }
+                            .pomo-accordion-content ul { padding-left: 20px; margin-top: 5px; } .pomo-accordion-content
+                            li { margin-bottom: 8px; }font-weight:700;">Doctor</span></span>
                     <button id="btn-logout-desktop"
                         style="background:none; border:1px solid #ff6b6b; color:#ff6b6b; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center;">✕</button>
                 </div>
@@ -188,6 +198,52 @@
                 <h3>Start Session</h3>
                 <p>25 min Focus / 5 min Break</p>
             </div>
+
+            <button class="pomo-accordion-btn" onclick="togglePomoInfo()">Learn the Pomodoro Technique ▼</button>
+            <div id="pomo-info-content" class="pomo-accordion-content hidden">
+                <h3 style="color:var(--accent); margin-top:0;">The Pomodoro Technique</h3>
+                <p>Stop fighting the clock and start working with it. Here is your complete guide to the productivity
+                    method that changed the world.</p>
+
+                <h4>What is it?</h4>
+                <p>The Pomodoro Technique is a time management philosophy that aims to provide the user with maximum
+                    focus and creative freshness, thereby allowing them to complete projects faster with less mental
+                    fatigue.</p>
+                <p>The concept is simple: break your workday into 25-minute chunks separated by five-minute breaks.
+                    These intervals are referred to as Pomodoros.</p>
+
+                <h4>How It Works (The 6 Steps)</h4>
+                <p>Don't overcomplicate it. You only need a timer and a task.</p>
+
+                <ul>
+                    <li><strong>1. Pick Your Task:</strong> Select one single task to focus on. Be specific.</li>
+                    <li><strong>2. Set the Timer:</strong> Set your timer for 25 minutes. Make a mental oath to focus
+                        exclusively.</li>
+                    <li><strong>3. Work Until the Ring:</strong> Immerse yourself. Do not switch tasks. If a thought
+                        pops up, write it down and continue.</li>
+                    <li><strong>4. The Short Break:</strong> When the timer rings, stop immediately. Take 5 minutes.
+                        Breathe, stretch. Do NOT check social media.</li>
+                    <li><strong>5. Repeat the Cycle:</strong> Go back to Step 2. (1 Cycle = 25m focus + 5m rest).</li>
+                    <li><strong>6. The Long Break:</strong> After 4 Pomodoros, take a restorative break of 15-30
+                        minutes. Let your brain recover.</li>
+                </ul>
+
+                <h4>The Golden Rules</h4>
+                <ul>
+                    <li><strong>The Indivisible Rule:</strong> A Pomodoro cannot be split up. If interrupted > 1 min,
+                        reset.</li>
+                    <li><strong>The Batching Rule:</strong> If a task is short, group it with others.</li>
+                    <li><strong>The Breakdown Rule:</strong> If a task needs > 5-7 Pomodoros, break it down.</li>
+                </ul>
+
+                <h4>Why It Works</h4>
+                <ul>
+                    <li><strong>Combats Parkinson’s Law:</strong> Limits time to force efficiency.</li>
+                    <li><strong>Eliminates Burnout:</strong> Frequent breaks keep your mind agile.</li>
+                    <li><strong>Reduces Anxiety:</strong> You only have to survive the next 25 minutes.</li>
+                </ul>
+            </div>
+
             <button class="btn-back-small" id="btn-back-pomodoro">← Back to Dashboard</button>
         </div>
 
