@@ -497,7 +497,7 @@
             };
         }
 
-        function openMobileSelection(mode) {
+        async function openMobileSelection(mode) {
             mobileSelectionMode = mode;
             hideAllViews();
             const view = document.getElementById('selection-view');
@@ -505,15 +505,40 @@
 
             document.getElementById('selection-mode-title').innerText = mode === 'standalone' ? 'Select Topics' : 'Customize Exam';
 
-            // Lista estática simulada para móvil (o conecta con Supabase si prefieres)
             const list = document.getElementById('dynamic-cat-list');
-            list.innerHTML = `
-                <div class="subject-item active" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Oral Pathology</div>
-                <div class="subject-item" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Pharmacology</div>
-                <div class="subject-item" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Operative Dentistry</div>
-                <div class="subject-item" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Patient Management</div>
-                <div class="subject-item" onclick="this.classList.toggle('active')"><div class="custom-checkbox"></div> Oral Surgery</div>
-            `;
+            list.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">Loading topics...</div>';
+
+            try {
+                // Reutilizamos lógica de fetch similar a app.js
+                const { data: { session } } = await _supabase.auth.getSession();
+                const userId = session ? session.user.id : null;
+
+                // Fetch de categorías activas
+                const { data: questions } = await _supabase.from('questions_bank').select('category').eq('is_active', true);
+
+                if (!questions) {
+                    list.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">No topics found.</div>';
+                    return;
+                }
+
+                // Agrupar categorías
+                const uniqueCats = [...new Set(questions.map(q => q.category || 'General'))].sort();
+
+                list.innerHTML = '';
+                uniqueCats.forEach(cat => {
+                    const item = document.createElement('div');
+                    item.className = 'subject-item';
+                    item.onclick = () => {
+                        item.classList.toggle('active');
+                    };
+                    item.innerHTML = `<div class="custom-checkbox"></div> ${cat}`;
+                    list.appendChild(item);
+                });
+
+            } catch (e) {
+                console.error(e);
+                list.innerHTML = '<div style="padding:20px; text-align:center; color:red;">Error loading topics.</div>';
+            }
         }
 
         async function initMobile() {

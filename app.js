@@ -426,8 +426,8 @@ function openSelectionView(mode) {
     }
     switchView('selection-view');
 
-    // Solo cargar categorías si estamos en standalone
-    if (mode === 'standalone') {
+    // Cargar categorías si estamos en standalone o simulation
+    if (mode === 'standalone' || mode === 'simulation') {
         renderCategoriesWithProgress();
     }
 }
