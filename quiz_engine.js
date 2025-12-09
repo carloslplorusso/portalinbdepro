@@ -422,23 +422,52 @@ const QuizEngine = {
     },
 
     renderSimQuestion() {
-        const q = this.data[this.currentIndex];
-        this.setText('sim-q-counter', `Question ${this.currentIndex + 1} of ${this.data.length}`);
-        this.setText('sim-q-text', q.question_text);
+        if (!this.data || this.data.length === 0) {
+            console.error("No data to render.");
+            return;
+        }
 
+        const q = this.data[this.currentIndex];
+        if (!q) {
+            console.error("Question object is undefined at index " + this.currentIndex);
+            return;
+        }
+
+        this.setText('sim-q-counter', `Question ${this.currentIndex + 1} of ${this.data.length}`);
+
+        // Ensure text is not null
+        const qText = q.question_text || "Question content unavailable.";
+        this.setText('sim-q-text', qText);
+
+        // Default Patient Data
         let pData = { patient: "N/A", cc: "-", history: "-", findings: "-" };
+
+        // Process Clinical Case Data Safe
         if (q.clinical_cases) {
+            // Handle array vs object return from Supabase
             const c = Array.isArray(q.clinical_cases) ? q.clinical_cases[0] : q.clinical_cases;
+
             if (c && c.patient_data) {
                 try {
-                    const parsed = typeof c.patient_data === 'string' ? JSON.parse(c.patient_data) : c.patient_data;
-                    pData = {
-                        patient: parsed.patient || parsed.age || "N/A",
-                        cc: parsed.cc || parsed.complaint || "-",
-                        history: parsed.history || "-",
-                        findings: parsed.findings || "-"
-                    };
-                } catch (e) { }
+                    // Safe Parse: Check if it's already an object
+                    let parsed;
+                    if (typeof c.patient_data === 'object') {
+                        parsed = c.patient_data;
+                    } else if (typeof c.patient_data === 'string') {
+                        parsed = JSON.parse(c.patient_data);
+                    }
+
+                    if (parsed) {
+                        pData = {
+                            patient: parsed.patient || parsed.age || "N/A",
+                            cc: parsed.cc || parsed.complaint || "-",
+                            history: parsed.history || "-",
+                            findings: parsed.findings || "-"
+                        };
+                    }
+                } catch (e) {
+                    console.error("Error parsing patient data:", e);
+                }
             }
         }
 
@@ -449,28 +478,32 @@ const QuizEngine = {
         setTable('sim-pat-find', pData.findings);
 
         const container = document.getElementById('sim-options-container');
-        container.innerHTML = '';
-        [q.option_a, q.option_b, q.option_c, q.option_d].forEach((opt, idx) => {
-            if (!opt) return;
-            const div = document.createElement('div');
-            div.className = 'sim-option';
-            if (this.userAnswers[q.id] === idx) div.classList.add('selected');
+        if (container) {
+            container.innerHTML = '';
+            [q.option_a, q.option_b, q.option_c, q.option_d].forEach((opt, idx) => {
+                if (!opt) return;
+                const div = document.createElement('div');
+                div.className = 'sim-option';
+                if (this.userAnswers[q.id] === idx) div.classList.add('selected');
 
-            div.innerHTML = `<div class="sim-radio"></div> ${opt}`;
-            div.onclick = () => {
-                this.userAnswers[q.id] = idx;
-                this.renderSimQuestion();
-            };
-            container.appendChild(div);
-        });
+                div.innerHTML = `<div class="sim-radio"></div> ${opt}`;
+                div.onclick = () => {
+                    this.userAnswers[q.id] = idx;
+                    this.renderSimQuestion();
+                };
+                container.appendChild(div);
+            });
+        }
 
         const btnMark = document.getElementById('btn-sim-mark');
-        if (this.markedQuestions.has(this.currentIndex)) {
-            btnMark.classList.add('active');
-            btnMark.innerText = "UNMARK";
-        } else {
-            btnMark.classList.remove('active');
-            btnMark.innerText = "MARK";
+        if (btnMark) {
+            if (this.markedQuestions.has(this.currentIndex)) {
+                btnMark.classList.add('active');
+                btnMark.innerText = "UNMARK";
+            } else {
+                btnMark.classList.remove('active');
+                btnMark.innerText = "MARK";
+            }
         }
     },
 
