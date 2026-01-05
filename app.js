@@ -379,6 +379,33 @@ async function renderCategoriesWithProgress() {
         });
 
         list.innerHTML = '';
+
+        // --- ADD SELECT ALL BUTTON ---
+        const btnContainer = document.createElement('div');
+        btnContainer.style.marginBottom = '15px';
+        btnContainer.style.textAlign = 'right';
+
+        const btnSelectAll = document.createElement('button');
+        btnSelectAll.innerText = "Select All";
+        btnSelectAll.className = "btn-secondary"; // Assuming this class exists or similar
+        btnSelectAll.style.cssText = "padding: 8px 16px; font-size: 0.9rem; border-radius: 6px; cursor: pointer; background: #3f3f46; color: white; border: none;";
+
+        btnSelectAll.onclick = () => {
+            const cards = list.querySelectorAll('.category-card');
+            const allSelected = Array.from(cards).every(c => c.classList.contains('selected'));
+
+            cards.forEach(c => {
+                if (allSelected) c.classList.remove('selected');
+                else c.classList.add('selected');
+            });
+
+            btnSelectAll.innerText = allSelected ? "Select All" : "Deselect All";
+        };
+
+        btnContainer.appendChild(btnSelectAll);
+        list.appendChild(btnContainer);
+        // -----------------------------
+
         const sortedCategories = Object.keys(stats).sort();
 
         if (sortedCategories.length === 0) {

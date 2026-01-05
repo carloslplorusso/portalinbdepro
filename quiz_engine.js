@@ -114,21 +114,76 @@ const QuizEngine = {
             const catsArr = catsStr.split(',').map(decodeURIComponent);
             console.log("DEBUG: Searching for categories:", catsArr);
 
-            // Allow both case-based and standalone questions for category practice
-            // UNLESS mode is specifically 'standalone' (Dark Mode Practice)
+            // 1. Enforce Standalone if needed
+            let isStandalone = false;
             if (this.mode === 'standalone') {
                 console.log("DEBUG: Enforcing Standalone (No Cases) for Category Selection");
                 query = query.is('case_id', null).is('clinical_case_id', null);
+                isStandalone = true;
             }
 
-            const res = await query.in('category', catsArr);
-            if (res.error) {
-                console.error("Supabase Error (Cats):", res.error);
-                alert("Error fetching category questions: " + res.error.message);
+            // 2. Fetch candidates (ALL matching IDs) to filter manually
+            // We use a fresh query to get IDs only for filtering
+            let idQuery = _supabase.from('questions_bank').select('id, category').in('category', catsArr).eq('is_active', true);
+            if (isStandalone) idQuery = idQuery.is('case_id', null).is('clinical_case_id', null);
+
+            const { data: candidates, error: candError } = await idQuery;
+
+            if (candError) {
+                console.error("Error fetching candidates:", candError);
+                alert("Error loading questions.");
+                return;
+            }
+
+            if (!candidates || candidates.length === 0) {
+                alert("No questions found for these categories.");
+                return;
+            }
+
+            // 3. Get User Progress
+            let answeredIds = new Set();
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                const { data: progress } = await _supabase.from('user_progress').select('question_id').eq('user_id', session.user.id);
+                if (progress) progress.forEach(p => answeredIds.add(p.question_id));
+            }
+
+            // 4. Filter Unseen
+            const unseen = candidates.filter(q => !answeredIds.has(q.id));
+            console.log(`Pool Stats: Total=${candidates.length}, Unseen=${unseen.length}`);
+
+            // 5. Select Logic
+            const targetCount = count || 20; // Default or URL param
+            let selectedIds = [];
+
+            if (unseen.length >= targetCount) {
+                // Randomly pick from unseen
+                selectedIds = unseen.sort(() => 0.5 - Math.random()).slice(0, targetCount).map(q => q.id);
             } else {
-                console.log("DEBUG: Query Result Count:", res.data?.length);
+                // Take all unseen
+                selectedIds.push(...unseen.map(q => q.id));
+                // Fill remainder with random seen
+                const remainder = targetCount - selectedIds.length;
+                const seen = candidates.filter(q => answeredIds.has(q.id));
+                const filled = seen.sort(() => 0.5 - Math.random()).slice(0, remainder).map(q => q.id);
+                selectedIds.push(...filled);
+            }
+
+            // Final Shuffle
+            selectedIds.sort(() => 0.5 - Math.random());
+
+            // 6. Fetch Full Data
+            const res = await _supabase.from('questions_bank')
+                .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
+                .in('id', selectedIds);
+
+            if (res.error) {
+                console.error("Supabase Error (Cats Full):", res.error);
+                alert("Error: " + res.error.message);
             }
             data = res.data;
+            if (data) data.sort(() => 0.5 - Math.random()); // Extra shuffle safety
+
         } else {
             // FIX: Simulation logic (Split Query to avoid OR .neq.null syntax issues on BigInt)
             if (this.mode.includes('simulation') || this.mode === 'itemsets') {
