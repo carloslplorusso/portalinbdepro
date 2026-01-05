@@ -59,16 +59,53 @@ const QuizEngine = {
         let data = [];
 
         // Lógica de Filtros
+
+        // Lógica de Filtros
         if (this.mode === 'random' || this.mode === 'daily') {
-            const { data: allIds } = await _supabase.from('questions_bank').select('id');
-            if (allIds) {
-                const shuffled = allIds.sort(() => 0.5 - Math.random()).slice(0, 10);
+            console.log("Fetch Random: Stand Alone Only & Unseen Prioritized");
+
+            // 1. Get User Progress (to avoid repeats)
+            let answeredIds = new Set();
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                const { data: progress } = await _supabase
+                    .from('user_progress')
+                    .select('question_id')
+                    .eq('user_id', session.user.id);
+                if (progress) progress.forEach(p => answeredIds.add(p.question_id));
+            }
+
+            // 2. Fetch ALL Stand Alone Question IDs
+            // Enforce: case_id IS NULL and clinical_case_id IS NULL
+            const { data: allIds } = await _supabase.from('questions_bank')
+                .select('id')
+                .is('case_id', null)
+                .is('clinical_case_id', null)
+                .eq('is_active', true);
+
+            if (allIds && allIds.length > 0) {
+                // 3. Filter Unseen
+                const unseen = allIds.filter(x => !answeredIds.has(x.id));
+                console.log(`Pool Stats: Total StandAlone=${allIds.length}, Unseen=${unseen.length}`);
+
+                // 4. Select 10
+                let pool = unseen;
+                if (unseen.length < 10) {
+                    console.warn("Run out of unseen questions! Mixing seen questions.");
+                    pool = allIds; // Fallback to all if user finished everything
+                }
+
+                const shuffled = pool.sort(() => 0.5 - Math.random()).slice(0, 10);
                 const ids = shuffled.map(x => x.id);
-                // Also fix here
+
+                // 5. Fetch Full Data
                 const res = await _supabase.from('questions_bank')
                     .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
                     .in('id', ids);
+
                 data = res.data;
+            } else {
+                alert("No Stand Alone questions found in database.");
             }
         } else if (this.mode === 'search' && term) {
             const res = await query.ilike('question_text', `%${term}%`);
