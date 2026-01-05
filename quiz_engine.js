@@ -53,7 +53,8 @@ const QuizEngine = {
     async fetchQuestions(count, term, catsStr) {
         if (typeof _supabase === 'undefined') { alert("Supabase no inicializado"); return; }
 
-        let query = _supabase.from('questions_bank').select('*, clinical_cases (*)');
+        // TEST MODE: Removed join temporarily to debug "No questions found"
+        let query = _supabase.from('questions_bank').select('*');
         let data = [];
 
         // Lógica de Filtros
@@ -62,7 +63,8 @@ const QuizEngine = {
             if (allIds) {
                 const shuffled = allIds.sort(() => 0.5 - Math.random()).slice(0, 10);
                 const ids = shuffled.map(x => x.id);
-                const res = await _supabase.from('questions_bank').select('*, clinical_cases (*)').in('id', ids);
+                // TEST: Removed join here too
+                const res = await _supabase.from('questions_bank').select('*').in('id', ids);
                 data = res.data;
             }
         } else if (this.mode === 'search' && term) {
@@ -70,11 +72,15 @@ const QuizEngine = {
             data = res.data;
         } else if (catsStr) {
             const catsArr = catsStr.split(',').map(decodeURIComponent);
+            console.log("DEBUG: Searching for categories:", catsArr);
+
             // Allow both case-based and standalone questions for category practice
             const res = await query.in('category', catsArr);
             if (res.error) {
                 console.error("Supabase Error (Cats):", res.error);
                 alert("Error fetching category questions: " + res.error.message);
+            } else {
+                console.log("DEBUG: Query Result Count:", res.data?.length);
             }
             data = res.data;
         } else {
