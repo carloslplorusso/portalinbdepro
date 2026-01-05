@@ -143,7 +143,42 @@ const QuizEngine = {
         }
 
         if (this.mode !== 'random' && this.mode !== 'daily') {
-            this.data = data.sort(() => Math.random() - 0.5);
+            if (this.mode.includes('simulation') || this.mode === 'itemsets') {
+                // Group by Case to ensure questions of the same case appear sequentially
+                const cases = {};
+                const standalone = [];
+
+                data.forEach(q => {
+                    const cId = q.clinical_case_id || q.case_id;
+                    if (cId) {
+                        if (!cases[cId]) cases[cId] = [];
+                        cases[cId].push(q);
+                    } else {
+                        standalone.push(q);
+                    }
+                });
+
+                // Shuffle the Cases (Keys)
+                const caseKeys = Object.keys(cases).sort(() => Math.random() - 0.5);
+
+                let sortedData = [];
+                caseKeys.forEach(k => {
+                    // Sort questions within the case by ID to ensure logical order (if any)
+                    const caseQs = cases[k].sort((a, b) => a.id - b.id);
+                    sortedData.push(...caseQs);
+                });
+
+                // Append standalones (if any caught in the filter)
+                if (standalone.length > 0) {
+                    sortedData.push(...standalone.sort(() => Math.random() - 0.5));
+                }
+
+                this.data = sortedData;
+
+            } else {
+                // Practice: Random Shuffle
+                this.data = data.sort(() => Math.random() - 0.5);
+            }
         } else {
             this.data = data;
         }
