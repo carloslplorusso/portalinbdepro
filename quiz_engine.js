@@ -53,8 +53,9 @@ const QuizEngine = {
     async fetchQuestions(count, term, catsStr) {
         if (typeof _supabase === 'undefined') { alert("Supabase no inicializado"); return; }
 
-        // Fix for Ambiguous FK: We specify !case_id to tell Supabase which relationship to use.
-        let query = _supabase.from('questions_bank').select('*, clinical_cases!case_id (*)');
+        // Fix for Ambiguous FK: We fetch BOTH potential relationships using aliases
+        let query = _supabase.from('questions_bank')
+            .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)');
         let data = [];
 
         // Lógica de Filtros
@@ -64,7 +65,9 @@ const QuizEngine = {
                 const shuffled = allIds.sort(() => 0.5 - Math.random()).slice(0, 10);
                 const ids = shuffled.map(x => x.id);
                 // Also fix here
-                const res = await _supabase.from('questions_bank').select('*, clinical_cases!case_id (*)').in('id', ids);
+                const res = await _supabase.from('questions_bank')
+                    .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
+                    .in('id', ids);
                 data = res.data;
             }
         } else if (this.mode === 'search' && term) {
@@ -84,8 +87,14 @@ const QuizEngine = {
             }
             data = res.data;
         } else {
-            if (this.mode.includes('simulation') || this.mode === 'itemsets') query = query.not('case_id', 'is', null);
-            else query = query.is('case_id', null);
+            // FIX: Simulation logic now checks if EITHER foreign key is present
+            if (this.mode.includes('simulation') || this.mode === 'itemsets') {
+                query = query.or('case_id.neq.null,clinical_case_id.neq.null');
+            } else {
+                // Practice: Only questions strictly WITHOUT a case (legacy logic, might be strict)
+                // Or maybe just random standalone. Let's keep it strict for now to avoid duplicates.
+                query = query.is('case_id', null).is('clinical_case_id', null);
+            }
 
             if (count) query = query.limit(count);
             else query = query.limit(100);
@@ -134,8 +143,11 @@ const QuizEngine = {
         // Prepare Question Text (with optional Case Context)
         let displayText = q.question_text;
 
-        if (q.clinical_cases) {
-            const c = Array.isArray(q.clinical_cases) ? q.clinical_cases[0] : q.clinical_cases;
+        // Resolve Case Data from either source
+        const caseData = q.case_new || q.case_old;
+
+        if (caseData) {
+            const c = Array.isArray(caseData) ? caseData[0] : caseData;
             if (c) {
                 let context = "";
                 // Use new fields or fallback
@@ -480,48 +492,45 @@ const QuizEngine = {
         // Default Patient Data
         let pData = { patient: "N/A", cc: "-", history: "-", findings: "-" };
 
-        // Process Clinical Case Data Safe
-        if (q.clinical_cases) {
-            // Handle array vs object return from Supabase
-            const c = Array.isArray(q.clinical_cases) ? q.clinical_cases[0] : q.clinical_cases;
+        // Process Clinical Case Data Safe (Dual Check)
+        const c = Array.isArray(q.case_new || q.case_old) ? (q.case_new || q.case_old)[0] : (q.case_new || q.case_old);
 
-            if (c) {
-                // 1. Check for specific columns (New Schema)
-                // We check if any of the new fields have content.
-                if (c.chief_complaint || c.medical_history || c.current_findings || c.patient_age) {
-                    const age = c.patient_age ? `${c.patient_age}` : "";
-                    const gender = c.patient_gender || "";
-                    // Simple logic to format Age/Gender
-                    const demo = [age, gender].filter(x => x).join(", ");
+        if (c) {
+            // 1. Check for specific columns (New Schema)
+            // We check if any of the new fields have content.
+            if (c.chief_complaint || c.medical_history || c.current_findings || c.patient_age) {
+                const age = c.patient_age ? `${c.patient_age}` : "";
+                const gender = c.patient_gender || "";
+                // Simple logic to format Age/Gender
+                const demo = [age, gender].filter(x => x).join(", ");
 
-                    pData = {
-                        patient: demo || "N/A",
-                        cc: c.chief_complaint || "-",
-                        history: c.medical_history || "-",
-                        findings: c.current_findings || "-"
-                    };
-                }
-                // 2. Fallback to 'patient_data' JSON (Old Schema)
-                else if (c.patient_data) {
-                    try {
-                        let parsed;
-                        if (typeof c.patient_data === 'object') {
-                            parsed = c.patient_data;
-                        } else if (typeof c.patient_data === 'string') {
-                            parsed = JSON.parse(c.patient_data);
-                        }
-
-                        if (parsed) {
-                            pData = {
-                                patient: parsed.patient || parsed.age || "N/A",
-                                cc: parsed.cc || parsed.complaint || "-",
-                                history: parsed.history || "-",
-                                findings: parsed.findings || "-"
-                            };
-                        }
-                    } catch (e) {
-                        console.error("Error parsing patient data:", e);
+                pData = {
+                    patient: demo || "N/A",
+                    cc: c.chief_complaint || "-",
+                    history: c.medical_history || "-",
+                    findings: c.current_findings || "-"
+                };
+            }
+            // 2. Fallback to 'patient_data' JSON (Old Schema)
+            else if (c.patient_data) {
+                try {
+                    let parsed;
+                    if (typeof c.patient_data === 'object') {
+                        parsed = c.patient_data;
+                    } else if (typeof c.patient_data === 'string') {
+                        parsed = JSON.parse(c.patient_data);
                     }
+
+                    if (parsed) {
+                        pData = {
+                            patient: parsed.patient || parsed.age || "N/A",
+                            cc: parsed.cc || parsed.complaint || "-",
+                            history: parsed.history || "-",
+                            findings: parsed.findings || "-"
+                        };
+                    }
+                } catch (e) {
+                    console.error("Error parsing patient data:", e);
                 }
             }
         }
