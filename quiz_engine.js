@@ -179,8 +179,22 @@ const QuizEngine = {
                     }
                 });
 
-                const caseKeys = Object.keys(cases);
+                let caseKeys = Object.keys(cases);
                 console.log(`DEBUG: Consolidated into ${caseKeys.length} unique scenarios from ${data.length} questions.`);
+
+                // --- ITEM SETS FILTERING ---
+                if (this.mode === 'itemsets') {
+                    const originalCount = caseKeys.length;
+                    // Filter: Keep only cases with >1 question
+                    caseKeys = caseKeys.filter(k => cases[k].length > 1);
+                    console.log(`DEBUG: Item Sets Filter: Dropped ${originalCount - caseKeys.length} single-item cases. Keeping ${caseKeys.length} sets.`);
+
+                    // Also discard standalone questions for strict Item Sets mode
+                    if (standalone.length > 0) {
+                        console.log(`DEBUG: Item Sets Filter: Dropped ${standalone.length} standalone questions.`);
+                        standalone.length = 0;
+                    }
+                }
 
                 // Shuffle the Scenarios (Keys)
                 const shuffledKeys = caseKeys.sort(() => Math.random() - 0.5);
