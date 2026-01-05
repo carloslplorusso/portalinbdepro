@@ -136,154 +136,146 @@ const QuizEngine = {
             let isStandalone = false;
             let standaloneCaseIds = [];
 
-            if (this.mode === 'standalone') {
-                console.log("DEBUG: Enforcing Standalone (No Scenarios) for Category Selection");
-                // Fetch valid cases
-                const { data: validCases } = await _supabase.from('clinical_cases')
-                    .select('id')
-                    .or('scenario_text.is.null,scenario_text.eq.""');
-                standaloneCaseIds = validCases ? validCases.map(c => c.id) : [];
-
-                query = query.is('case_id', null);
-                if (standaloneCaseIds.length > 0) {
-                    query = query.in('clinical_case_id', standaloneCaseIds);
-                } else {
-                    query = query.is('clinical_case_id', null); // Fallback
-                }
-                isStandalone = true;
-            }
-
-            // 2. Fetch candidates (ALL matching IDs) to filter manually
-            // We use a fresh query to get IDs only for filtering
-            let idQuery = _supabase.from('questions_bank').select('id, category').in('category', catsArr).eq('is_active', true);
-            if (isStandalone) {
-                idQuery = idQuery.is('case_id', null);
-                if (standaloneCaseIds.length > 0) {
-                    idQuery = idQuery.in('clinical_case_id', standaloneCaseIds);
-                } else {
-                    idQuery = idQuery.is('clinical_case_id', null);
-                }
-            }
-
-            const { data: candidates, error: candError } = await idQuery;
-
-            if (candError) {
-                console.error("Error fetching candidates:", candError);
-                alert("Error loading questions.");
-                return;
-            }
-
-            if (!candidates || candidates.length === 0) {
-                alert("No questions found for these categories.");
-                return;
-            }
-
-            // 3. Get User Progress
-            let answeredIds = new Set();
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (session) {
-                const { data: progress } = await _supabase.from('user_progress').select('question_id').eq('user_id', session.user.id);
-                if (progress) progress.forEach(p => answeredIds.add(p.question_id));
-            }
-
-            // 4. Filter Unseen
-            const unseen = candidates.filter(q => !answeredIds.has(q.id));
-            console.log(`Pool Stats: Total=${candidates.length}, Unseen=${unseen.length}`);
-
-            // 5. Select Logic
-            const targetCount = count || 20; // Default or URL param
-            let selectedIds = [];
-
-            if (unseen.length >= targetCount) {
-                // Randomly pick from unseen
-                selectedIds = unseen.sort(() => 0.5 - Math.random()).slice(0, targetCount).map(q => q.id);
+            query = query.is('case_id', null);
+            // We previously filtered by 'No scenario', but User confirmed Standalone questions HAVE scenarios.
+            // So we relax this to allow ALL questions linked to cases (but still excluding legacy groups if needed).
+            // Effectively, we stop filtering by `clinical_case_id` entirely here, relying on the 'case_id' null check for legacy items.
+            if (standaloneCaseIds.length > 0) {
+                // Legacy logic removal: We just want ALL valid single questions. 
+                // Nothing to do here if we want to allow all.
             } else {
-                // Take all unseen
-                selectedIds.push(...unseen.map(q => q.id));
-                // Fill remainder with random seen
-                const remainder = targetCount - selectedIds.length;
-                const seen = candidates.filter(q => answeredIds.has(q.id));
-                const filled = seen.sort(() => 0.5 - Math.random()).slice(0, remainder).map(q => q.id);
-                selectedIds.push(...filled);
+                // Fallback
             }
+            isStandalone = true;
+        }
 
-            // Final Shuffle
-            selectedIds.sort(() => 0.5 - Math.random());
+        // 2. Fetch candidates (ALL matching IDs) to filter manually
+        // We use a fresh query to get IDs only for filtering
+        let idQuery = _supabase.from('questions_bank').select('id, category').in('category', catsArr).eq('is_active', true);
+        if (isStandalone) {
+            idQuery = idQuery.is('case_id', null);
+            // Relaxed: No clinical_case_id checks
+        }
 
-            // 6. Fetch Full Data
-            const res = await _supabase.from('questions_bank')
-                .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
-                .in('id', selectedIds);
+        const { data: candidates, error: candError } = await idQuery;
 
-            if (res.error) {
-                console.error("Supabase Error (Cats Full):", res.error);
-                alert("Error: " + res.error.message);
-            }
-            data = res.data;
-            if (data) data.sort(() => 0.5 - Math.random()); // Extra shuffle safety
+        if (candError) {
+            console.error("Error fetching candidates:", candError);
+            alert("Error loading questions.");
+            return;
+        }
 
+        if (!candidates || candidates.length === 0) {
+            alert("No questions found for these categories.");
+            return;
+        }
+
+        // 3. Get User Progress
+        let answeredIds = new Set();
+        const { data: { session } } = await _supabase.auth.getSession();
+        if (session) {
+            const { data: progress } = await _supabase.from('user_progress').select('question_id').eq('user_id', session.user.id);
+            if (progress) progress.forEach(p => answeredIds.add(p.question_id));
+        }
+
+        // 4. Filter Unseen
+        const unseen = candidates.filter(q => !answeredIds.has(q.id));
+        console.log(`Pool Stats: Total=${candidates.length}, Unseen=${unseen.length}`);
+
+        // 5. Select Logic
+        const targetCount = count || 20; // Default or URL param
+        let selectedIds = [];
+
+        if (unseen.length >= targetCount) {
+            // Randomly pick from unseen
+            selectedIds = unseen.sort(() => 0.5 - Math.random()).slice(0, targetCount).map(q => q.id);
         } else {
-            // FIX: Simulation logic (Split Query to avoid OR .neq.null syntax issues on BigInt)
-            if (this.mode.includes('simulation') || this.mode === 'itemsets') {
-                console.log("Fetch Simulation: Smart Selection (Unseen Priority)");
+            // Take all unseen
+            selectedIds.push(...unseen.map(q => q.id));
+            // Fill remainder with random seen
+            const remainder = targetCount - selectedIds.length;
+            const seen = candidates.filter(q => answeredIds.has(q.id));
+            const filled = seen.sort(() => 0.5 - Math.random()).slice(0, remainder).map(q => q.id);
+            selectedIds.push(...filled);
+        }
 
-                // Query A: checks case_id IS NOT NULL (ID only)
-                const qA = _supabase.from('questions_bank').select('id, case_id').not('case_id', 'is', null);
+        // Final Shuffle
+        selectedIds.sort(() => 0.5 - Math.random());
 
-                // Query B: checks clinical_case_id IS NOT NULL (ID only)
-                const qB = _supabase.from('questions_bank').select('id, clinical_case_id').not('clinical_case_id', 'is', null);
+        // 6. Fetch Full Data
+        const res = await _supabase.from('questions_bank')
+            .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
+            .in('id', selectedIds);
 
-                const [resA, resB] = await Promise.all([qA, qB]);
+        if (res.error) {
+            console.error("Supabase Error (Cats Full):", res.error);
+            alert("Error: " + res.error.message);
+        }
+        data = res.data;
+        if (data) data.sort(() => 0.5 - Math.random()); // Extra shuffle safety
 
-                if (resA.error) console.error("Error Q_A:", resA.error);
-                if (resB.error) console.error("Error Q_B:", resB.error);
+    } else {
+        // FIX: Simulation logic (Split Query to avoid OR .neq.null syntax issues on BigInt)
+        if(this.mode.includes('simulation') || this.mode === 'itemsets') {
+            console.log("Fetch Simulation: Smart Selection (Unseen Priority)");
 
-                // Combine and deduplicate IDs
-                const combined = [...(resA.data || []), ...(resB.data || [])];
-                const uniqueIds = new Set(combined.map(x => x.id));
-                const allSimIds = Array.from(uniqueIds);
+// Query A: checks case_id IS NOT NULL (ID only)
+const qA = _supabase.from('questions_bank').select('id, case_id').not('case_id', 'is', null);
 
-                // 1. Get User Progress
-                let answeredIds = new Set();
-                const { data: { session } } = await _supabase.auth.getSession();
-                if (session) {
-                    const { data: progress } = await _supabase.from('user_progress').select('question_id').eq('user_id', session.user.id);
-                    if (progress) progress.forEach(p => answeredIds.add(p.question_id));
-                }
+// Query B: checks clinical_case_id IS NOT NULL (ID only)
+const qB = _supabase.from('questions_bank').select('id, clinical_case_id').not('clinical_case_id', 'is', null);
 
-                // 2. Filter Unseen
-                const unseen = allSimIds.filter(id => !answeredIds.has(id));
-                console.log(`Sim Pool: Total=${allSimIds.length}, Unseen=${unseen.length}`);
+const [resA, resB] = await Promise.all([qA, qB]);
 
-                // 3. Selection Logic (70 or count)
-                const targetCount = count || 70; // Hard default 70
-                let selectedIds = [];
+if (resA.error) console.error("Error Q_A:", resA.error);
+if (resB.error) console.error("Error Q_B:", resB.error);
 
-                if (unseen.length >= targetCount) {
-                    selectedIds = unseen.sort(() => 0.5 - Math.random()).slice(0, targetCount);
-                } else {
-                    selectedIds.push(...unseen);
-                    // Fill
-                    const remainder = targetCount - selectedIds.length;
-                    const seen = allSimIds.filter(id => answeredIds.has(id));
-                    const filled = seen.sort(() => 0.5 - Math.random()).slice(0, remainder);
-                    selectedIds.push(...filled);
-                }
+// Combine and deduplicate IDs
+const combined = [...(resA.data || []), ...(resB.data || [])];
+const uniqueIds = new Set(combined.map(x => x.id));
+const allSimIds = Array.from(uniqueIds);
 
-                // Shuffle Key Order
-                selectedIds.sort(() => 0.5 - Math.random());
+// 1. Get User Progress
+let answeredIds = new Set();
+const { data: { session } } = await _supabase.auth.getSession();
+if (session) {
+    const { data: progress } = await _supabase.from('user_progress').select('question_id').eq('user_id', session.user.id);
+    if (progress) progress.forEach(p => answeredIds.add(p.question_id));
+}
 
-                // 4. Fetch Full Data
-                // Note: Simulation logic requires grouping by Case. 
-                // We fetch the raw questions here, then the existing grouping logic below will handle the rest.
-                const res = await _supabase.from('questions_bank')
-                    .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
-                    .in('id', selectedIds);
+// 2. Filter Unseen
+const unseen = allSimIds.filter(id => !answeredIds.has(id));
+console.log(`Sim Pool: Total=${allSimIds.length}, Unseen=${unseen.length}`);
 
-                if (res.error) {
-                    console.error("Supabase Error (Sim Full):", res.error);
-                }
-                data = res.data;
+// 3. Selection Logic (70 or count)
+const targetCount = count || 70; // Hard default 70
+let selectedIds = [];
+
+if (unseen.length >= targetCount) {
+    selectedIds = unseen.sort(() => 0.5 - Math.random()).slice(0, targetCount);
+} else {
+    selectedIds.push(...unseen);
+    // Fill
+    const remainder = targetCount - selectedIds.length;
+    const seen = allSimIds.filter(id => answeredIds.has(id));
+    const filled = seen.sort(() => 0.5 - Math.random()).slice(0, remainder);
+    selectedIds.push(...filled);
+}
+
+// Shuffle Key Order
+selectedIds.sort(() => 0.5 - Math.random());
+
+// 4. Fetch Full Data
+// Note: Simulation logic requires grouping by Case. 
+// We fetch the raw questions here, then the existing grouping logic below will handle the rest.
+const res = await _supabase.from('questions_bank')
+    .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
+    .in('id', selectedIds);
+
+if (res.error) {
+    console.error("Supabase Error (Sim Full):", res.error);
+}
+data = res.data;
 
                 // Note: The subsequent code (lines ~210+) handles grouping into cases.
                 // However, since we selected random IDs, we might get partial cases?
@@ -303,285 +295,296 @@ const QuizEngine = {
                 // The grouping logic will handle it visually.
 
             } else {
-                // Practice: Only questions strictly WITHOUT a case
-                query = query.is('case_id', null).is('clinical_case_id', null);
-                if (count) query = query.limit(count);
-                else query = query.limit(100);
+    // Practice: Only questions strictly WITHOUT a case
+    query = query.is('case_id', null).is('clinical_case_id', null);
+    if (count) query = query.limit(count);
+    else query = query.limit(100);
 
-                const res = await query;
-                if (res.error) {
-                    console.error("Supabase Error (Standard):", res.error);
-                    alert("Error fetching questions: " + res.error.message);
-                }
-                data = res.data;
-            }
+    const res = await query;
+    if (res.error) {
+        console.error("Supabase Error (Standard):", res.error);
+        alert("Error fetching questions: " + res.error.message);
+    }
+    data = res.data;
+}
         }
 
-        if (!data || data.length === 0) {
-            alert("No questions found.");
-            this.goBack();
-            return;
-        }
+if (!data || data.length === 0) {
+    alert("No questions found.");
+    this.goBack();
+    return;
+}
 
-        if (this.mode !== 'random' && this.mode !== 'daily') {
-            if (this.mode.includes('simulation') || this.mode === 'itemsets') {
-                // Group by Case Content (not just ID) to handle duplicate case records
-                const cases = {};
-                const standalone = [];
+if (this.mode !== 'random' && this.mode !== 'daily') {
+    if (this.mode.includes('simulation') || this.mode === 'itemsets') {
+        // Group by Case Content (not just ID) to handle duplicate case records
+        const cases = {};
+        const standalone = [];
 
-                console.log("DEBUG: Starting grouping by CONTENT. Total items:", data.length);
+        console.log("DEBUG: Starting grouping by CONTENT. Total items:", data.length);
 
-                data.forEach(q => {
-                    // Resolve the linked case object
-                    // Supabase returns an object (if 1-to-1 via FK) or array (if 1-to-many reverse).
-                    // Since questions_bank has the FK, it's 1-to-1 from Question->Case
-                    let c = q.case_new || q.case_old;
-                    if (Array.isArray(c)) c = c[0]; // Safety check
+        data.forEach(q => {
+            // Resolve the linked case object
+            // Supabase returns an object (if 1-to-1 via FK) or array (if 1-to-many reverse).
+            // Since questions_bank has the FK, it's 1-to-1 from Question->Case
+            let c = q.case_new || q.case_old;
+            if (Array.isArray(c)) c = c[0]; // Safety check
 
-                    if (c) {
-                        // Generate a Content-Based Key
-                        // We use 50 characters of scenario or patient data to identify "identical" cases
-                        let groupKey = c.id; // Default to ID
+            if (c) {
+                // Generate a Content-Based Key
+                // We use 50 characters of scenario or patient data to identify "identical" cases
+                let groupKey = c.id; // Default to ID
 
-                        if (c.scenario_text && c.scenario_text.length > 10) {
-                            groupKey = "SCEN_" + c.scenario_text.trim().substring(0, 100);
-                        } else if (c.patient_data) {
-                            // Fallback to patient data if scenario is missing
-                            let pStr = (typeof c.patient_data === 'string') ? c.patient_data : JSON.stringify(c.patient_data);
-                            groupKey = "PAT_" + pStr.substring(0, 100);
-                        }
-
-                        // console.log(`DEBUG: Item ${q.id} GroupKey: ${groupKey}`); // Detailed Log
-
-                        if (!cases[groupKey]) cases[groupKey] = [];
-                        cases[groupKey].push(q);
-                    } else {
-                        standalone.push(q);
-                    }
-                });
-
-                let caseKeys = Object.keys(cases);
-                console.log(`DEBUG: Consolidated into ${caseKeys.length} unique scenarios from ${data.length} questions.`);
-
-                // --- ITEM SETS FILTERING ---
-                if (this.mode === 'itemsets') {
-                    const originalCount = caseKeys.length;
-                    // Filter: Keep only cases with >1 question
-                    caseKeys = caseKeys.filter(k => cases[k].length > 1);
-                    console.log(`DEBUG: Item Sets Filter: Dropped ${originalCount - caseKeys.length} single-item cases. Keeping ${caseKeys.length} sets.`);
-
-                    // Also discard standalone questions for strict Item Sets mode
-                    if (standalone.length > 0) {
-                        console.log(`DEBUG: Item Sets Filter: Dropped ${standalone.length} standalone questions.`);
-                        standalone.length = 0;
-                    }
+                if (c.scenario_text && c.scenario_text.length > 10) {
+                    groupKey = "SCEN_" + c.scenario_text.trim().substring(0, 100);
+                } else if (c.patient_data) {
+                    // Fallback to patient data if scenario is missing
+                    let pStr = (typeof c.patient_data === 'string') ? c.patient_data : JSON.stringify(c.patient_data);
+                    groupKey = "PAT_" + pStr.substring(0, 100);
                 }
 
-                // Shuffle the Scenarios (Keys)
-                const shuffledKeys = caseKeys.sort(() => Math.random() - 0.5);
+                // console.log(`DEBUG: Item ${q.id} GroupKey: ${groupKey}`); // Detailed Log
 
-                let sortedData = [];
-                shuffledKeys.forEach(k => {
-                    // Sort questions within the scenario. 
-                    // Ideally by ID or some 'order' field. We use ID for stability.
-                    const caseQs = cases[k].sort((a, b) => a.id - b.id);
-                    sortedData.push(...caseQs);
-                });
-
-                // Append standalones (shuffled)
-                if (standalone.length > 0) {
-                    sortedData.push(...standalone.sort(() => Math.random() - 0.5));
-                }
-
-                this.data = sortedData;
-
+                if (!cases[groupKey]) cases[groupKey] = [];
+                cases[groupKey].push(q);
             } else {
-                // Practice: Random Shuffle
-                this.data = data.sort(() => Math.random() - 0.5);
-            }
-        } else {
-            this.data = data;
-        }
-
-        this.startQuiz();
-    },
-
-    // --- 3. INICIO Y RENDERIZADO ---
-    startQuiz() {
-        this.currentIndex = 0;
-        document.getElementById('prac-start-screen')?.classList.add('hidden');
-
-        if (this.mode.includes('simulation') || this.mode === 'itemsets') {
-            document.getElementById('sim-screen-quiz').classList.add('active');
-            this.renderSimQuestion();
-        } else {
-            document.getElementById('prac-quiz-screen').classList.remove('hidden');
-            this.renderPracticeQuestion();
-        }
-    },
-
-    // --- 3A. RENDER MODO PRÁCTICA ---
-    renderPracticeQuestion() {
-        const q = this.data[this.currentIndex];
-
-        // Standalone Mode: Show ONLY the question text.
-        // Clinical Case context is intentionally hidden in this mode.
-        document.getElementById('prac-q-text').innerText = q.question_text;
-
-        document.getElementById('prac-review-area').classList.add('hidden');
-        document.getElementById('prac-error-msg')?.classList.add('hidden');
-        document.getElementById('prac-error-msg')?.classList.add('hidden');
-        document.getElementById('btn-prac-next').classList.add('hidden');
-
-        // Report Button Injection for Practice Mode
-        // Ensure there is a container or create one if needed, or append to an existing area.
-        // Assuming we can append it near the question text or options.
-        // Let's add it to the top right of the question area if possible, or below options.
-        // Ideally checking if a report button exists or creating one dynamically.
-        // For simplicity, let's inject a small link/button in the explanation area or near options container.
-
-        let reportBtn = document.getElementById('prac-report-btn');
-        if (!reportBtn) {
-            const container = document.getElementById('prac-quiz-screen'); // or specific container
-            reportBtn = document.createElement('button');
-            reportBtn.id = 'prac-report-btn';
-            reportBtn.innerText = '🚩 Report';
-            reportBtn.className = 'btn-report-problem';
-            // Minimal styling: positioned or float. 
-            // Better: Put it in the header/footer of the card.
-            // Let's assume user wants it "visible".
-
-            // Cleanest: Append to options container as a footer link
-        }
-
-        // Actually, let's add it to the option list container at the bottom
-        // Or re-render it every time
-
-
-        const container = document.getElementById('prac-options-list');
-        container.innerHTML = '';
-
-        [q.option_a, q.option_b, q.option_c, q.option_d].forEach((opt, idx) => {
-            if (!opt) return;
-            const letter = String.fromCharCode(65 + idx);
-            const div = document.createElement('div');
-            div.className = 'prac-option';
-            div.id = `prac-opt-${idx}`;
-            div.innerHTML = `<div class="prac-radio"></div><span>${opt}</span>`;
-            div.onclick = () => this.handlePracticeAnswer(idx, letter, q);
-            container.appendChild(div);
-        });
-
-        // Add Report Button at the bottom of options
-        const reportDiv = document.createElement('div');
-        reportDiv.style.textAlign = 'right';
-        reportDiv.style.marginTop = '10px';
-        reportDiv.innerHTML = `<button onclick="reportQuestion(${q.id})" style="background:transparent; border:none; color:#666; font-size:0.8rem; cursor:pointer; text-decoration:underline;">🚩 Report Issue</button>`;
-        container.appendChild(reportDiv);
-    },
-
-    handlePracticeAnswer(idx, letter, q) {
-        if (this.userAnswers[q.id]) return;
-        this.userAnswers[q.id] = letter;
-
-        const selectedDiv = document.getElementById(`prac-opt-${idx}`);
-        selectedDiv.classList.add('selected');
-
-        const allOpts = document.getElementById('prac-options-list').children;
-        Array.from(allOpts).forEach((div, i) => {
-            div.classList.add('answered');
-            const optLet = String.fromCharCode(65 + i);
-            const optText = [q.option_a, q.option_b, q.option_c, q.option_d][i];
-
-            if (optLet === q.correct_answer || optText === q.correct_answer) {
-                div.classList.add('correct');
-            } else if (i === idx) {
-                div.classList.add('incorrect');
+                standalone.push(q);
             }
         });
 
-        const expArea = document.getElementById('prac-explanation');
-        expArea.innerHTML = q.explanation ? `<strong>Explanation:</strong><br>${q.explanation}` : "No explanation available.";
-        expArea.classList.remove('hidden');
-        document.getElementById('prac-review-area').classList.remove('hidden');
+        let caseKeys = Object.keys(cases);
+        console.log(`DEBUG: Consolidated into ${caseKeys.length} unique scenarios from ${data.length} questions.`);
+
+        // --- ITEM SETS FILTERING ---
+        if (this.mode === 'itemsets') {
+            const originalCount = caseKeys.length;
+            // Filter: Keep only cases with >1 question
+            caseKeys = caseKeys.filter(k => cases[k].length > 1);
+            console.log(`DEBUG: Item Sets Filter: Dropped ${originalCount - caseKeys.length} single-item cases. Keeping ${caseKeys.length} sets.`);
+
+            // Also discard standalone questions for strict Item Sets mode
+            if (standalone.length > 0) {
+                console.log(`DEBUG: Item Sets Filter: Dropped ${standalone.length} standalone questions.`);
+                standalone.length = 0;
+            }
+        }
+
+        // Shuffle the Scenarios (Keys)
+        const shuffledKeys = caseKeys.sort(() => Math.random() - 0.5);
+
+        let sortedData = [];
+        shuffledKeys.forEach(k => {
+            // Sort questions within the scenario. 
+            // Ideally by ID or some 'order' field. We use ID for stability.
+            const caseQs = cases[k].sort((a, b) => a.id - b.id);
+            sortedData.push(...caseQs);
+        });
+
+        // Append standalones (shuffled)
+        if (standalone.length > 0) {
+            sortedData.push(...standalone.sort(() => Math.random() - 0.5));
+        }
+
+        this.data = sortedData;
+
+    } else {
+        // Practice: Random Shuffle
+        this.data = data.sort(() => Math.random() - 0.5);
+    }
+} else {
+    this.data = data;
+}
+
+this.startQuiz();
     },
+
+// --- 3. INICIO Y RENDERIZADO ---
+startQuiz() {
+    this.currentIndex = 0;
+    document.getElementById('prac-start-screen')?.classList.add('hidden');
+
+    if (this.mode.includes('simulation') || this.mode === 'itemsets') {
+        document.getElementById('sim-screen-quiz').classList.add('active');
+        this.renderSimQuestion();
+    } else {
+        document.getElementById('prac-quiz-screen').classList.remove('hidden');
+        this.renderPracticeQuestion();
+    }
+},
+
+// --- 3A. RENDER MODO PRÁCTICA ---
+renderPracticeQuestion() {
+    const q = this.data[this.currentIndex];
+
+    // Standalone Mode: Show ONLY the question text (Merged with Scenario if exists)
+    // Clinical Case context is intentionally hidden in this mode.
+
+    let displayText = q.question_text;
+
+    // Auto-Merge Scenario for Standalone/Practice Mode
+    // If the question has a linked case with scenario text, prepend it.
+    if (q.case_new && q.case_new.scenario_text && q.case_new.scenario_text.trim() !== "") {
+        displayText = `<div style="margin-bottom:15px; font-weight:500; color:#cbd5e1; border-left:3px solid #facc15; padding-left:12px;">
+            ${q.case_new.scenario_text}
+        </div>${q.question_text}`;
+    }
+
+    document.getElementById('prac-q-text').innerHTML = displayText;
+
+    document.getElementById('prac-review-area').classList.add('hidden');
+    document.getElementById('prac-error-msg')?.classList.add('hidden');
+    document.getElementById('prac-error-msg')?.classList.add('hidden');
+    document.getElementById('btn-prac-next').classList.add('hidden');
+
+    // Report Button Injection for Practice Mode
+    // Ensure there is a container or create one if needed, or append to an existing area.
+    // Assuming we can append it near the question text or options.
+    // Let's add it to the top right of the question area if possible, or below options.
+    // Ideally checking if a report button exists or creating one dynamically.
+    // For simplicity, let's inject a small link/button in the explanation area or near options container.
+
+    let reportBtn = document.getElementById('prac-report-btn');
+    if (!reportBtn) {
+        const container = document.getElementById('prac-quiz-screen'); // or specific container
+        reportBtn = document.createElement('button');
+        reportBtn.id = 'prac-report-btn';
+        reportBtn.innerText = '🚩 Report';
+        reportBtn.className = 'btn-report-problem';
+        // Minimal styling: positioned or float. 
+        // Better: Put it in the header/footer of the card.
+        // Let's assume user wants it "visible".
+
+        // Cleanest: Append to options container as a footer link
+    }
+
+    // Actually, let's add it to the option list container at the bottom
+    // Or re-render it every time
+
+
+    const container = document.getElementById('prac-options-list');
+    container.innerHTML = '';
+
+    [q.option_a, q.option_b, q.option_c, q.option_d].forEach((opt, idx) => {
+        if (!opt) return;
+        const letter = String.fromCharCode(65 + idx);
+        const div = document.createElement('div');
+        div.className = 'prac-option';
+        div.id = `prac-opt-${idx}`;
+        div.innerHTML = `<div class="prac-radio"></div><span>${opt}</span>`;
+        div.onclick = () => this.handlePracticeAnswer(idx, letter, q);
+        container.appendChild(div);
+    });
+
+    // Add Report Button at the bottom of options
+    const reportDiv = document.createElement('div');
+    reportDiv.style.textAlign = 'right';
+    reportDiv.style.marginTop = '10px';
+    reportDiv.innerHTML = `<button onclick="reportQuestion(${q.id})" style="background:transparent; border:none; color:#666; font-size:0.8rem; cursor:pointer; text-decoration:underline;">🚩 Report Issue</button>`;
+    container.appendChild(reportDiv);
+},
+
+handlePracticeAnswer(idx, letter, q) {
+    if (this.userAnswers[q.id]) return;
+    this.userAnswers[q.id] = letter;
+
+    const selectedDiv = document.getElementById(`prac-opt-${idx}`);
+    selectedDiv.classList.add('selected');
+
+    const allOpts = document.getElementById('prac-options-list').children;
+    Array.from(allOpts).forEach((div, i) => {
+        div.classList.add('answered');
+        const optLet = String.fromCharCode(65 + i);
+        const optText = [q.option_a, q.option_b, q.option_c, q.option_d][i];
+
+        if (optLet === q.correct_answer || optText === q.correct_answer) {
+            div.classList.add('correct');
+        } else if (i === idx) {
+            div.classList.add('incorrect');
+        }
+    });
+
+    const expArea = document.getElementById('prac-explanation');
+    expArea.innerHTML = q.explanation ? `<strong>Explanation:</strong><br>${q.explanation}` : "No explanation available.";
+    expArea.classList.remove('hidden');
+    document.getElementById('prac-review-area').classList.remove('hidden');
+},
 
     // --- 4. CLASIFICACIÓN (EASY/MED/HARD) ---
     async classifyQuestion(status) {
-        if (status === 'learning') this.stats.hard++;
-        if (status === 'reviewing') this.stats.medium++;
-        if (status === 'mastered') this.stats.easy++;
+    if (status === 'learning') this.stats.hard++;
+    if (status === 'reviewing') this.stats.medium++;
+    if (status === 'mastered') this.stats.easy++;
 
-        const btns = document.querySelectorAll('.btn-classify');
-        btns.forEach(b => b.classList.remove('active'));
+    const btns = document.querySelectorAll('.btn-classify');
+    btns.forEach(b => b.classList.remove('active'));
 
-        const btnMap = { 'learning': '.btn-hard', 'reviewing': '.btn-medium', 'mastered': '.btn-easy' };
-        document.querySelector(btnMap[status])?.classList.add('active');
+    const btnMap = { 'learning': '.btn-hard', 'reviewing': '.btn-medium', 'mastered': '.btn-easy' };
+    document.querySelector(btnMap[status])?.classList.add('active');
 
-        const q = this.data[this.currentIndex];
-        const { data: { session } } = await _supabase.auth.getSession();
+    const q = this.data[this.currentIndex];
+    const { data: { session } } = await _supabase.auth.getSession();
 
-        if (session) {
-            _supabase.from('user_progress').insert([{
-                user_id: session.user.id,
-                question_id: q.id,
-                status: status,
-                quiz_mode: this.mode,
-                timestamp: new Date()
-            }]).then(() => console.log('Progress saved'));
-        }
+    if (session) {
+        _supabase.from('user_progress').insert([{
+            user_id: session.user.id,
+            question_id: q.id,
+            status: status,
+            quiz_mode: this.mode,
+            timestamp: new Date()
+        }]).then(() => console.log('Progress saved'));
+    }
 
-        document.getElementById('btn-prac-next').classList.remove('hidden');
-        document.getElementById('prac-error-msg')?.classList.add('hidden');
-    },
+    document.getElementById('btn-prac-next').classList.remove('hidden');
+    document.getElementById('prac-error-msg')?.classList.add('hidden');
+},
 
-    nextQuestion() {
-        if (this.currentIndex < this.data.length - 1) {
-            this.currentIndex++;
-            if (this.mode.includes('simulation') || this.mode === 'itemsets') this.renderSimQuestion();
-            else this.renderPracticeQuestion();
-        } else {
-            this.finishQuiz();
-        }
-    },
+nextQuestion() {
+    if (this.currentIndex < this.data.length - 1) {
+        this.currentIndex++;
+        if (this.mode.includes('simulation') || this.mode === 'itemsets') this.renderSimQuestion();
+        else this.renderPracticeQuestion();
+    } else {
+        this.finishQuiz();
+    }
+},
 
-    // --- 5. RENDERIZAR LISTA DE REVISIÓN (SOLO RESPONDIDAS) ---
-    renderFinalReview(prefix) {
-        const listContainer = document.getElementById(`${prefix}-final-list-content`);
-        if (!listContainer) return;
+// --- 5. RENDERIZAR LISTA DE REVISIÓN (SOLO RESPONDIDAS) ---
+renderFinalReview(prefix) {
+    const listContainer = document.getElementById(`${prefix}-final-list-content`);
+    if (!listContainer) return;
 
-        listContainer.innerHTML = '';
+    listContainer.innerHTML = '';
 
-        const isSim = (prefix === 'sim');
-        const theme = isSim ? {
-            card: '#ffffff', border: '#e5e7eb', text: '#1f2937', header: '#f9fafb', hover: '#f3f4f6', detail: '#f9fafb', detailText: '#4b5563', accent: '#235d88'
-        } : {
-            card: '#27272a', border: '#333', text: 'white', header: '#18181b', hover: '#222', detail: '#111', detailText: '#ccc', accent: '#facc15'
-        };
+    const isSim = (prefix === 'sim');
+    const theme = isSim ? {
+        card: '#ffffff', border: '#e5e7eb', text: '#1f2937', header: '#f9fafb', hover: '#f3f4f6', detail: '#f9fafb', detailText: '#4b5563', accent: '#235d88'
+    } : {
+        card: '#27272a', border: '#333', text: 'white', header: '#18181b', hover: '#222', detail: '#111', detailText: '#ccc', accent: '#facc15'
+    };
 
-        let questionsShown = 0;
+    let questionsShown = 0;
 
-        this.data.forEach((q, index) => {
-            const userAns = this.userAnswers[q.id];
-            // --- FILTRO: Solo mostrar si fue respondida ---
-            if (userAns === undefined || userAns === null) return;
-            questionsShown++;
+    this.data.forEach((q, index) => {
+        const userAns = this.userAnswers[q.id];
+        // --- FILTRO: Solo mostrar si fue respondida ---
+        if (userAns === undefined || userAns === null) return;
+        questionsShown++;
 
-            const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
-            const ansChar = typeof userAns === 'number' ? String.fromCharCode(65 + userAns) : userAns;
-            const ansText = typeof userAns === 'number' ? opts[userAns] : (userAns.length > 1 ? userAns : opts[ansChar?.charCodeAt(0) - 65] || null);
-            const isCorrect = (ansChar === q.correct_answer || ansText === q.correct_answer);
+        const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
+        const ansChar = typeof userAns === 'number' ? String.fromCharCode(65 + userAns) : userAns;
+        const ansText = typeof userAns === 'number' ? opts[userAns] : (userAns.length > 1 ? userAns : opts[ansChar?.charCodeAt(0) - 65] || null);
+        const isCorrect = (ansChar === q.correct_answer || ansText === q.correct_answer);
 
-            const statusText = isCorrect ? 'Correct' : 'Incorrect';
-            const statusColor = isCorrect ? '#22c55e' : '#ef4444';
-            const icon = isCorrect ? '✓' : '✕';
+        const statusText = isCorrect ? 'Correct' : 'Incorrect';
+        const statusColor = isCorrect ? '#22c55e' : '#ef4444';
+        const icon = isCorrect ? '✓' : '✕';
 
-            const itemDiv = document.createElement('div');
-            itemDiv.style.cssText = `background:${theme.card}; border:1px solid ${theme.border}; border-radius:8px; margin-bottom:10px; overflow:hidden;`;
+        const itemDiv = document.createElement('div');
+        itemDiv.style.cssText = `background:${theme.card}; border:1px solid ${theme.border}; border-radius:8px; margin-bottom:10px; overflow:hidden;`;
 
-            const headerDiv = document.createElement('div');
-            headerDiv.style.cssText = `padding:15px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:${theme.header};`;
-            headerDiv.innerHTML = `
+        const headerDiv = document.createElement('div');
+        headerDiv.style.cssText = `padding:15px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:${theme.header};`;
+        headerDiv.innerHTML = `
                 <div style="display:flex; align-items:center; gap:10px; color:${theme.text}; font-weight:bold;">
                     <span style="opacity:0.7;">Q ${index + 1}</span>
                     <span style="color:${statusColor}; display:flex; align-items:center; gap:5px;">${icon} ${statusText}</span>
@@ -589,358 +592,358 @@ const QuizEngine = {
                 <div style="color:${theme.accent}; font-size:0.8rem; font-weight:700; text-transform:uppercase;">Explain this ▼</div>
             `;
 
-            const detailDiv = document.createElement('div');
-            detailDiv.className = 'hidden';
-            detailDiv.style.cssText = `padding:20px; background:${theme.detail}; border-top:1px solid ${theme.border}; color:${theme.detailText}; line-height:1.5;`;
-            detailDiv.innerHTML = `
+        const detailDiv = document.createElement('div');
+        detailDiv.className = 'hidden';
+        detailDiv.style.cssText = `padding:20px; background:${theme.detail}; border-top:1px solid ${theme.border}; color:${theme.detailText}; line-height:1.5;`;
+        detailDiv.innerHTML = `
                 <div style="margin-bottom:15px; font-weight:600; color:${theme.text};">${q.question_text}</div>
                 <div style="background:${isSim ? '#fffbeb' : 'rgba(250,204,21,0.1)'}; border-left:4px solid ${theme.accent}; padding:15px; border-radius:4px;">
                     <strong style="color:${theme.accent};">EXPLANATION:</strong><br>${q.explanation || 'No explanation available.'}
                 </div>
             `;
 
-            headerDiv.onclick = () => {
-                if (detailDiv.classList.contains('hidden')) {
-                    detailDiv.classList.remove('hidden');
-                    headerDiv.style.background = theme.hover;
-                } else {
-                    detailDiv.classList.add('hidden');
-                    headerDiv.style.background = theme.header;
-                }
-            };
-
-            itemDiv.appendChild(headerDiv);
-            itemDiv.appendChild(detailDiv);
-            listContainer.appendChild(itemDiv);
-        });
-
-        if (questionsShown === 0) {
-            listContainer.innerHTML = `<div style="padding:20px; text-align:center; color:${theme.detailText}">No questions answered yet.</div>`;
-        }
-    },
-
-    // --- 6. FUNCIÓN DE FINALIZACIÓN (FLUJO: QUIZ -> LISTA DE REVISIÓN) ---
-    finishQuiz() {
-        if (this.simTimerInterval) clearInterval(this.simTimerInterval);
-
-        // Ocultar Quizzes Activos
-        document.getElementById('prac-quiz-screen')?.classList.add('hidden');
-        document.getElementById('sim-screen-quiz')?.classList.remove('active');
-        document.getElementById('sim-screen-review')?.classList.remove('active');
-
-        const prefix = (this.mode.includes('simulation') || this.mode === 'itemsets') ? 'sim' : 'prac';
-
-        // 1. Calcular Gráficos (Prepara los datos, pero NO muestra la pantalla aún)
-        this.calculateAndRenderCharts(prefix);
-
-        // 2. Renderizar Lista
-        this.renderFinalReview(prefix);
-
-        // 3. MOSTRAR PANTALLA DE LISTA DE REVISIÓN PRIMERO
-        if (prefix === 'sim') {
-            document.getElementById('sim-final-review-screen').classList.add('active');
-            document.getElementById('sim-final-review-screen').style.display = 'flex';
-            // Asegurar que la pantalla de stats esté oculta inicialmente
-            document.getElementById('sim-screen-perf').classList.remove('active');
-            document.getElementById('sim-screen-perf').style.display = 'none';
-        } else {
-            // En modo práctica, la pantalla de revisión es 'prac-review-screen'
-            document.getElementById('prac-review-screen').classList.remove('hidden');
-            // Asegurar que la pantalla de stats esté oculta inicialmente
-            document.getElementById('prac-results-screen').classList.add('hidden');
-        }
-    },
-
-    // --- 7. PASAR DE LISTA A ESTADÍSTICAS (SE LLAMA DESDE EL BOTÓN) ---
-    showSessionResults(prefix) {
-        if (prefix === 'sim') {
-            // Ocultar Lista
-            document.getElementById('sim-final-review-screen').classList.remove('active');
-            document.getElementById('sim-final-review-screen').style.display = 'none';
-
-            // Mostrar Stats Simulación (Correct/Incorrect)
-            const statsScreen = document.getElementById('sim-screen-perf');
-            statsScreen.classList.add('active');
-            statsScreen.style.display = 'flex';
-        } else {
-            // Ocultar Lista
-            document.getElementById('prac-review-screen').classList.add('hidden');
-
-            // Mostrar Stats Práctica (Easy/Med/Hard)
-            document.getElementById('prac-results-screen').classList.remove('hidden');
-            document.getElementById('prac-results-screen').style.display = 'flex';
-        }
-    },
-
-    // --- 8. CÁLCULO DE ESTADÍSTICAS (DIFERENCIADO) ---
-    calculateAndRenderCharts(prefix) {
-        let correct = 0;
-        let catMap = {};
-
-        // 1. Cálculo base
-        this.data.forEach(q => {
-            const userAns = this.userAnswers[q.id];
-            let isCorr = false;
-
-            if (userAns !== undefined && userAns !== null) {
-                const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
-                const ansChar = typeof userAns === 'number' ? String.fromCharCode(65 + userAns) : userAns;
-                const ansText = typeof userAns === 'number' ? opts[userAns] : (userAns.length > 1 ? userAns : opts[ansChar?.charCodeAt(0) - 65]);
-
-                if (ansChar === q.correct_answer || ansText === q.correct_answer) isCorr = true;
-            }
-
-            if (isCorr) correct++;
-
-            const cat = q.category || "General";
-            if (!catMap[cat]) catMap[cat] = { c: 0, t: 0 };
-            catMap[cat].t++;
-            if (isCorr) catMap[cat].c++;
-        });
-
-        const total = this.data.length;
-        const acc = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-        // Renderizar Textos
-        this.setText(`${prefix}-acc-val`, acc + "%");
-        this.setText(`${prefix}-correct-val`, correct);
-        this.setText(`${prefix}-incorrect-val`, total - correct);
-
-        // 2. PIE CHART (LÓGICA ESPECÍFICA)
-        const pie = document.getElementById(`${prefix}-perf-pie`);
-
-        if (pie) {
-            if (prefix === 'sim') {
-                // MODO SIMULACIÓN (LIGHT): CORRECTO vs INCORRECTO
-                const deg = Math.round((acc / 100) * 360);
-                pie.style.background = `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
-
+        headerDiv.onclick = () => {
+            if (detailDiv.classList.contains('hidden')) {
+                detailDiv.classList.remove('hidden');
+                headerDiv.style.background = theme.hover;
             } else {
-                // MODO PRÁCTICA (DARK): EASY / MEDIUM / HARD
-                // Usamos this.stats para colorear el gráfico
-                const s = this.stats;
-                const totalRated = (s.easy + s.medium + s.hard) || 1;
+                detailDiv.classList.add('hidden');
+                headerDiv.style.background = theme.header;
+            }
+        };
 
-                const degEasy = (s.easy / totalRated) * 360;
-                const degMed = (s.medium / totalRated) * 360;
-                // degHard es el resto
+        itemDiv.appendChild(headerDiv);
+        itemDiv.appendChild(detailDiv);
+        listContainer.appendChild(itemDiv);
+    });
 
-                pie.style.background = `conic-gradient(
+    if (questionsShown === 0) {
+        listContainer.innerHTML = `<div style="padding:20px; text-align:center; color:${theme.detailText}">No questions answered yet.</div>`;
+    }
+},
+
+// --- 6. FUNCIÓN DE FINALIZACIÓN (FLUJO: QUIZ -> LISTA DE REVISIÓN) ---
+finishQuiz() {
+    if (this.simTimerInterval) clearInterval(this.simTimerInterval);
+
+    // Ocultar Quizzes Activos
+    document.getElementById('prac-quiz-screen')?.classList.add('hidden');
+    document.getElementById('sim-screen-quiz')?.classList.remove('active');
+    document.getElementById('sim-screen-review')?.classList.remove('active');
+
+    const prefix = (this.mode.includes('simulation') || this.mode === 'itemsets') ? 'sim' : 'prac';
+
+    // 1. Calcular Gráficos (Prepara los datos, pero NO muestra la pantalla aún)
+    this.calculateAndRenderCharts(prefix);
+
+    // 2. Renderizar Lista
+    this.renderFinalReview(prefix);
+
+    // 3. MOSTRAR PANTALLA DE LISTA DE REVISIÓN PRIMERO
+    if (prefix === 'sim') {
+        document.getElementById('sim-final-review-screen').classList.add('active');
+        document.getElementById('sim-final-review-screen').style.display = 'flex';
+        // Asegurar que la pantalla de stats esté oculta inicialmente
+        document.getElementById('sim-screen-perf').classList.remove('active');
+        document.getElementById('sim-screen-perf').style.display = 'none';
+    } else {
+        // En modo práctica, la pantalla de revisión es 'prac-review-screen'
+        document.getElementById('prac-review-screen').classList.remove('hidden');
+        // Asegurar que la pantalla de stats esté oculta inicialmente
+        document.getElementById('prac-results-screen').classList.add('hidden');
+    }
+},
+
+// --- 7. PASAR DE LISTA A ESTADÍSTICAS (SE LLAMA DESDE EL BOTÓN) ---
+showSessionResults(prefix) {
+    if (prefix === 'sim') {
+        // Ocultar Lista
+        document.getElementById('sim-final-review-screen').classList.remove('active');
+        document.getElementById('sim-final-review-screen').style.display = 'none';
+
+        // Mostrar Stats Simulación (Correct/Incorrect)
+        const statsScreen = document.getElementById('sim-screen-perf');
+        statsScreen.classList.add('active');
+        statsScreen.style.display = 'flex';
+    } else {
+        // Ocultar Lista
+        document.getElementById('prac-review-screen').classList.add('hidden');
+
+        // Mostrar Stats Práctica (Easy/Med/Hard)
+        document.getElementById('prac-results-screen').classList.remove('hidden');
+        document.getElementById('prac-results-screen').style.display = 'flex';
+    }
+},
+
+// --- 8. CÁLCULO DE ESTADÍSTICAS (DIFERENCIADO) ---
+calculateAndRenderCharts(prefix) {
+    let correct = 0;
+    let catMap = {};
+
+    // 1. Cálculo base
+    this.data.forEach(q => {
+        const userAns = this.userAnswers[q.id];
+        let isCorr = false;
+
+        if (userAns !== undefined && userAns !== null) {
+            const opts = [q.option_a, q.option_b, q.option_c, q.option_d];
+            const ansChar = typeof userAns === 'number' ? String.fromCharCode(65 + userAns) : userAns;
+            const ansText = typeof userAns === 'number' ? opts[userAns] : (userAns.length > 1 ? userAns : opts[ansChar?.charCodeAt(0) - 65]);
+
+            if (ansChar === q.correct_answer || ansText === q.correct_answer) isCorr = true;
+        }
+
+        if (isCorr) correct++;
+
+        const cat = q.category || "General";
+        if (!catMap[cat]) catMap[cat] = { c: 0, t: 0 };
+        catMap[cat].t++;
+        if (isCorr) catMap[cat].c++;
+    });
+
+    const total = this.data.length;
+    const acc = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+    // Renderizar Textos
+    this.setText(`${prefix}-acc-val`, acc + "%");
+    this.setText(`${prefix}-correct-val`, correct);
+    this.setText(`${prefix}-incorrect-val`, total - correct);
+
+    // 2. PIE CHART (LÓGICA ESPECÍFICA)
+    const pie = document.getElementById(`${prefix}-perf-pie`);
+
+    if (pie) {
+        if (prefix === 'sim') {
+            // MODO SIMULACIÓN (LIGHT): CORRECTO vs INCORRECTO
+            const deg = Math.round((acc / 100) * 360);
+            pie.style.background = `conic-gradient(#22c55e 0deg ${deg}deg, #ef4444 ${deg}deg 360deg)`;
+
+        } else {
+            // MODO PRÁCTICA (DARK): EASY / MEDIUM / HARD
+            // Usamos this.stats para colorear el gráfico
+            const s = this.stats;
+            const totalRated = (s.easy + s.medium + s.hard) || 1;
+
+            const degEasy = (s.easy / totalRated) * 360;
+            const degMed = (s.medium / totalRated) * 360;
+            // degHard es el resto
+
+            pie.style.background = `conic-gradient(
                     #22c55e 0deg ${degEasy}deg, 
                     #facc15 ${degEasy}deg ${degEasy + degMed}deg, 
                     #ef4444 ${degEasy + degMed}deg 360deg
                 )`;
-            }
         }
+    }
 
-        // 3. Renderizar Lista de Categorías
-        const catDiv = document.getElementById(`${prefix}-cat-list`);
-        if (catDiv) {
-            catDiv.innerHTML = '';
-            for (const [name, d] of Object.entries(catMap)) {
-                catDiv.innerHTML += `
+    // 3. Renderizar Lista de Categorías
+    const catDiv = document.getElementById(`${prefix}-cat-list`);
+    if (catDiv) {
+        catDiv.innerHTML = '';
+        for (const [name, d] of Object.entries(catMap)) {
+            catDiv.innerHTML += `
                     <div class="cat-item">
                         <span>${name}</span>
                         <span style="font-family:monospace; font-weight:bold;">
                             <span style="color:#22c55e">${d.c}</span> / <span style="color:#ef4444">${d.t - d.c}</span>
                         </span>
                     </div>`;
-            }
         }
-    },
+    }
+},
 
-    // --- UTILS ---
-    startSimTimer() {
-        this.simTimerInterval = setInterval(() => {
-            this.simTotalTime--;
-            const h = Math.floor(this.simTotalTime / 3600);
-            const m = Math.floor((this.simTotalTime % 3600) / 60);
-            const s = this.simTotalTime % 60;
-            const tStr = `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+// --- UTILS ---
+startSimTimer() {
+    this.simTimerInterval = setInterval(() => {
+        this.simTotalTime--;
+        const h = Math.floor(this.simTotalTime / 3600);
+        const m = Math.floor((this.simTotalTime % 3600) / 60);
+        const s = this.simTotalTime % 60;
+        const tStr = `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 
-            this.setText('sim-timer', tStr);
-            this.setText('sim-timer-rev', tStr);
+        this.setText('sim-timer', tStr);
+        this.setText('sim-timer-rev', tStr);
 
-            if (this.simTotalTime <= 0) this.finishQuiz();
-        }, 1000);
-    },
+        if (this.simTotalTime <= 0) this.finishQuiz();
+    }, 1000);
+},
 
-    renderSimQuestion() {
-        if (!this.data || this.data.length === 0) {
-            console.error("No data to render.");
-            return;
+renderSimQuestion() {
+    if (!this.data || this.data.length === 0) {
+        console.error("No data to render.");
+        return;
+    }
+
+    const q = this.data[this.currentIndex];
+    if (!q) {
+        console.error("Question object is undefined at index " + this.currentIndex);
+        return;
+    }
+
+    this.setText('sim-q-counter', `Question ${this.currentIndex + 1} of ${this.data.length}`);
+
+    // Ensure text is not null
+    const qText = q.question_text || "Question content unavailable.";
+    this.setText('sim-q-text', qText);
+
+    // Default Patient Data
+    let pData = { patient: "N/A", cc: "-", history: "-", findings: "-" };
+
+    // Process Clinical Case Data Safe (Dual Check)
+    const c = Array.isArray(q.case_new || q.case_old) ? (q.case_new || q.case_old)[0] : (q.case_new || q.case_old);
+
+    if (c) {
+        // 1. Check for specific columns (New Schema)
+        // We check if any of the new fields have content.
+        if (c.chief_complaint || c.medical_history || c.current_findings || c.patient_age) {
+            const age = c.patient_age ? `${c.patient_age}` : "";
+            const gender = c.patient_gender || "";
+            // Simple logic to format Age/Gender
+            const demo = [age, gender].filter(x => x).join(", ");
+
+            pData = {
+                patient: demo || "N/A",
+                cc: c.chief_complaint || "-",
+                history: c.medical_history || "-",
+                findings: c.current_findings || "-"
+            };
         }
-
-        const q = this.data[this.currentIndex];
-        if (!q) {
-            console.error("Question object is undefined at index " + this.currentIndex);
-            return;
-        }
-
-        this.setText('sim-q-counter', `Question ${this.currentIndex + 1} of ${this.data.length}`);
-
-        // Ensure text is not null
-        const qText = q.question_text || "Question content unavailable.";
-        this.setText('sim-q-text', qText);
-
-        // Default Patient Data
-        let pData = { patient: "N/A", cc: "-", history: "-", findings: "-" };
-
-        // Process Clinical Case Data Safe (Dual Check)
-        const c = Array.isArray(q.case_new || q.case_old) ? (q.case_new || q.case_old)[0] : (q.case_new || q.case_old);
-
-        if (c) {
-            // 1. Check for specific columns (New Schema)
-            // We check if any of the new fields have content.
-            if (c.chief_complaint || c.medical_history || c.current_findings || c.patient_age) {
-                const age = c.patient_age ? `${c.patient_age}` : "";
-                const gender = c.patient_gender || "";
-                // Simple logic to format Age/Gender
-                const demo = [age, gender].filter(x => x).join(", ");
-
-                pData = {
-                    patient: demo || "N/A",
-                    cc: c.chief_complaint || "-",
-                    history: c.medical_history || "-",
-                    findings: c.current_findings || "-"
-                };
-            }
-            // 2. Fallback to 'patient_data' JSON (Old Schema)
-            else if (c.patient_data) {
-                try {
-                    let parsed;
-                    if (typeof c.patient_data === 'object') {
-                        parsed = c.patient_data;
-                    } else if (typeof c.patient_data === 'string') {
-                        parsed = JSON.parse(c.patient_data);
-                    }
-
-                    if (parsed) {
-                        pData = {
-                            patient: parsed.patient || parsed.age || "N/A",
-                            cc: parsed.cc || parsed.complaint || "-",
-                            history: parsed.history || "-",
-                            findings: parsed.findings || "-"
-                        };
-                    }
-                } catch (e) {
-                    console.error("Error parsing patient data:", e);
+        // 2. Fallback to 'patient_data' JSON (Old Schema)
+        else if (c.patient_data) {
+            try {
+                let parsed;
+                if (typeof c.patient_data === 'object') {
+                    parsed = c.patient_data;
+                } else if (typeof c.patient_data === 'string') {
+                    parsed = JSON.parse(c.patient_data);
                 }
+
+                if (parsed) {
+                    pData = {
+                        patient: parsed.patient || parsed.age || "N/A",
+                        cc: parsed.cc || parsed.complaint || "-",
+                        history: parsed.history || "-",
+                        findings: parsed.findings || "-"
+                    };
+                }
+            } catch (e) {
+                console.error("Error parsing patient data:", e);
             }
         }
+    }
 
-        const setTable = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = `<tr><td>${val}</td></tr>`; };
-        setTable('sim-pat-demo', pData.patient);
-        setTable('sim-pat-cc', pData.cc);
-        setTable('sim-pat-hist', pData.history);
-        setTable('sim-pat-find', pData.findings);
+    const setTable = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = `<tr><td>${val}</td></tr>`; };
+    setTable('sim-pat-demo', pData.patient);
+    setTable('sim-pat-cc', pData.cc);
+    setTable('sim-pat-hist', pData.history);
+    setTable('sim-pat-find', pData.findings);
 
-        const container = document.getElementById('sim-options-container');
-        if (container) {
-            container.innerHTML = '';
-            [q.option_a, q.option_b, q.option_c, q.option_d].forEach((opt, idx) => {
-                if (!opt) return;
-                const div = document.createElement('div');
-                div.className = 'sim-option';
-                if (this.userAnswers[q.id] === idx) div.classList.add('selected');
+    const container = document.getElementById('sim-options-container');
+    if (container) {
+        container.innerHTML = '';
+        [q.option_a, q.option_b, q.option_c, q.option_d].forEach((opt, idx) => {
+            if (!opt) return;
+            const div = document.createElement('div');
+            div.className = 'sim-option';
+            if (this.userAnswers[q.id] === idx) div.classList.add('selected');
 
-                div.innerHTML = `<div class="sim-radio"></div> ${opt}`;
-                div.onclick = () => {
-                    this.userAnswers[q.id] = idx;
-                    this.renderSimQuestion();
-                };
-                container.appendChild(div);
-            });
+            div.innerHTML = `<div class="sim-radio"></div> ${opt}`;
+            div.onclick = () => {
+                this.userAnswers[q.id] = idx;
+                this.renderSimQuestion();
+            };
+            container.appendChild(div);
+        });
+    }
+
+    // Add Report Button for Simulation
+    const simContainer = document.getElementById('sim-options-container');
+    // Note: container is cleared above, so we can just append.
+    if (simContainer) {
+        const reportDiv = document.createElement('div');
+        reportDiv.style.textAlign = 'right';
+        reportDiv.style.marginTop = '15px';
+        reportDiv.innerHTML = `<button onclick="reportQuestion(${q.id})" style="background:transparent; border:none; color:#888; font-size:0.8rem; cursor:pointer;">🚩 Report Issue</button>`;
+        simContainer.appendChild(reportDiv);
+    }
+
+    const btnMark = document.getElementById('btn-sim-mark');
+    if (btnMark) {
+        if (this.markedQuestions.has(this.currentIndex)) {
+            btnMark.classList.add('active');
+            btnMark.innerText = "UNMARK";
+        } else {
+            btnMark.classList.remove('active');
+            btnMark.innerText = "MARK";
         }
+    }
+},
 
-        // Add Report Button for Simulation
-        const simContainer = document.getElementById('sim-options-container');
-        // Note: container is cleared above, so we can just append.
-        if (simContainer) {
-            const reportDiv = document.createElement('div');
-            reportDiv.style.textAlign = 'right';
-            reportDiv.style.marginTop = '15px';
-            reportDiv.innerHTML = `<button onclick="reportQuestion(${q.id})" style="background:transparent; border:none; color:#888; font-size:0.8rem; cursor:pointer;">🚩 Report Issue</button>`;
-            simContainer.appendChild(reportDiv);
-        }
+goToSimReview() {
+    document.getElementById('sim-screen-quiz').classList.remove('active');
+    document.getElementById('sim-screen-review').classList.add('active');
+    const body = document.getElementById('sim-review-body');
+    body.innerHTML = '';
 
-        const btnMark = document.getElementById('btn-sim-mark');
-        if (btnMark) {
-            if (this.markedQuestions.has(this.currentIndex)) {
-                btnMark.classList.add('active');
-                btnMark.innerText = "UNMARK";
-            } else {
-                btnMark.classList.remove('active');
-                btnMark.innerText = "MARK";
-            }
-        }
-    },
-
-    goToSimReview() {
-        document.getElementById('sim-screen-quiz').classList.remove('active');
-        document.getElementById('sim-screen-review').classList.add('active');
-        const body = document.getElementById('sim-review-body');
-        body.innerHTML = '';
-
-        this.data.forEach((q, i) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
+    this.data.forEach((q, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
                 <td>Q ${i + 1}</td>
                 <td style="text-align:center;">${this.markedQuestions.has(i) ? '✓' : ''}</td>
                 <td style="text-align:center;">${this.userAnswers[q.id] !== undefined ? 'Done' : '-'}</td>
             `;
-            tr.onclick = () => { this.currentIndex = i; this.returnToSimQuiz(); };
-            body.appendChild(tr);
-        });
-    },
+        tr.onclick = () => { this.currentIndex = i; this.returnToSimQuiz(); };
+        body.appendChild(tr);
+    });
+},
 
-    returnToSimQuiz() {
-        document.getElementById('sim-screen-review').classList.remove('active');
-        document.getElementById('sim-screen-quiz').classList.add('active');
-        this.renderSimQuestion();
-    },
+returnToSimQuiz() {
+    document.getElementById('sim-screen-review').classList.remove('active');
+    document.getElementById('sim-screen-quiz').classList.add('active');
+    this.renderSimQuestion();
+},
 
-    toggleSimMark() {
-        if (this.markedQuestions.has(this.currentIndex)) this.markedQuestions.delete(this.currentIndex);
-        else this.markedQuestions.add(this.currentIndex);
-        this.renderSimQuestion();
-    },
+toggleSimMark() {
+    if (this.markedQuestions.has(this.currentIndex)) this.markedQuestions.delete(this.currentIndex);
+    else this.markedQuestions.add(this.currentIndex);
+    this.renderSimQuestion();
+},
 
-    setText(id, txt) {
-        const el = document.getElementById(id);
-        if (el) el.innerText = txt;
-    },
+setText(id, txt) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = txt;
+},
 
-    goBack() {
-        if (this.isMobile) window.location.href = 'mobile.html';
-        else window.location.href = 'dashboard.html';
-    },
+goBack() {
+    if (this.isMobile) window.location.href = 'mobile.html';
+    else window.location.href = 'dashboard.html';
+},
 
     // --- 9. REPORTING SYSTEM ---
     async reportQuestion(qId) {
-        if (!qId) return;
+    if (!qId) return;
 
-        // Simple prompt for now
-        const reason = prompt("Describe the error or problem with this question:");
-        if (!reason || !reason.trim()) return;
+    // Simple prompt for now
+    const reason = prompt("Describe the error or problem with this question:");
+    if (!reason || !reason.trim()) return;
 
-        const { data: { session } } = await _supabase.auth.getSession();
-        const userId = session ? session.user.id : null;
+    const { data: { session } } = await _supabase.auth.getSession();
+    const userId = session ? session.user.id : null;
 
-        const { error } = await _supabase.from('question_reports').insert({
-            question_id: qId,
-            user_id: userId,
-            report_text: reason.trim(),
-            status: 'pending'
-        });
+    const { error } = await _supabase.from('question_reports').insert({
+        question_id: qId,
+        user_id: userId,
+        report_text: reason.trim(),
+        status: 'pending'
+    });
 
-        if (error) {
-            console.error("Error reporting question:", error);
-            alert("Could not send report.\nError: " + error.message + "\nDetails: " + (error.details || ""));
-        } else {
-            alert("Report sent! Thank you for your feedback.");
-        }
+    if (error) {
+        console.error("Error reporting question:", error);
+        alert("Could not send report.\nError: " + error.message + "\nDetails: " + (error.details || ""));
+    } else {
+        alert("Report sent! Thank you for your feedback.");
     }
+}
 };
 
 window.classifyPractice = (s) => QuizEngine.classifyQuestion(s);
