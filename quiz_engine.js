@@ -75,12 +75,31 @@ const QuizEngine = {
                 if (progress) progress.forEach(p => answeredIds.add(p.question_id));
             }
 
-            // 2. Fetch ALL Stand Alone Question IDs
-            // Enforce: case_id IS NULL only (Allow clinical_case_id to be present)
-            const { data: allIds } = await _supabase.from('questions_bank')
+            // 2. Fetch ALL Stand Alone Question IDs (Two-Step Strategy)
+            // First: Identify clinical cases that have NO scenario_text (True Standalone)
+            const { data: validCases } = await _supabase.from('clinical_cases')
                 .select('id')
-                .is('case_id', null)
+                .or('scenario_text.is.null,scenario_text.eq.""');
+
+            const validCaseIds = validCases ? validCases.map(c => c.id) : [];
+
+            // Second: Fetch questions linked to those cases
+            let qQuery = _supabase.from('questions_bank')
+                .select('id')
+                .is('case_id', null) // Legacy grouping check
                 .eq('is_active', true);
+
+            if (validCaseIds.length > 0) {
+                qQuery = qQuery.in('clinical_case_id', validCaseIds);
+            } else {
+                // If no standalone cases found, we shouldn't return random questions that might belong to scenarios.
+                // However, falling back to 'is null' might be safer if the fetch failed? 
+                // No, if validCaseIds is empty, it means we found NO standalone cases.
+                // We should likely force an empty result or check for nulls loop.
+                qQuery = qQuery.is('clinical_case_id', null);
+            }
+
+            const { data: allIds } = await qQuery;
 
             if (allIds && allIds.length > 0) {
                 // 3. Filter Unseen
@@ -115,16 +134,36 @@ const QuizEngine = {
 
             // 1. Enforce Standalone if needed
             let isStandalone = false;
+            let standaloneCaseIds = [];
+
             if (this.mode === 'standalone') {
-                console.log("DEBUG: Enforcing Standalone (No Cases) for Category Selection");
+                console.log("DEBUG: Enforcing Standalone (No Scenarios) for Category Selection");
+                // Fetch valid cases
+                const { data: validCases } = await _supabase.from('clinical_cases')
+                    .select('id')
+                    .or('scenario_text.is.null,scenario_text.eq.""');
+                standaloneCaseIds = validCases ? validCases.map(c => c.id) : [];
+
                 query = query.is('case_id', null);
+                if (standaloneCaseIds.length > 0) {
+                    query = query.in('clinical_case_id', standaloneCaseIds);
+                } else {
+                    query = query.is('clinical_case_id', null); // Fallback
+                }
                 isStandalone = true;
             }
 
             // 2. Fetch candidates (ALL matching IDs) to filter manually
             // We use a fresh query to get IDs only for filtering
             let idQuery = _supabase.from('questions_bank').select('id, category').in('category', catsArr).eq('is_active', true);
-            if (isStandalone) idQuery = idQuery.is('case_id', null);
+            if (isStandalone) {
+                idQuery = idQuery.is('case_id', null);
+                if (standaloneCaseIds.length > 0) {
+                    idQuery = idQuery.in('clinical_case_id', standaloneCaseIds);
+                } else {
+                    idQuery = idQuery.is('clinical_case_id', null);
+                }
+            }
 
             const { data: candidates, error: candError } = await idQuery;
 
