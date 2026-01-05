@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INBDE Pro - Error Reports</title>
+    <!-- Use same CSS for consistency -->
+    <link rel="stylesheet" href="dashboard.css">
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #18181b;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            background: #facc15;
+            color: #000;
+        }
+
+        .status-resolved {
+            background: #22c55e;
+            color: #fff;
+        }
+
+        .btn-action {
+            padding: 5px 10px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-light);
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .btn-action:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h1>🚩 Error Reports</h1>
+            <button onclick="window.location.href='dashboard.html'" class="btn-action">Back to Dashboard</button>
+        </div>
+
+        <div id="loading" style="margin-top:20px;">Loading reports...</div>
+
+        <table id="reports-table" style="display:none; margin-top:20px;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Question ID</th>
+                    <th>Report Text</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="reports-body">
+                <!-- Rows injected here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Local script specific to reports page
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof _supabase === 'undefined') {
+                alert("Supabase not initialized");
+                return;
+            }
+
+            // Check if user is admin? For now, we assume this page is 'hidden'
+            // Ideally we check RLS or role, but keeping it simple as requested.
+
+            loadReports();
+        });
+
+        async function loadReports() {
+            const loader = document.getElementById('loading');
+            const table = document.getElementById('reports-table');
+            const tbody = document.getElementById('reports-body');
+
+            loader.style.display = 'block';
+            table.style.display = 'none';
+            tbody.innerHTML = '';
+
+            const { data, error } = await _supabase
+                .from('question_reports')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            loader.style.display = 'none';
+
+            if (error) {
+                console.error(error);
+                document.body.innerHTML += `<div style="color:red">Error loading reports: ${error.message}</div>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                document.body.innerHTML += `<div style="margin-top:20px;">No reports found.</div>`;
+                return;
+            }
+
+            table.style.display = 'table';
+
+            data.forEach(report => {
+                const date = new Date(report.created_at).toLocaleDateString() + ' ' + new Date(report.created_at).toLocaleTimeString();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                <td>#${report.id}</td>
+                <td>${date}</td>
+                <td>
+                    <a href="#" onclick="viewQuestion(${report.question_id})" style="color:var(--accent); text-decoration:none;">${report.question_id}</a>
+                </td>
+                <td>${report.report_text}</td>
+                <td><span class="status-badge status-${report.status}">${report.status}</span></td>
+                <td>
+                    ${report.status === 'pending' ?
+                        `<button onclick="resolveReport(${report.id})" class="btn-action">Mark Resolved</button>` :
+                        '<span style="opacity:0.5;">-</span>'}
+                </td>
+            `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function resolveReport(id) {
+            if (!confirm("Mark this report as resolved?")) return;
+
+            const { error } = await _supabase
+                .from('question_reports')
+                .update({ status: 'resolved' })
+                .eq('id', id);
+
+            if (error) alert("Error: " + error.message);
+            else loadReports(); // Reload
+        }
+
+        // Quick view question content
+        async function viewQuestion(qId) {
+            const { data } = await _supabase.from('questions_bank').select('question_text').eq('id', qId).single();
+            if (data) alert("Question Text:\n\n" + data.question_text);
+        }
+    </script>
+
+</body>
+
+</html>

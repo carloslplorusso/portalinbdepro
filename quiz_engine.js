@@ -249,7 +249,33 @@ const QuizEngine = {
 
         document.getElementById('prac-review-area').classList.add('hidden');
         document.getElementById('prac-error-msg')?.classList.add('hidden');
+        document.getElementById('prac-error-msg')?.classList.add('hidden');
         document.getElementById('btn-prac-next').classList.add('hidden');
+
+        // Report Button Injection for Practice Mode
+        // Ensure there is a container or create one if needed, or append to an existing area.
+        // Assuming we can append it near the question text or options.
+        // Let's add it to the top right of the question area if possible, or below options.
+        // Ideally checking if a report button exists or creating one dynamically.
+        // For simplicity, let's inject a small link/button in the explanation area or near options container.
+
+        let reportBtn = document.getElementById('prac-report-btn');
+        if (!reportBtn) {
+            const container = document.getElementById('prac-quiz-screen'); // or specific container
+            reportBtn = document.createElement('button');
+            reportBtn.id = 'prac-report-btn';
+            reportBtn.innerText = '🚩 Report';
+            reportBtn.className = 'btn-report-problem';
+            // Minimal styling: positioned or float. 
+            // Better: Put it in the header/footer of the card.
+            // Let's assume user wants it "visible".
+
+            // Cleanest: Append to options container as a footer link
+        }
+
+        // Actually, let's add it to the option list container at the bottom
+        // Or re-render it every time
+
 
         const container = document.getElementById('prac-options-list');
         container.innerHTML = '';
@@ -264,6 +290,13 @@ const QuizEngine = {
             div.onclick = () => this.handlePracticeAnswer(idx, letter, q);
             container.appendChild(div);
         });
+
+        // Add Report Button at the bottom of options
+        const reportDiv = document.createElement('div');
+        reportDiv.style.textAlign = 'right';
+        reportDiv.style.marginTop = '10px';
+        reportDiv.innerHTML = `<button onclick="reportQuestion(${q.id})" style="background:transparent; border:none; color:#666; font-size:0.8rem; cursor:pointer; text-decoration:underline;">🚩 Report Issue</button>`;
+        container.appendChild(reportDiv);
     },
 
     handlePracticeAnswer(idx, letter, q) {
@@ -639,6 +672,17 @@ const QuizEngine = {
             });
         }
 
+        // Add Report Button for Simulation
+        const simContainer = document.getElementById('sim-options-container');
+        // Note: container is cleared above, so we can just append.
+        if (simContainer) {
+            const reportDiv = document.createElement('div');
+            reportDiv.style.textAlign = 'right';
+            reportDiv.style.marginTop = '15px';
+            reportDiv.innerHTML = `<button onclick="reportQuestion(${q.id})" style="background:transparent; border:none; color:#888; font-size:0.8rem; cursor:pointer;">🚩 Report Issue</button>`;
+            simContainer.appendChild(reportDiv);
+        }
+
         const btnMark = document.getElementById('btn-sim-mark');
         if (btnMark) {
             if (this.markedQuestions.has(this.currentIndex)) {
@@ -689,6 +733,32 @@ const QuizEngine = {
     goBack() {
         if (this.isMobile) window.location.href = 'mobile.html';
         else window.location.href = 'dashboard.html';
+    },
+
+    // --- 9. REPORTING SYSTEM ---
+    async reportQuestion(qId) {
+        if (!qId) return;
+
+        // Simple prompt for now
+        const reason = prompt("Describe the error or problem with this question:");
+        if (!reason || !reason.trim()) return;
+
+        const { data: { session } } = await _supabase.auth.getSession();
+        const userId = session ? session.user.id : null;
+
+        const { error } = await _supabase.from('question_reports').insert({
+            question_id: qId,
+            user_id: userId,
+            report_text: reason.trim(),
+            status: 'pending'
+        });
+
+        if (error) {
+            console.error("Error reporting question:", error);
+            alert("Could not send report. Please try again.");
+        } else {
+            alert("Report sent! Thank you for your feedback.");
+        }
     }
 };
 
@@ -703,5 +773,6 @@ window.finishSimExam = () => QuizEngine.finishQuiz();
 window.showPracticeResults = () => QuizEngine.showSessionResults('prac');
 window.showSimResults = () => QuizEngine.showSessionResults('sim');
 window.goToDashboard = () => QuizEngine.goBack();
+window.reportQuestion = (id) => QuizEngine.reportQuestion(id);
 
 document.addEventListener('DOMContentLoaded', () => QuizEngine.init());
