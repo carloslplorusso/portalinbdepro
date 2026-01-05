@@ -802,7 +802,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('btn-learn-standalone')?.addEventListener('click', () => openSelectionView('standalone'));
             document.getElementById('btn-learn-itemsets')?.addEventListener('click', () => window.location.href = 'quiz_engine.html?mode=itemsets&count=20');
             document.getElementById('btn-sim-customize')?.addEventListener('click', () => openSelectionView('simulation'));
-            document.getElementById('btn-sim-start')?.addEventListener('click', () => window.location.href = 'quiz_engine.html?mode=simulation');
+            document.getElementById('btn-sim-start')?.addEventListener('click', () => window.location.href = 'quiz_engine.html?mode=simulation&count=70');
 
             // Pomodoro
             document.getElementById('btn-pomo-session')?.addEventListener('click', openPomodoroSession);
@@ -828,7 +828,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         alert("Please select at least one subject.");
                     }
                 } else {
-                    window.location.href = `quiz_engine.html?mode=${currentSelectionMode}`;
+                    // For Simulation, default to 70 items
+                    if (currentSelectionMode === 'simulation') {
+                        window.location.href = `quiz_engine.html?mode=${currentSelectionMode}&count=70`;
+                    } else {
+                        window.location.href = `quiz_engine.html?mode=${currentSelectionMode}`;
+                    }
                 }
             });
         }
