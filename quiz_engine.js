@@ -115,6 +115,12 @@ const QuizEngine = {
             console.log("DEBUG: Searching for categories:", catsArr);
 
             // Allow both case-based and standalone questions for category practice
+            // UNLESS mode is specifically 'standalone' (Dark Mode Practice)
+            if (this.mode === 'standalone') {
+                console.log("DEBUG: Enforcing Standalone (No Cases) for Category Selection");
+                query = query.is('case_id', null).is('clinical_case_id', null);
+            }
+
             const res = await query.in('category', catsArr);
             if (res.error) {
                 console.error("Supabase Error (Cats):", res.error);
