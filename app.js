@@ -811,29 +811,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('btn-back-timer')?.addEventListener('click', () => switchView('pomodoro-view'));
 
             // START QUIZ con selección múltiple
+            // START QUIZ con selección múltiple
             document.getElementById('btn-start-quiz-selection')?.addEventListener('click', () => {
 
+                // Capturar múltiples categorías seleccionadas
+                const selectedCards = document.querySelectorAll('.category-card.selected');
+                let catsParam = null;
+
+                if (selectedCards.length > 0) {
+                    const selectedCats = Array.from(selectedCards).map(card =>
+                        card.querySelector('.cat-name').innerText.trim()
+                    );
+                    catsParam = selectedCats.map(c => encodeURIComponent(c)).join(',');
+                }
+
                 if (currentSelectionMode === 'standalone') {
-                    // Capturar múltiples categorías seleccionadas
-                    const selectedCards = document.querySelectorAll('.category-card.selected');
-
-                    if (selectedCards.length > 0) {
-                        const selectedCats = Array.from(selectedCards).map(card =>
-                            card.querySelector('.cat-name').innerText.trim()
-                        );
-
-                        const catsParam = selectedCats.map(c => encodeURIComponent(c)).join(',');
+                    if (catsParam) {
                         window.location.href = `quiz_engine.html?mode=standalone&cats=${catsParam}`;
                     } else {
                         alert("Please select at least one subject.");
                     }
-                } else {
-                    // For Simulation, default to 70 items
-                    if (currentSelectionMode === 'simulation') {
-                        window.location.href = `quiz_engine.html?mode=${currentSelectionMode}&count=70`;
+                } else if (currentSelectionMode === 'simulation') {
+                    // For Simulation, default to 70 items or use selected categories
+                    if (catsParam) {
+                        // Fix for Customize Simulation: Include categories
+                        window.location.href = `quiz_engine.html?mode=simulation&count=70&cats=${catsParam}`;
                     } else {
-                        window.location.href = `quiz_engine.html?mode=${currentSelectionMode}`;
+                        // Default full simulation
+                        window.location.href = `quiz_engine.html?mode=simulation&count=70`;
                     }
+                } else {
+                    window.location.href = `quiz_engine.html?mode=${currentSelectionMode}`;
                 }
             });
         }
