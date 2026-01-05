@@ -76,11 +76,10 @@ const QuizEngine = {
             }
 
             // 2. Fetch ALL Stand Alone Question IDs
-            // Enforce: case_id IS NULL and clinical_case_id IS NULL
+            // Enforce: case_id IS NULL only (Allow clinical_case_id to be present)
             const { data: allIds } = await _supabase.from('questions_bank')
                 .select('id')
                 .is('case_id', null)
-                .is('clinical_case_id', null)
                 .eq('is_active', true);
 
             if (allIds && allIds.length > 0) {
@@ -118,14 +117,14 @@ const QuizEngine = {
             let isStandalone = false;
             if (this.mode === 'standalone') {
                 console.log("DEBUG: Enforcing Standalone (No Cases) for Category Selection");
-                query = query.is('case_id', null).is('clinical_case_id', null);
+                query = query.is('case_id', null);
                 isStandalone = true;
             }
 
             // 2. Fetch candidates (ALL matching IDs) to filter manually
             // We use a fresh query to get IDs only for filtering
             let idQuery = _supabase.from('questions_bank').select('id, category').in('category', catsArr).eq('is_active', true);
-            if (isStandalone) idQuery = idQuery.is('case_id', null).is('clinical_case_id', null);
+            if (isStandalone) idQuery = idQuery.is('case_id', null);
 
             const { data: candidates, error: candError } = await idQuery;
 
