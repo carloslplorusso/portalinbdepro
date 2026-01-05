@@ -148,8 +148,11 @@ const QuizEngine = {
                 const cases = {};
                 const standalone = [];
 
+                console.log("DEBUG: Starting grouping. Total items:", data.length);
+
                 data.forEach(q => {
                     const cId = q.clinical_case_id || q.case_id;
+                    console.log(`DEBUG: Item ${q.id} has CaseID: ${cId}`);
                     if (cId) {
                         if (!cases[cId]) cases[cId] = [];
                         cases[cId].push(q);
@@ -158,11 +161,15 @@ const QuizEngine = {
                     }
                 });
 
+                const caseKeys = Object.keys(cases);
+                console.log(`DEBUG: Found ${caseKeys.length} unique cases and ${standalone.length} standalone questions.`);
+                console.log("DEBUG: Case Sizes:", caseKeys.map(k => cases[k].length));
+
                 // Shuffle the Cases (Keys)
-                const caseKeys = Object.keys(cases).sort(() => Math.random() - 0.5);
+                const shuffledKeys = caseKeys.sort(() => Math.random() - 0.5);
 
                 let sortedData = [];
-                caseKeys.forEach(k => {
+                shuffledKeys.forEach(k => {
                     // Sort questions within the case by ID to ensure logical order (if any)
                     const caseQs = cases[k].sort((a, b) => a.id - b.id);
                     sortedData.push(...caseQs);
