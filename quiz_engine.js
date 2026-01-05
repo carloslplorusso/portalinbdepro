@@ -53,124 +53,13 @@ const QuizEngine = {
     async fetchQuestions(count, term, catsStr) {
         if (typeof _supabase === 'undefined') { alert("Supabase no inicializado"); return; }
 
-        // Fix for Ambiguous FK: We fetch BOTH potential relationships using aliases
+        let data = [];
         let query = _supabase.from('questions_bank')
             .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)');
-        let data = [];
 
-        // Lógica de Filtros
-
-        // Lógica de Filtros
+        // --- STRATEGY 1: RANDOM / DAILY ---
         if (this.mode === 'random' || this.mode === 'daily') {
             console.log("Fetch Random: Stand Alone Only & Unseen Prioritized");
-
-            // 1. Get User Progress (to avoid repeats)
-            let answeredIds = new Set();
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (session) {
-                const { data: progress } = await _supabase
-                    .from('user_progress')
-                    .select('question_id')
-                    .eq('user_id', session.user.id);
-                if (progress) progress.forEach(p => answeredIds.add(p.question_id));
-            }
-
-            // 2. Fetch ALL Stand Alone Question IDs (Two-Step Strategy)
-            // First: Identify clinical cases that have NO scenario_text (True Standalone)
-            const { data: validCases } = await _supabase.from('clinical_cases')
-                .select('id')
-                .or('scenario_text.is.null,scenario_text.eq.""');
-
-            const validCaseIds = validCases ? validCases.map(c => c.id) : [];
-
-            // Second: Fetch questions linked to those cases
-            let qQuery = _supabase.from('questions_bank')
-                .select('id')
-                .is('case_id', null) // Legacy grouping check
-                .eq('is_active', true);
-
-            if (validCaseIds.length > 0) {
-                qQuery = qQuery.in('clinical_case_id', validCaseIds);
-            } else {
-                // If no standalone cases found, we shouldn't return random questions that might belong to scenarios.
-                // However, falling back to 'is null' might be safer if the fetch failed? 
-                // No, if validCaseIds is empty, it means we found NO standalone cases.
-                // We should likely force an empty result or check for nulls loop.
-                qQuery = qQuery.is('clinical_case_id', null);
-            }
-
-            const { data: allIds } = await qQuery;
-
-            if (allIds && allIds.length > 0) {
-                // 3. Filter Unseen
-                const unseen = allIds.filter(x => !answeredIds.has(x.id));
-                console.log(`Pool Stats: Total StandAlone=${allIds.length}, Unseen=${unseen.length}`);
-
-                // 4. Select 10
-                let pool = unseen;
-                if (unseen.length < 10) {
-                    console.warn("Run out of unseen questions! Mixing seen questions.");
-                    pool = allIds; // Fallback to all if user finished everything
-                }
-
-                const shuffled = pool.sort(() => 0.5 - Math.random()).slice(0, 10);
-                const ids = shuffled.map(x => x.id);
-
-                // 5. Fetch Full Data
-                const res = await _supabase.from('questions_bank')
-                    .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
-                    .in('id', ids);
-
-                data = res.data;
-            } else {
-                alert("No Stand Alone questions found in database.");
-            }
-        } else if (this.mode === 'search' && term) {
-            const res = await query.ilike('question_text', `%${term}%`);
-            data = res.data;
-        } else if (catsStr) {
-            const catsArr = catsStr.split(',').map(decodeURIComponent);
-            console.log("DEBUG: Searching for categories:", catsArr);
-
-            // 1. Enforce Standalone if needed
-            let isStandalone = false;
-            let standaloneCaseIds = [];
-
-            query = query.is('case_id', null);
-            // We previously filtered by 'No scenario', but User confirmed Standalone questions HAVE scenarios.
-            // So we relax this to allow ALL questions linked to cases (but still excluding legacy groups if needed).
-            // Effectively, we stop filtering by `clinical_case_id` entirely here, relying on the 'case_id' null check for legacy items.
-            if (standaloneCaseIds.length > 0) {
-                // Legacy logic removal: We just want ALL valid single questions. 
-                // Nothing to do here if we want to allow all.
-            } else {
-                // Fallback
-            }
-            isStandalone = true;
-
-
-            // 2. Fetch candidates (ALL matching IDs) to filter manually
-            // We use a fresh query to get IDs only for filtering
-            let idQuery = _supabase.from('questions_bank').select('id, category').in('category', catsArr).eq('is_active', true);
-            if (isStandalone) {
-                idQuery = idQuery.is('case_id', null);
-                // Relaxed: No clinical_case_id checks
-            }
-
-            const { data: candidates, error: candError } = await idQuery;
-
-            if (candError) {
-                console.error("Error fetching candidates:", candError);
-                alert("Error loading questions.");
-                return;
-            }
-
-            if (!candidates || candidates.length === 0) {
-                alert("No questions found for these categories.");
-                return;
-            }
-
-            // 3. Get User Progress
             let answeredIds = new Set();
             const { data: { session } } = await _supabase.auth.getSession();
             if (session) {
@@ -178,221 +67,168 @@ const QuizEngine = {
                 if (progress) progress.forEach(p => answeredIds.add(p.question_id));
             }
 
-            // 4. Filter Unseen
-            const unseen = candidates.filter(q => !answeredIds.has(q.id));
-            console.log(`Pool Stats: Total=${candidates.length}, Unseen=${unseen.length}`);
+            // Fetch Standalone Cases
+            const { data: validCases } = await _supabase.from('clinical_cases')
+                .select('id').or('scenario_text.is.null,scenario_text.eq.""');
+            const validCaseIds = validCases ? validCases.map(c => c.id) : [];
 
-            // 5. Select Logic
-            const targetCount = count || 20; // Default or URL param
+            let qQuery = _supabase.from('questions_bank').select('id').is('case_id', null).eq('is_active', true);
+            if (validCaseIds.length > 0) qQuery = qQuery.in('clinical_case_id', validCaseIds);
+            else qQuery = qQuery.is('clinical_case_id', null);
+
+            const { data: allIds } = await qQuery;
+            if (allIds && allIds.length > 0) {
+                const unseen = allIds.filter(x => !answeredIds.has(x.id));
+                let pool = unseen;
+                if (unseen.length < 10) pool = allIds;
+
+                const shuffled = pool.sort(() => 0.5 - Math.random()).slice(0, 10);
+                const ids = shuffled.map(x => x.id);
+
+                const res = await _supabase.from('questions_bank')
+                    .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
+                    .in('id', ids);
+                data = res.data;
+            } else {
+                alert("No Stand Alone questions found.");
+            }
+
+            // --- STRATEGY 2: SEARCH ---
+        } else if (this.mode === 'search' && term) {
+            const res = await query.ilike('question_text', `%${term}%`);
+            data = res.data;
+
+            // --- STRATEGY 3: CATEGORIES ---
+        } else if (catsStr) {
+            const catsArr = catsStr.split(',').map(decodeURIComponent);
+            // Candidates query
+            let idQuery = _supabase.from('questions_bank').select('id, category').in('category', catsArr).eq('is_active', true);
+            const { data: candidates, error: candError } = await idQuery;
+
+            if (candError || !candidates || candidates.length === 0) {
+                alert("No questions found for categories.");
+                return;
+            }
+
+            let answeredIds = new Set();
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                const { data: progress } = await _supabase.from('user_progress').select('question_id').eq('user_id', session.user.id);
+                if (progress) progress.forEach(p => answeredIds.add(p.question_id));
+            }
+
+            const unseen = candidates.filter(q => !answeredIds.has(q.id));
+            const targetCount = count || 20;
             let selectedIds = [];
 
             if (unseen.length >= targetCount) {
-                // Randomly pick from unseen
                 selectedIds = unseen.sort(() => 0.5 - Math.random()).slice(0, targetCount).map(q => q.id);
             } else {
-                // Take all unseen
                 selectedIds.push(...unseen.map(q => q.id));
-                // Fill remainder with random seen
                 const remainder = targetCount - selectedIds.length;
                 const seen = candidates.filter(q => answeredIds.has(q.id));
                 const filled = seen.sort(() => 0.5 - Math.random()).slice(0, remainder).map(q => q.id);
                 selectedIds.push(...filled);
             }
-
-            // Final Shuffle
             selectedIds.sort(() => 0.5 - Math.random());
 
-            // 6. Fetch Full Data
             const res = await _supabase.from('questions_bank')
                 .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
                 .in('id', selectedIds);
-
-            if (res.error) {
-                console.error("Supabase Error (Cats Full):", res.error);
-                alert("Error: " + res.error.message);
-            }
             data = res.data;
-            if (data) data.sort(() => 0.5 - Math.random()); // Extra shuffle safety
 
-        } else {
-            // FIX: Simulation logic (Split Query to avoid OR .neq.null syntax issues on BigInt)
-            if (this.mode.includes('simulation') || this.mode === 'itemsets') {
-                console.log("Fetch Simulation: Smart Selection (Unseen Priority)");
+            // --- STRATEGY 4: SIMULATION / ITEM SETS ---
+        } else if (this.mode.includes('simulation') || this.mode === 'itemsets') {
+            console.log("Fetch Sim/ItemSets");
+            // Query A & B
+            const qA = _supabase.from('questions_bank').select('id, case_id').not('case_id', 'is', null);
+            const qB = _supabase.from('questions_bank').select('id, clinical_case_id').not('clinical_case_id', 'is', null);
+            const [resA, resB] = await Promise.all([qA, qB]);
 
-                // Query A: checks case_id IS NOT NULL (ID only)
-                const qA = _supabase.from('questions_bank').select('id, case_id').not('case_id', 'is', null);
+            const combined = [...(resA.data || []), ...(resB.data || [])];
+            const uniqueIds = new Set(combined.map(x => x.id));
+            const allSimIds = Array.from(uniqueIds);
 
-                // Query B: checks clinical_case_id IS NOT NULL (ID only)
-                const qB = _supabase.from('questions_bank').select('id, clinical_case_id').not('clinical_case_id', 'is', null);
-
-                const [resA, resB] = await Promise.all([qA, qB]);
-
-                if (resA.error) console.error("Error Q_A:", resA.error);
-                if (resB.error) console.error("Error Q_B:", resB.error);
-
-                // Combine and deduplicate IDs
-                const combined = [...(resA.data || []), ...(resB.data || [])];
-                const uniqueIds = new Set(combined.map(x => x.id));
-                const allSimIds = Array.from(uniqueIds);
-
-                // 1. Get User Progress
-                let answeredIds = new Set();
-                const { data: { session } } = await _supabase.auth.getSession();
-                if (session) {
-                    const { data: progress } = await _supabase.from('user_progress').select('question_id').eq('user_id', session.user.id);
-                    if (progress) progress.forEach(p => answeredIds.add(p.question_id));
-                }
-
-                // 2. Filter Unseen
-                const unseen = allSimIds.filter(id => !answeredIds.has(id));
-                console.log(`Sim Pool: Total=${allSimIds.length}, Unseen=${unseen.length}`);
-
-                // 3. Selection Logic (70 or count)
-                const targetCount = count || 70; // Hard default 70
-                let selectedIds = [];
-
-                if (unseen.length >= targetCount) {
-                    selectedIds = unseen.sort(() => 0.5 - Math.random()).slice(0, targetCount);
-                } else {
-                    selectedIds.push(...unseen);
-                    // Fill
-                    const remainder = targetCount - selectedIds.length;
-                    const seen = allSimIds.filter(id => answeredIds.has(id));
-                    const filled = seen.sort(() => 0.5 - Math.random()).slice(0, remainder);
-                    selectedIds.push(...filled);
-                }
-
-                // Shuffle Key Order
-                selectedIds.sort(() => 0.5 - Math.random());
-
-                // 4. Fetch Full Data
-                // Note: Simulation logic requires grouping by Case. 
-                // We fetch the raw questions here, then the existing grouping logic below will handle the rest.
-                const res = await _supabase.from('questions_bank')
-                    .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
-                    .in('id', selectedIds);
-
-                if (res.error) {
-                    console.error("Supabase Error (Sim Full):", res.error);
-                }
-                data = res.data;
-
-                // Note: The subsequent code (lines ~210+) handles grouping into cases.
-                // However, since we selected random IDs, we might get partial cases?
-                // The original logic fetched specific counts of questions, implies questions are independent rows.
-                // But grouped by case content. 
-                // If we select random questions, we might break "Item Sets" integrity if an item set has 5 questions and we pick 2.
-                // Simulation mimics INBDE: Usually sets are intact.
-                // Ideally we should select CASES, not QUESTIONS.
-                // But the current DB structure seems Question-centric.
-                // User requirement: "70 items". INBDE is usually 70 items.
-                // Assuming picking questions is fine, logic below groups them.
-
-                // Check if we need to filter for Item Sets mode (sets only)?
-                // Original logic: "if itemsets... dropped single-item cases".
-                // We should be careful. 
-                // If we pick 70 random questions, many might be from the same case. 
-                // The grouping logic will handle it visually.
-
-            } else {
-                // Practice: Only questions strictly WITHOUT a case
-                query = query.is('case_id', null).is('clinical_case_id', null);
-                if (count) query = query.limit(count);
-                else query = query.limit(100);
-
-                const res = await query;
-                if (res.error) {
-                    console.error("Supabase Error (Standard):", res.error);
-                    alert("Error fetching questions: " + res.error.message);
-                }
-                data = res.data;
+            let answeredIds = new Set();
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                const { data: progress } = await _supabase.from('user_progress').select('question_id').eq('user_id', session.user.id);
+                if (progress) progress.forEach(p => answeredIds.add(p.question_id));
             }
+
+            const unseen = allSimIds.filter(id => !answeredIds.has(id));
+            const targetCount = count || 70;
+            let selectedIds = [];
+
+            if (unseen.length >= targetCount) {
+                selectedIds = unseen.sort(() => 0.5 - Math.random()).slice(0, targetCount);
+            } else {
+                selectedIds.push(...unseen);
+                const remainder = targetCount - selectedIds.length;
+                const seen = allSimIds.filter(id => answeredIds.has(id));
+                const filled = seen.sort(() => 0.5 - Math.random()).slice(0, remainder);
+                selectedIds.push(...filled);
+            }
+            selectedIds.sort(() => 0.5 - Math.random());
+
+            const res = await _supabase.from('questions_bank')
+                .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
+                .in('id', selectedIds);
+            data = res.data;
+
+            // --- STRATEGY 5: PRACTICE FALLBACK ---
+        } else {
+            // Basic fallback
+            console.log("Fetch Fallback");
+            const qFallback = query.is('case_id', null).is('clinical_case_id', null).limit(10);
+            const res = await qFallback;
+            data = res.data;
         }
 
+        // --- POST PROCESSING (Validate & Group) ---
         if (!data || data.length === 0) {
             alert("No questions found.");
             this.goBack();
             return;
         }
+        this.data = []; // Reset
 
-        if (this.mode !== 'random' && this.mode !== 'daily') {
-            if (this.mode.includes('simulation') || this.mode === 'itemsets') {
-                // Group by Case Content (not just ID) to handle duplicate case records
-                const cases = {};
-                const standalone = [];
+        if (this.mode.includes('simulation') || this.mode === 'itemsets') {
+            // GROUPING LOGIC
+            const cases = {};
+            const standalone = [];
+            data.forEach(q => {
+                let c = q.case_new || q.case_old;
+                if (Array.isArray(c)) c = c[0];
 
-                console.log("DEBUG: Starting grouping by CONTENT. Total items:", data.length);
-
-                data.forEach(q => {
-                    // Resolve the linked case object
-                    // Supabase returns an object (if 1-to-1 via FK) or array (if 1-to-many reverse).
-                    // Since questions_bank has the FK, it's 1-to-1 from Question->Case
-                    let c = q.case_new || q.case_old;
-                    if (Array.isArray(c)) c = c[0]; // Safety check
-
-                    if (c) {
-                        // Generate a Content-Based Key
-                        // We use 50 characters of scenario or patient data to identify "identical" cases
-                        let groupKey = c.id; // Default to ID
-
-                        if (c.scenario_text && c.scenario_text.length > 10) {
-                            groupKey = "SCEN_" + c.scenario_text.trim().substring(0, 100);
-                        } else if (c.patient_data) {
-                            // Fallback to patient data if scenario is missing
-                            let pStr = (typeof c.patient_data === 'string') ? c.patient_data : JSON.stringify(c.patient_data);
-                            groupKey = "PAT_" + pStr.substring(0, 100);
-                        }
-
-                        // console.log(`DEBUG: Item ${q.id} GroupKey: ${groupKey}`); // Detailed Log
-
-                        if (!cases[groupKey]) cases[groupKey] = [];
-                        cases[groupKey].push(q);
-                    } else {
-                        standalone.push(q);
+                if (c) {
+                    let groupKey = c.id;
+                    if (c.scenario_text && c.scenario_text.length > 10) groupKey = "SCEN_" + c.scenario_text.trim().substring(0, 50);
+                    else if (c.patient_data) {
+                        let pStr = (typeof c.patient_data === 'string') ? c.patient_data : JSON.stringify(c.patient_data);
+                        groupKey = "PAT_" + pStr.substring(0, 50);
                     }
-                });
-
-                let caseKeys = Object.keys(cases);
-                console.log(`DEBUG: Consolidated into ${caseKeys.length} unique scenarios from ${data.length} questions.`);
-
-                // --- ITEM SETS FILTERING ---
-                if (this.mode === 'itemsets') {
-                    const originalCount = caseKeys.length;
-                    // Filter: Keep only cases with >1 question
-                    caseKeys = caseKeys.filter(k => cases[k].length > 1);
-                    console.log(`DEBUG: Item Sets Filter: Dropped ${originalCount - caseKeys.length} single-item cases. Keeping ${caseKeys.length} sets.`);
-
-                    // Also discard standalone questions for strict Item Sets mode
-                    if (standalone.length > 0) {
-                        console.log(`DEBUG: Item Sets Filter: Dropped ${standalone.length} standalone questions.`);
-                        standalone.length = 0;
-                    }
+                    if (!cases[groupKey]) cases[groupKey] = [];
+                    cases[groupKey].push(q);
+                } else {
+                    standalone.push(q);
                 }
+            });
 
-                // Shuffle the Scenarios (Keys)
-                const shuffledKeys = caseKeys.sort(() => Math.random() - 0.5);
-
-                let sortedData = [];
-                shuffledKeys.forEach(k => {
-                    // Sort questions within the scenario. 
-                    // Ideally by ID or some 'order' field. We use ID for stability.
-                    const caseQs = cases[k].sort((a, b) => a.id - b.id);
-                    sortedData.push(...caseQs);
-                });
-
-                // Append standalones (shuffled)
-                if (standalone.length > 0) {
-                    sortedData.push(...standalone.sort(() => Math.random() - 0.5));
-                }
-
-                this.data = sortedData;
-
-            } else {
-                // Practice: Random Shuffle
-                this.data = data.sort(() => Math.random() - 0.5);
+            let caseKeys = Object.keys(cases);
+            if (this.mode === 'itemsets') {
+                caseKeys = caseKeys.filter(k => cases[k].length > 1);
+                standalone.length = 0; // strict
             }
+            const shuffledKeys = caseKeys.sort(() => Math.random() - 0.5);
+            shuffledKeys.forEach(k => {
+                this.data.push(...cases[k].sort((a, b) => a.id - b.id));
+            });
+            this.data.push(...standalone.sort(() => Math.random() - 0.5));
+
         } else {
-            this.data = data;
+            // SIMPLE SHUFFLE (Random, Search, Cats, Practice)
+            this.data = data.sort(() => Math.random() - 0.5);
         }
 
         this.startQuiz();
