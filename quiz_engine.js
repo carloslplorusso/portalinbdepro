@@ -70,7 +70,8 @@ const QuizEngine = {
             data = res.data;
         } else if (catsStr) {
             const catsArr = catsStr.split(',').map(decodeURIComponent);
-            const res = await query.in('category', catsArr).is('case_id', null);
+            // Allow both case-based and standalone questions for category practice
+            const res = await query.in('category', catsArr);
             data = res.data;
         } else {
             if (this.mode.includes('simulation') || this.mode === 'itemsets') query = query.not('case_id', 'is', null);
@@ -115,7 +116,30 @@ const QuizEngine = {
     // --- 3A. RENDER MODO PRÁCTICA ---
     renderPracticeQuestion() {
         const q = this.data[this.currentIndex];
-        document.getElementById('prac-q-text').innerText = q.question_text;
+
+        // Prepare Question Text (with optional Case Context)
+        let displayText = q.question_text;
+
+        if (q.clinical_cases) {
+            const c = Array.isArray(q.clinical_cases) ? q.clinical_cases[0] : q.clinical_cases;
+            if (c) {
+                let context = "";
+                // Use new fields or fallback
+                const cc = c.chief_complaint || (c.patient_data?.cc) || (c.patient_data?.complaint) || "";
+                const hist = c.medical_history || (c.patient_data?.history) || "";
+                const scen = c.scenario_text || "";
+
+                if (scen) context += `[SCENARIO]: ${scen}\n\n`;
+                if (cc) context += `[CHIEF COMPLAINT]: ${cc}\n`;
+                if (hist) context += `[HISTORY]: ${hist}\n`;
+
+                if (context) {
+                    displayText = context + "\n----------------\n" + displayText;
+                }
+            }
+        }
+
+        document.getElementById('prac-q-text').innerText = displayText;
 
         document.getElementById('prac-review-area').classList.add('hidden');
         document.getElementById('prac-error-msg')?.classList.add('hidden');
@@ -447,26 +471,43 @@ const QuizEngine = {
             // Handle array vs object return from Supabase
             const c = Array.isArray(q.clinical_cases) ? q.clinical_cases[0] : q.clinical_cases;
 
-            if (c && c.patient_data) {
-                try {
-                    // Safe Parse: Check if it's already an object
-                    let parsed;
-                    if (typeof c.patient_data === 'object') {
-                        parsed = c.patient_data;
-                    } else if (typeof c.patient_data === 'string') {
-                        parsed = JSON.parse(c.patient_data);
-                    }
+            if (c) {
+                // 1. Check for specific columns (New Schema)
+                // We check if any of the new fields have content.
+                if (c.chief_complaint || c.medical_history || c.current_findings || c.patient_age) {
+                    const age = c.patient_age ? `${c.patient_age}` : "";
+                    const gender = c.patient_gender || "";
+                    // Simple logic to format Age/Gender
+                    const demo = [age, gender].filter(x => x).join(", ");
 
-                    if (parsed) {
-                        pData = {
-                            patient: parsed.patient || parsed.age || "N/A",
-                            cc: parsed.cc || parsed.complaint || "-",
-                            history: parsed.history || "-",
-                            findings: parsed.findings || "-"
-                        };
+                    pData = {
+                        patient: demo || "N/A",
+                        cc: c.chief_complaint || "-",
+                        history: c.medical_history || "-",
+                        findings: c.current_findings || "-"
+                    };
+                }
+                // 2. Fallback to 'patient_data' JSON (Old Schema)
+                else if (c.patient_data) {
+                    try {
+                        let parsed;
+                        if (typeof c.patient_data === 'object') {
+                            parsed = c.patient_data;
+                        } else if (typeof c.patient_data === 'string') {
+                            parsed = JSON.parse(c.patient_data);
+                        }
+
+                        if (parsed) {
+                            pData = {
+                                patient: parsed.patient || parsed.age || "N/A",
+                                cc: parsed.cc || parsed.complaint || "-",
+                                history: parsed.history || "-",
+                                findings: parsed.findings || "-"
+                            };
+                        }
+                    } catch (e) {
+                        console.error("Error parsing patient data:", e);
                     }
-                } catch (e) {
-                    console.error("Error parsing patient data:", e);
                 }
             }
         }
