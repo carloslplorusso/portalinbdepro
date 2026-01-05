@@ -144,38 +144,56 @@ const QuizEngine = {
 
         if (this.mode !== 'random' && this.mode !== 'daily') {
             if (this.mode.includes('simulation') || this.mode === 'itemsets') {
-                // Group by Case to ensure questions of the same case appear sequentially
+                // Group by Case Content (not just ID) to handle duplicate case records
                 const cases = {};
                 const standalone = [];
 
-                console.log("DEBUG: Starting grouping. Total items:", data.length);
+                console.log("DEBUG: Starting grouping by CONTENT. Total items:", data.length);
 
                 data.forEach(q => {
-                    const cId = q.clinical_case_id || q.case_id;
-                    console.log(`DEBUG: Item ${q.id} has CaseID: ${cId}`);
-                    if (cId) {
-                        if (!cases[cId]) cases[cId] = [];
-                        cases[cId].push(q);
+                    // Resolve the linked case object
+                    // Supabase returns an object (if 1-to-1 via FK) or array (if 1-to-many reverse).
+                    // Since questions_bank has the FK, it's 1-to-1 from Question->Case
+                    let c = q.case_new || q.case_old;
+                    if (Array.isArray(c)) c = c[0]; // Safety check
+
+                    if (c) {
+                        // Generate a Content-Based Key
+                        // We use 50 characters of scenario or patient data to identify "identical" cases
+                        let groupKey = c.id; // Default to ID
+
+                        if (c.scenario_text && c.scenario_text.length > 10) {
+                            groupKey = "SCEN_" + c.scenario_text.trim().substring(0, 100);
+                        } else if (c.patient_data) {
+                            // Fallback to patient data if scenario is missing
+                            let pStr = (typeof c.patient_data === 'string') ? c.patient_data : JSON.stringify(c.patient_data);
+                            groupKey = "PAT_" + pStr.substring(0, 100);
+                        }
+
+                        // console.log(`DEBUG: Item ${q.id} GroupKey: ${groupKey}`); // Detailed Log
+
+                        if (!cases[groupKey]) cases[groupKey] = [];
+                        cases[groupKey].push(q);
                     } else {
                         standalone.push(q);
                     }
                 });
 
                 const caseKeys = Object.keys(cases);
-                console.log(`DEBUG: Found ${caseKeys.length} unique cases and ${standalone.length} standalone questions.`);
-                console.log("DEBUG: Case Sizes:", caseKeys.map(k => cases[k].length));
+                console.log(`DEBUG: Consolidated into ${caseKeys.length} unique scenarios from ${data.length} questions.`);
 
-                // Shuffle the Cases (Keys)
+                // Shuffle the Scenarios (Keys)
                 const shuffledKeys = caseKeys.sort(() => Math.random() - 0.5);
 
                 let sortedData = [];
                 shuffledKeys.forEach(k => {
-                    // Sort questions within the case by ID to ensure logical order (if any)
+                    // Sort questions within the scenario. 
+                    // Ideally by ID or some 'order' field. We use ID for stability.
                     const caseQs = cases[k].sort((a, b) => a.id - b.id);
                     sortedData.push(...caseQs);
                 });
 
-                // Append standalones (if any caught in the filter)
+                // Append standalones (shuffled)
                 if (standalone.length > 0) {
                     sortedData.push(...standalone.sort(() => Math.random() - 0.5));
                 }
