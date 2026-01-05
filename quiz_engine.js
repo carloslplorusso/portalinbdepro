@@ -72,6 +72,10 @@ const QuizEngine = {
             const catsArr = catsStr.split(',').map(decodeURIComponent);
             // Allow both case-based and standalone questions for category practice
             const res = await query.in('category', catsArr);
+            if (res.error) {
+                console.error("Supabase Error (Cats):", res.error);
+                alert("Error fetching category questions: " + res.error.message);
+            }
             data = res.data;
         } else {
             if (this.mode.includes('simulation') || this.mode === 'itemsets') query = query.not('case_id', 'is', null);
@@ -81,6 +85,10 @@ const QuizEngine = {
             else query = query.limit(100);
 
             const res = await query;
+            if (res.error) {
+                console.error("Supabase Error (Standard):", res.error);
+                alert("Error fetching questions: " + res.error.message);
+            }
             data = res.data;
         }
 
