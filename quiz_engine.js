@@ -53,8 +53,8 @@ const QuizEngine = {
     async fetchQuestions(count, term, catsStr) {
         if (typeof _supabase === 'undefined') { alert("Supabase no inicializado"); return; }
 
-        // TEST MODE: Removed join temporarily to debug "No questions found"
-        let query = _supabase.from('questions_bank').select('*');
+        // Fix for Ambiguous FK: We specify !case_id to tell Supabase which relationship to use.
+        let query = _supabase.from('questions_bank').select('*, clinical_cases!case_id (*)');
         let data = [];
 
         // Lógica de Filtros
@@ -63,8 +63,8 @@ const QuizEngine = {
             if (allIds) {
                 const shuffled = allIds.sort(() => 0.5 - Math.random()).slice(0, 10);
                 const ids = shuffled.map(x => x.id);
-                // TEST: Removed join here too
-                const res = await _supabase.from('questions_bank').select('*').in('id', ids);
+                // Also fix here
+                const res = await _supabase.from('questions_bank').select('*, clinical_cases!case_id (*)').in('id', ids);
                 data = res.data;
             }
         } else if (this.mode === 'search' && term) {
