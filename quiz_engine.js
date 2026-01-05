@@ -87,24 +87,53 @@ const QuizEngine = {
             }
             data = res.data;
         } else {
-            // FIX: Simulation logic now checks if EITHER foreign key is present
+            // FIX: Simulation logic (Split Query to avoid OR .neq.null syntax issues on BigInt)
             if (this.mode.includes('simulation') || this.mode === 'itemsets') {
-                query = query.or('case_id.neq.null,clinical_case_id.neq.null');
+                // Query A: checks case_id
+                const qA = _supabase.from('questions_bank')
+                    .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
+                    .not('case_id', 'is', null);
+
+                // Query B: checks clinical_case_id
+                const qB = _supabase.from('questions_bank')
+                    .select('*, case_old:clinical_cases!case_id (*), case_new:clinical_cases!clinical_case_id (*)')
+                    .not('clinical_case_id', 'is', null);
+
+                if (count) { qA.limit(count); qB.limit(count); }
+                else { qA.limit(100); qB.limit(100); }
+
+                const [resA, resB] = await Promise.all([qA, qB]);
+
+                if (resA.error) console.error("Error Q_A:", resA.error);
+                if (resB.error) console.error("Error Q_B:", resB.error);
+
+                // Combine and deduplicate by ID
+                const combined = [...(resA.data || []), ...(resB.data || [])];
+                const seen = new Set();
+                data = [];
+                for (const item of combined) {
+                    if (!seen.has(item.id)) {
+                        seen.add(item.id);
+                        data.push(item);
+                    }
+                }
+
+                // Shuffle if needed (simulation usually randomizes order found)
+                if (count && data.length > count) data = data.slice(0, count);
+
             } else {
-                // Practice: Only questions strictly WITHOUT a case (legacy logic, might be strict)
-                // Or maybe just random standalone. Let's keep it strict for now to avoid duplicates.
+                // Practice: Only questions strictly WITHOUT a case
                 query = query.is('case_id', null).is('clinical_case_id', null);
-            }
+                if (count) query = query.limit(count);
+                else query = query.limit(100);
 
-            if (count) query = query.limit(count);
-            else query = query.limit(100);
-
-            const res = await query;
-            if (res.error) {
-                console.error("Supabase Error (Standard):", res.error);
-                alert("Error fetching questions: " + res.error.message);
+                const res = await query;
+                if (res.error) {
+                    console.error("Supabase Error (Standard):", res.error);
+                    alert("Error fetching questions: " + res.error.message);
+                }
+                data = res.data;
             }
-            data = res.data;
         }
 
         if (!data || data.length === 0) {
@@ -140,32 +169,9 @@ const QuizEngine = {
     renderPracticeQuestion() {
         const q = this.data[this.currentIndex];
 
-        // Prepare Question Text (with optional Case Context)
-        let displayText = q.question_text;
-
-        // Resolve Case Data from either source
-        const caseData = q.case_new || q.case_old;
-
-        if (caseData) {
-            const c = Array.isArray(caseData) ? caseData[0] : caseData;
-            if (c) {
-                let context = "";
-                // Use new fields or fallback
-                const cc = c.chief_complaint || (c.patient_data?.cc) || (c.patient_data?.complaint) || "";
-                const hist = c.medical_history || (c.patient_data?.history) || "";
-                const scen = c.scenario_text || "";
-
-                if (scen) context += `[SCENARIO]: ${scen}\n\n`;
-                if (cc) context += `[CHIEF COMPLAINT]: ${cc}\n`;
-                if (hist) context += `[HISTORY]: ${hist}\n`;
-
-                if (context) {
-                    displayText = context + "\n----------------\n" + displayText;
-                }
-            }
-        }
-
-        document.getElementById('prac-q-text').innerText = displayText;
+        // Standalone Mode: Show ONLY the question text.
+        // Clinical Case context is intentionally hidden in this mode.
+        document.getElementById('prac-q-text').innerText = q.question_text;
 
         document.getElementById('prac-review-area').classList.add('hidden');
         document.getElementById('prac-error-msg')?.classList.add('hidden');
