@@ -798,7 +798,7 @@ const QuizEngine = {
 
         if (error) {
             console.error("Error reporting question:", error);
-            alert("Could not send report. Please try again.");
+            alert("Could not send report.\nError: " + error.message + "\nDetails: " + (error.details || ""));
         } else {
             alert("Report sent! Thank you for your feedback.");
         }
