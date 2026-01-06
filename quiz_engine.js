@@ -756,28 +756,116 @@ const QuizEngine = {
     },
 
     // --- 9. REPORTING SYSTEM ---
-    async reportQuestion(qId) {
+    // --- 9. REPORTING SYSTEM ---
+    injectReportModal() {
+        if (document.getElementById('report-modal')) return;
+
+        const modalHTML = `
+            <div id="report-modal" class="modal-overlay hidden" style="z-index: 10000;">
+                <div class="modal-content" style="background:#121212; border:1px solid #333; padding:25px; border-radius:16px; width:90%; max-width:400px; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.8);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3 style="margin:0; font-weight:800; color:white; font-size:1.2rem;">🚩 Report Issue</h3>
+                        <span class="close-btn" onclick="QuizEngine.closeReportModal()" style="cursor:pointer; font-size:1.5rem; color:#888;">×</span>
+                    </div>
+                    <p style="color:#a1a1aa; font-size:0.9rem; margin-bottom:15px; line-height:1.4;">
+                        Describe the error or problem with this question.
+                    </p>
+                    <textarea id="report-text" placeholder="E.g. Wrong answer key, typo, display issue..." 
+                        style="width:100%; background:#000; border:1px solid #333; color:white; padding:15px; border-radius:12px; font-size:0.95rem; min-height:120px; resize:none; margin-bottom:20px; outline:none; font-family:inherit;"></textarea>
+                     <div style="display:flex; gap:10px;">
+                        <button onclick="QuizEngine.closeReportModal()" style="flex:1; background:transparent; border:1px solid #333; color:#a1a1aa; padding:12px; border-radius:8px; font-weight:600; cursor:pointer; transition:0.2s;">Cancel</button>
+                        <button id="btn-submit-report" onclick="QuizEngine.submitReport()" style="flex:1; background:#facc15; color:black; border:none; padding:12px; border-radius:8px; font-weight:800; cursor:pointer; text-transform:uppercase; font-size:0.9rem; transition:0.2s;">Send Report</button>
+                    </div>
+                </div>
+                <style>
+                    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+                    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+                    #report-text:focus { border-color: #facc15; }
+                </style>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    },
+
+    currentReportQId: null,
+
+    reportQuestion(qId) {
+        if (!qId) return;
+        this.currentReportQId = qId;
+        this.injectReportModal();
+
+        const txt = document.getElementById('report-text');
+        if (txt) txt.value = '';
+
+        const modal = document.getElementById('report-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+    },
+
+    closeReportModal() {
+        const modal = document.getElementById('report-modal');
+        if (modal) {
+            modal.classList.remove('active');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+        this.currentReportQId = null;
+    },
+
+    async submitReport() {
+        const text = document.getElementById('report-text').value.trim();
+        if (!text) {
+            alert("Please enter a description.");
+            return;
+        }
+
+        const qId = this.currentReportQId;
         if (!qId) return;
 
-        // Simple prompt for now
-        const reason = prompt("Describe the error or problem with this question:");
-        if (!reason || !reason.trim()) return;
+        const btn = document.getElementById('btn-submit-report');
+        if (btn) {
+            btn.innerText = "Sending...";
+            btn.disabled = true;
+        }
 
-        const { data: { session } } = await _supabase.auth.getSession();
-        const userId = session ? session.user.id : null;
+        try {
+            const { data: { session } } = await _supabase.auth.getSession();
+            const userId = session ? session.user.id : null;
 
-        const { error } = await _supabase.from('question_reports').insert({
-            question_id: qId,
-            user_id: userId,
-            report_text: reason.trim(),
-            status: 'pending'
-        });
+            // Find question text
+            const q = this.data.find(item => item.id == qId);
+            const qText = q ? q.question_text : "Unknown Question";
 
-        if (error) {
-            console.error("Error reporting question:", error);
-            alert("Could not send report.\nError: " + error.message + "\nDetails: " + (error.details || ""));
-        } else {
-            alert("Report sent! Thank you for your feedback.");
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timeStr = now.toTimeString().split(' ')[0];
+
+            const payload = {
+                created_at: now.toISOString(),
+                report_date: dateStr,
+                report_time: timeStr,
+                user_id: userId,
+                question: qText,
+                quiz_mode: this.mode,
+                report_text: text
+            };
+
+            const { error } = await _supabase.from('report_issues').insert(payload);
+
+            if (error) throw error;
+
+            alert("Report sent! Thank you.");
+            this.closeReportModal();
+
+        } catch (e) {
+            console.error("Error reporting:", e);
+            alert("Could not send report. " + e.message);
+        } finally {
+            if (btn) {
+                btn.innerText = "Send Report";
+                btn.disabled = false;
+            }
         }
     }
 };
@@ -794,5 +882,6 @@ window.showPracticeResults = () => QuizEngine.showSessionResults('prac');
 window.showSimResults = () => QuizEngine.showSessionResults('sim');
 window.goToDashboard = () => QuizEngine.goBack();
 window.reportQuestion = (id) => QuizEngine.reportQuestion(id);
+window.QuizEngine = QuizEngine;
 
 document.addEventListener('DOMContentLoaded', () => QuizEngine.init());
