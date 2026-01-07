@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>INBDE Pro Lab - Mobile</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* ================================================================= */
+        /* === 1. BASE Y UTILIDADES (MOBILE FIRST) === */
+        /* ================================================================= */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: 'Inter', sans-serif;
+            background-color: #050505;
+            /* Fondo base dark */
+            color: #f4f4f5;
+            min-height: 100vh;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ================================================================= */
+        /* === 2. MODO PRÁCTICA (DARK) === */
+        /* ================================================================= */
+        body.mode-practice {
+            background: radial-gradient(circle at 50% 50%, #1a1830 0%, #000000 90%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .practice-wrapper {
+            width: 100%;
+            max-width: 100%;
+            padding: 10px;
+        }
+
+        /* --- PANTALLA INICIO (SELECCIÓN DE CATEGORÍAS) --- */
+        #prac-start-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+        }
+
+        .prac-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #facc15;
+            text-shadow: 0 0 10px rgba(250, 204, 21, 0.2);
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .prac-desc {
+            font-size: 1rem;
+            color: #a1a1aa;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        /* Lista de Categorías (Estilo Checkbox Móvil - Simple) */
+        .cat-selection-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            margin-bottom: 25px;
+            background: #111;
+            border-radius: 12px;
+            border: 1px solid #333;
+            overflow: hidden;
+            max-height: 55vh;
+            /* Altura máxima con scroll */
+            overflow-y: auto;
+        }
+
+        .mobile-cat-item {
+            display: flex;
+            align-items: center;
+            padding: 18px 16px;
+            /* Padding cómodo para el dedo */
+            border-bottom: 1px solid #222;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        .mobile-cat-item:last-child {
+            border-bottom: none;
+        }
+
+        .mobile-cat-item:active {
+            background: #222;
+        }
+
+        .mobile-cat-item.selected {
+            color: white;
+            font-weight: 600;
+            background: #18181b;
+        }
+
+        .mobile-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #555;
+            margin-right: 15px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: transparent;
+        }
+
+        .mobile-cat-item.selected .mobile-checkbox {
+            background: #facc15;
+            border-color: #facc15;
+        }
+
+        .mobile-cat-item.selected .mobile-checkbox::after {
+            content: '✓';
+            color: black;
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        /* Botón Start */
+        .btn-start-custom {
+            background: #facc15;
+            color: #000;
+            font-weight: 800;
+            padding: 18px;
+            border-radius: 12px;
+            border: none;
+            width: 100%;
+            font-size: 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            opacity: 0.5;
+            pointer-events: none;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-start-custom.ready {
+            opacity: 1;
+            pointer-events: all;
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
+        }
+
+        /* --- PANTALLA QUIZ --- */
+        .prac-quiz-container {
+            background: #121214;
+            border: 1px solid #27272a;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .prac-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .prac-question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #fff;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .prac-option {
+            display: flex;
+            align-items: flex-start;
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 18px 15px;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: 0.1s;
+        }
+
+        .prac-option:active {
+            background: #252528;
+            border-color: #facc15;
+        }
+
+        .prac-option.correct {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: #22c55e;
+        }
+
+        .prac-option.incorrect {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: #ef4444;
+        }
+
+        .prac-radio {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #71717a;
+            border-radius: 50%;
+            margin-right: 15px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .prac-option.selected .prac-radio {
+            background: #facc15;
+            border-color: #facc15;
+        }
+
+        /* Review Area */
+        .prac-review-area {
+            border-top: 1px solid #27272a;
+            padding-top: 20px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .prac-classify-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .btn-classify {
+            padding: 15px 0;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            color: #fff;
+            opacity: 0.3;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .btn-classify.active {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        .btn-hard {
+            background: #ef4444;
+        }
+
+        .btn-medium {
+            background: #facc15;
+            color: #000;
+        }
+
+        .btn-easy {
+            background: #22c55e;
+        }
+
+        .prac-explanation {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid #facc15;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: left;
+            line-height: 1.5;
+            color: #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .btn-prac-next {
+            background: #facc15;
+            color: #000;
+            border: none;
+            padding: 16px;
+            width: 100%;
+            border-radius: 10px;
+            font-weight: 800;
+            margin-top: 20px;
+            text-transform: uppercase;
+            font-size: 1rem;
+        }
+
+        /* ================================================================= */
+        /* === 3. MODO SIMULACIÓN (LIGHT) === */
+        /* ================================================================= */
+        body.mode-simulation {
+            background-color: #f2f2f2;
+            color: #333;
+            display: block;
+            padding: 0;
+        }
+
+        .sim-screen {
+            display: none;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .sim-screen.active {
+            display: flex;
+        }
+
+        .sim-content {
+            padding: 15px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-grow: 1;
+
+            /* MODIFICACIÓN: Aumentado para evitar que el footer fijo tape el contenido */
+            padding-bottom: 160px;
+        }
+
+        .sim-header {
+            background: #235d88;
+            color: white;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .header-left,
+        .header-center,
+        .header-right {
+            width: 100%;
+            font-weight: 600;
+        }
+
+        .sim-footer {
+            background: #235d88;
+            padding: 15px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sim-patient-panel {
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            width: 100%;
+            max-height: 220px;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .sim-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .sim-table th {
+            background: #e0e6ec;
+            padding: 10px;
+            text-align: left;
+            border-top: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+        }
+
+        .sim-table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .sim-question-area {
+            width: 100%;
+        }
+
+        .sim-q-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .sim-option {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 18px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            font-size: 1rem;
+        }
+
+        .sim-option.selected {
+            background: #dceefb;
+            border-color: #235d88;
+            font-weight: 500;
+        }
+
+        .sim-radio {
+            width: 18px;
+            height: 18px;
+            border: 1px solid #999;
+            border-radius: 50%;
+            margin-right: 15px;
+            background: white;
+            flex-shrink: 0;
+        }
+
+        .sim-option.selected .sim-radio {
+            background: #235d88;
+            border-color: #235d88;
+        }
+
+        .btn-sim-nav {
+            background: white;
+            color: #235d88;
+            border: none;
+            padding: 14px;
+            font-weight: 700;
+            border-radius: 6px;
+            width: 100%;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .btn-sim-nav.mark.active {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .footer-btns-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .footer-btns-row button {
+            flex: 1;
+        }
+
+        /* ================================================================= */
+        /* === 4. RESULTADOS (COMMON) === */
+        /* ================================================================= */
+        .perf-container {
+            width: 100%;
+            background-color: #1c1c1c;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 25px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            margin: 20px auto;
+        }
+
+        .perf-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-align: center;
+            color: #f0f0f0;
+            margin-bottom: 10px;
+        }
+
+        .chart-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .pie-chart {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            background: #333;
+        }
+
+        .pie-center {
+            width: 70%;
+            height: 70%;
+            background-color: #1c1c1c;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #f0f0f0;
+            z-index: 2;
+        }
+
+        .acc-text {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .acc-label {
+            font-size: 0.8rem;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+
+        .data-row {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 5px;
+            color: white;
+        }
+
+        .col-green {
+            color: #22c55e;
+        }
+
+        .col-red {
+            color: #ef4444;
+        }
+
+        .landscape-bar {
+            display: flex;
+            height: 50px;
+            border-radius: 8px;
+            overflow: hidden;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .landscape-seg {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #000;
+            line-height: 1;
+            font-size: 0.8rem;
+        }
+
+        .landscape-seg.seg-text-white {
+            color: #fff;
+        }
+
+        .cat-list-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .cat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f0f0f0;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="root-practice" class="practice-wrapper hidden">
+
+        <div id="prac-start-screen" class="fade-in">
+            <h1 class="prac-title">Select Topics</h1>
+            <p class="prac-desc">Choose categories to practice</p>
+
+            <div id="category-list-container" class="cat-selection-container">
+                <div style="padding:20px; text-align:center; color:#666;">Initializing...</div>
+            </div>
+
+            <button id="btn-start-selected" class="btn-start-custom" onclick="startSelectedPractice()">
+                Start Practice
+            </button>
+            <button onclick="goToDashboard()"
+                style="background:transparent; border:none; color:#666; margin-top:20px; font-weight:600;">Cancel</button>
+        </div>
+
+        <div id="prac-quiz-screen" class="prac-quiz-container hidden fade-in">
+            <div class="prac-header">
+                <span style="font-weight:800; color:#fff;">Practice Mode</span>
+                <button onclick="finishPracticeQuiz()"
+                    style="background:none; border:none; color:#ef4444; font-size:1.2rem;">×</button>
+            </div>
+
+            <div id="prac-question-area">
+                <p id="prac-q-text" class="prac-question-text">Loading question...</p>
+                <div id="prac-options-list"></div>
+            </div>
+
+            <p id="prac-error-msg" class="hidden"
+                style="color:#ef4444; text-align:center; font-weight:bold; margin:10px 0;">Please rate difficulty first.
+            </p>
+
+            <div id="prac-review-area" class="prac-review-area hidden">
+                <p style="color:#71717a; font-weight:600; text-transform:uppercase; font-size:0.75rem;">HOW WAS IT?</p>
+                <div class="prac-classify-btns">
+                    <button class="btn-classify btn-hard" onclick="classifyPractice('learning')">Hard</button>
+                    <button class="btn-classify btn-medium" onclick="classifyPractice('reviewing')">Medium</button>
+                    <button class="btn-classify btn-easy" onclick="classifyPractice('mastered')">Easy</button>
+                </div>
+                <div id="prac-explanation" class="prac-explanation hidden"></div>
+                <button id="btn-prac-next" class="btn-prac-next hidden" onclick="nextPracticeQuestion()">Next Question
+                    →</button>
+            </div>
+        </div>
+
+        <div id="prac-review-screen" class="hidden fade-in" style="min-height:100vh; padding:20px 0 50px 0;">
+            <div class="perf-container" style="padding:20px; display:flex; flex-direction:column; gap:0;">
+                <h2 style="color:#facc15; text-align:center; margin-bottom:20px; font-size:1.5rem;">Session Review</h2>
+                <div id="prac-final-list-content" style="width:100%; display:flex; flex-direction:column; gap:10px;">
+                </div>
+                <button onclick="QuizEngine.showSessionResults('prac')"
+                    style="margin-top:25px; width:100%; padding:15px; background:#facc15; color:#000; border:none; border-radius:10px; font-weight:800; text-transform:uppercase; font-size:1rem;">
+                    View Statistics
+                </button>
+            </div>
+        </div>
+
+        <div id="prac-results-screen" class="hidden fade-in" style="min-height:100vh; padding-top:20px;">
+            <div class="perf-container">
+                <div class="perf-title">Session Report</div>
+                <div class="chart-section">
+                    <div class="pie-chart" id="prac-perf-pie">
+                        <div class="pie-center">
+                            <span class="acc-text" id="prac-acc-val">0%</span>
+                            <span class="acc-label">Accuracy</span>
+                        </div>
+                    </div>
+                    <div class="data-row">
+                        <span class="col-green" id="prac-correct-val">0</span> / <span class="col-red"
+                            id="prac-incorrect-val">0</span>
+                    </div>
+                </div>
+                <div class="stats-section">
+                    <div class="landscape-bar" id="prac-landscape-bar"></div>
+                    <div class="cat-list-box">
+                        <div
+                            style="text-align:center; color:#aaa; font-weight:bold; margin-bottom:10px; font-size:0.8rem;">
+                            TOPIC BREAKDOWN</div>
+                        <div id="prac-cat-list"></div>
+                    </div>
+                </div>
+                <button onclick="goToDashboard()"
+                    style="width:100%; padding:15px; background:#fff; color:#000; border:none; border-radius:10px; font-weight:800; text-transform:uppercase;">Back
+                    to Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="root-simulation" class="hidden">
+
+        <div id="sim-screen-quiz" class="sim-screen active">
+            <div class="sim-header">
+                <div class="header-left"><span id="sim-q-counter">Q 1</span></div>
+                <div class="header-center"><span>Sim Exam</span></div>
+                <div class="header-right"><span id="sim-timer">--:--</span></div>
+            </div>
+
+            <div class="sim-content">
+                <div class="sim-patient-panel">
+                    <table class="sim-table">
+                        <thead>
+                            <tr>
+                                <th>Patient Profile</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sim-pat-demo">
+                            <tr>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                        <thead>
+                            <tr>
+                                <th>Chief Complaint</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sim-pat-cc">
+                            <tr>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                        <thead>
+                            <tr>
+                                <th>History</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sim-pat-hist">
+                            <tr>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                        <thead>
+                            <tr>
+                                <th>Findings</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sim-pat-find">
+                            <tr>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="sim-question-area">
+                    <p id="sim-q-text" class="sim-q-text">Loading...</p>
+                    <div id="sim-options-container"></div>
+                </div>
+            </div>
+
+            <div class="sim-footer">
+                <button class="btn-sim-nav" onclick="nextSimQuestion()"
+                    style="background:#facc15; color:black; border:none;">NEXT QUESTION</button>
+                <div class="footer-btns-row">
+                    <button id="btn-sim-mark" class="btn-sim-nav mark" onclick="toggleSimMark()">MARK</button>
+                    <button class="btn-sim-nav" onclick="goToSimReview()">REVIEW</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="sim-screen-review" class="sim-screen">
+            <div class="sim-header">
+                <div style="flex:1; text-align:center;">Review Panel</div>
+                <div><span id="sim-timer-rev">--:--</span></div>
+            </div>
+
+            <div style="flex-grow:1; overflow-y:auto; padding:15px; padding-bottom:100px;">
+                <div class="sim-review-table-container">
+                    <table class="sim-review-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th style="text-align:center;">Mark</th>
+                                <th style="text-align:center;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sim-review-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="sim-footer">
+                <button class="btn-sim-nav" style="background:white; color:#235d88;" onclick="returnToSimQuiz()">BACK TO
+                    QUIZ</button>
+                <button class="btn-sim-nav" style="background:#ef4444; color:white;" onclick="finishSimExam()">SUBMIT
+                    EXAM</button>
+            </div>
+        </div>
+
+        <div id="sim-final-review-screen" class="sim-screen" style="background:#f2f2f2; padding:20px; display:none;">
+            <div class="perf-container"
+                style="background:#ffffff; color:#333; padding:25px; display:flex; flex-direction:column; gap:0; box-shadow: 0 5px 20px rgba(0,0,0,0.05);">
+                <h2 style="color:#235d88; text-align:center; margin-bottom:20px; font-size:1.5rem;">Exam Review</h2>
+                <div id="sim-final-list-content" style="width:100%; display:flex; flex-direction:column; gap:10px;">
+                </div>
+                <button onclick="QuizEngine.showSessionResults('sim')"
+                    style="margin-top:25px; width:100%; padding:15px; background:#235d88; color:#fff; border:none; border-radius:10px; font-weight:800; text-transform:uppercase; font-size:1rem;">
+                    View Statistics
+                </button>
+            </div>
+        </div>
+
+        <div id="sim-screen-perf" class="sim-screen" style="background:#111; padding:20px; display:none;">
+            <div class="perf-container" style="background:#1c1c1c;">
+                <div class="perf-title">Exam Results</div>
+                <div class="chart-section">
+                    <div class="pie-chart" id="sim-perf-pie">
+                        <div class="pie-center">
+                            <span class="acc-text" id="sim-acc-val">0%</span>
+                            <span class="acc-label">Score</span>
+                        </div>
+                    </div>
+                    <div class="data-row">
+                        <span class="col-green" id="sim-correct-val">0</span> / <span class="col-red"
+                            id="sim-incorrect-val">0</span>
+                    </div>
+                </div>
+                <div class="stats-section">
+                    <div class="landscape-bar" id="sim-landscape-bar"></div>
+                    <div class="cat-list-box">
+                        <div
+                            style="text-align:center; color:#aaa; font-weight:bold; margin-bottom:10px; font-size:0.8rem;">
+                            CATEGORY BREAKDOWN</div>
+                        <div id="sim-cat-list"></div>
+                    </div>
+                </div>
+                <button onclick="goToDashboard()"
+                    style="width:100%; padding:15px; background:#fff; color:#000; border:none; border-radius:10px; font-weight:800; text-transform:uppercase;">Exit
+                    Exam</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="quiz_engine.js"></script>
+    <script>
+        // Función específica de UI para Mobile (Checkboxes simples)
+        async function loadCategoriesUI() {
+            const container = document.getElementById('category-list-container');
+            container.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">Loading categories...</div>';
+
+            // Nota: Se asume que _supabase y la tabla 'questions_bank' están definidos y accesibles
+            if (typeof _supabase === 'undefined') {
+                container.innerHTML = '<div style="padding:20px; text-align:center; color:#ef4444;">Supabase not initialized.</div>';
+                return;
+            }
+
+            const { data, error } = await _supabase.from('questions_bank').select('category');
+
+            if (error || !data) { container.innerHTML = 'Error loading data.'; return; }
+
+            const uniqueCategories = [...new Set(data.map(item => item.category))]
+                .filter(c => c && c.trim() !== '').sort();
+
+            container.innerHTML = '';
+            let selectedCategories = new Set();
+
+            uniqueCategories.forEach(catName => {
+                const div = document.createElement('div');
+                div.className = 'mobile-cat-item';
+                div.onclick = () => {
+                    div.classList.toggle('selected');
+                    if (selectedCategories.has(catName)) selectedCategories.delete(catName);
+                    else selectedCategories.add(catName);
+
+                    const startBtn = document.getElementById('btn-start-selected');
+                    if (selectedCategories.size > 0) {
+                        startBtn.classList.add('ready');
+                        startBtn.innerText = `START (${selectedCategories.size})`;
+                        startBtn.onclick = () => {
+                            const catsParam = Array.from(selectedCategories).map(encodeURIComponent).join(',');
+                            // Llama directamente a la función del QuizEngine para iniciar
+                            if (typeof QuizEngine !== 'undefined' && typeof QuizEngine.fetchQuestions === 'function') {
+                                QuizEngine.fetchQuestions(null, null, catsParam);
+                            } else {
+                                console.error("QuizEngine not available.");
+                            }
+                        };
+                    } else {
+                        startBtn.classList.remove('ready');
+                        startBtn.innerText = 'START PRACTICE';
+                        startBtn.onclick = startSelectedPractice; // Restaurar onclick por defecto si es necesario
+                    }
+                };
+
+                div.innerHTML = `<div class="mobile-checkbox"></div><span>${catName}</span>`;
+                container.appendChild(div);
+            });
+        }
+
+        // Redirección segura si quiz_engine no la define
+        if (typeof window.goToDashboard === 'undefined') {
+            window.goToDashboard = function () {
+                window.location.href = 'mobile.html';
+            };
+        }
+        // Placeholder para startSelectedPractice si no está en app.js
+        function startSelectedPractice() {
+            // Esta función es manejada por el event listener dentro de loadCategoriesUI
+            console.log("Starting practice...");
+        }
+    </script>
+</body>
+
+</html>
